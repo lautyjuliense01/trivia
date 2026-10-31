@@ -620,7 +620,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 <script>
 (() => {
 'use strict';
-const VERSION = 'v16 · 31/10 22:15';
+const VERSION = 'v17 · 31/10 22:30';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2167,6 +2167,15 @@ function initControl() {
     const c = [{ code: 'control_data', value: { change_mode: 'gradient', h: Math.round(h || 0), s: Math.round((sat == null ? 100 : sat) * 2.55), v: Math.max(3, Math.round(b * 2.55)), bright: 0, temperature: 0 } }];
     return withMode ? [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'colour' }, ...c] : c;
   }
+  // Color en formato "en vivo": h 0-360, s y v 0-255. El blanco se arma con color (estas tiras suelen ser solo RGB).
+  function vivoColor(L, cfg) {
+    const vMin = cfg.vMin == null ? 8 : cfg.vMin;
+    if (L.tipo === 'blanco') { const w = (L.calidez || 0) / 100; return { h: Math.round(32 + (210 - 32) * w), s: Math.round(45 - 37 * w), b: L.brillo == null ? 60 : L.brillo, vMin }; }
+    return { h: L.h || 0, s: L.s == null ? 100 : L.s, b: L.brillo == null ? 100 : L.brillo, vMin };
+  }
+  function liveCmd(c, mode = 'gradient') {
+    return [{ code: 'switch_led', value: true }, { code: 'control_data', value: { change_mode: mode, h: Math.round(c.h), s: Math.round(c.s * 2.55), v: Math.max(c.vMin || 3, Math.round(c.b * 2.55)), bright: 0, temperature: 0 } }];
+  }
   const loops = {};
   function stopLoop(lamp) { if (loops[lamp]) { clearInterval(loops[lamp].i); clearTimeout(loops[lamp].t); delete loops[lamp]; } }
   async function startLoop(lamp, L, cfg) {
@@ -2175,6 +2184,7 @@ function initControl() {
     let k = 0, first = true;
     const send = () => {
       const c = cols[k % cols.length]; k++;
+      if (cfg.vivo) { const cmdV = liveCmd({ h: c[0], s: c[1], b: c[2], vMin: cfg.vMin == null ? 8 : cfg.vMin }, L.modo === 'salto' ? 'direct' : 'gradient'); first = false; return postLamp(lamp, cmdV).catch(e => { log(`💡 ${lamp}: efecto cortado — ${e.message}`, 'e'); stopLoop(lamp); }); }
       const cmd = L.modo === 'salto'
         ? [...(first ? [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'colour' }] : []), { code: 'colour_data_v2', value: { h: Math.round(c[0]), s: p10(c[1], 0), v: p10(c[2]) } }]
         : ctrlCmd(c[0], c[1], c[2], first);
@@ -2208,6 +2218,13 @@ function initControl() {
         const Lx = L[lamp] ? { ...L, ...L[lamp] } : L;               // cada lámpara puede tener su variante (ej.: tira: { h: 280 })
         try {
           if (Lx.apagar) { await postLamp(lamp, [{ code: 'switch_led', value: false }]); return true; }
+          if (cfg.modo === 'vivo') {
+            // Esta luz solo entiende la orden "en vivo" (control_data): todo se traduce a eso
+            if (Lx.tipo === 'efecto') { await startLoop(lamp, Lx, { ...cfg, vivo: true }); return true; }
+            const c = vivoColor(Lx, cfg);
+            await postLamp(lamp, liveCmd(c, (Lx.transicion || 0) > 0 ? 'gradient' : 'direct'));
+            return true;
+          }
           if (cfg.escenas === false) {
             // Esta luz no acepta escenas a medida: la app hace los efectos y fundidos con órdenes sueltas
             if (Lx.tipo === 'efecto') { await startLoop(lamp, Lx, cfg); return true; }

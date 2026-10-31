@@ -68,7 +68,9 @@ window.TRIVIA = {
      En el control elegís si se usa una, la otra o todas juntas. */
   lamparas: {
     techo: 'eba75b70df50a7545c9thx',
-    tira:  { id: 'eb65b658340d7685eatgz1', escenas: false },   // tira LED detrás del sillón. escenas: false = solo colores fijos (sin efectos ni fundidos)
+    // tira LED detrás del sillón. modo 'vivo' = solo entiende la orden de transición en vivo; la app traduce todo a eso.
+    // vMin: brillo mínimo (0-255) para que no se apague en los looks muy oscuros. pasoMin: segundos mínimos entre órdenes en los efectos.
+    tira:  { id: 'eb65b658340d7685eatgz1', modo: 'vivo', vMin: 8, pasoMin: 0.5 },
   },
 
   /* ---------- Luces (Tuya directo) ----------
