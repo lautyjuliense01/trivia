@@ -25,13 +25,19 @@ window.TRIVIA = {
   apertura: {
     credito: 2800,          // ms de cada crédito
     golpes: 'extremos',     // golpes de tráiler en los créditos: 'todos', 'extremos' o 'ninguno'
-    // Avisos de sala antes de los créditos (en silencio). ms opcional; si no, se calcula por el largo del texto.
+    graves: true,           // cada aviso entra con un golpe grave de cine (false = avisos en silencio)
+    volGraves: 1,           // volumen de los graves (0 a 1.5)
+    // Avisos de sala antes de los créditos. ms opcional; si no, se calcula por el largo del texto.
+    // sonido (opcional): 'grave' (el de siempre), 'envolvente' (crece, gira por la sala y golpea), 'audio/archivo.mp3' o '' (silencio).
     // audio opcional: 'audio/archivo.mp3' subido al repositorio (por ejemplo, una voz en off grabada).
     avisos: [
       { icono: '📵', texto: 'Por favor, apaguen sus celulares', sub: 'La función está por comenzar' },
       { icono: '🤫', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe' },
       { icono: '🖊️', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan' },
       { icono: '🚪', texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final' },
+      // Prueba de sonido para la barra: unos 5 s de sonido que crece y gira, golpe grave, destello del techo y aparece el texto.
+      // subida: ms hasta el golpe · luz: false para que el techo no destelle
+      { texto: 'Bioingeniería Surround', sub: 'Esta sala cuenta con sonido envolvente 7.1', sonido: 'envolvente', subida: 4800 },
     ],
   },
 
@@ -144,7 +150,13 @@ window.TRIVIA = {
     flash:     { tipo: 'blanco', brillo: 100, calidez: 60, respaldo: 'festejo' },    // destello corto
     noche:     { tipo: 'color', h: 232, s: 90, brillo: 7, respaldo: 'tension' },       // azul de noche para los reflectores de la intro
     pulso:     { tipo: 'color', h: 30, s: 85, brillo: 45, respaldo: 'normal' },       // destello cálido con cada crédito
-    foco:      { tipo: 'blanco', brillo: 75, calidez: 25, respaldo: 'normal', tira: { tipo: 'color', h: 38, s: 90, brillo: 55 } },   // foco del presentador (la tira, dorada)
+    foco:      { tipo: 'blanco', brillo: 75, calidez: 25, respaldo: 'normal', tira: { tipo: 'color', h: 38, s: 90, brillo: 55 } },   // foco blanco (ya no se usa en tu entrada)
+    // Tu entrada. tele: 'ritmo' = la tele no copia la lámpara: hace su propio juego, clavado al bombo del tema.
+    latido:      { tipo: 'efecto', modo: 'respirar', colores: [[270, 85, 14], [270, 85, 1]], paso: 0.94, respaldo: 'tension', tira: { colores: [[275, 90, 35], [275, 90, 3]] } },        // violeta que late lento
+    latidoRapido: { tipo: 'efecto', modo: 'respirar', colores: [[285, 90, 22], [285, 90, 1]], paso: 0.47, respaldo: 'tension', tira: { colores: [[290, 95, 55], [290, 95, 4]] } },   // late al doble: "con ustedes…"
+    estroboHost: { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo', tele: 'ritmo' },
+    fiestaHost:  { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 38], [325, 95, 38], [268, 90, 38], [195, 90, 38]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo',
+                   tira: { colores: [[268, 90, 70], [195, 90, 70], [38, 95, 70], [325, 95, 70]] } },   // fiesta sin encandilar: techo al 38 %, la tira en contraste
     destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },  // celebración corta
     apagado:   { tipo: 'apagado' },   // apaga todo; el look siguiente las vuelve a prender solo
     estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },   // titila lo más rápido posible, 100 ↔ 0
@@ -157,14 +169,14 @@ window.TRIVIA = {
      Un nombre de look, o una secuencia [[ms, look], ...] donde ms es cuándo se tiene que VER la luz desde que tocás el botón.
      La app la dispara antes según la "demora de la lámpara" que configures en el control. */
   guion: {
-    previa: 'ambiente',
+    previa: 'sala',          // al reiniciar la partida queda la luz de sala, lista para la previa
     presentamos: [[0, 'oscuro'], [1700, 'escenario']],
     // cine: lo arma la app sola (baja la luz y un pulso por crédito). Para personalizarlo, agregá cine: [[ms, look], ...]
     intro: [[0, 'noche'], [15300, 'dorado'], [16500, 'destello'], [17900, 'dorado'], [19700, 'calido']],   // golpe dorado con el título (seg. 15)
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
     contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],   // primero baja el último a la fila a oscuras
-    presentador: 'oscuro',                                      // tu entrada: a oscuras mientras entrás
-    presentadorGolpe: [[0, 'estrobo'], [1500, 'foco']],         // al tocar "Golpe de entrada": estrobo y foco
+    // presentador: lo arma la app según tus textos (oscuro → latido → latido rápido en "con ustedes…")
+    presentadorGolpe: [[0, 'estroboHost'], [3750, 'fiestaHost']],   // golpe de entrada: 2 compases de estrobo (3,75 s a 128 bpm) y fiesta
     reglas: 'sala',
     ronda: 'sala',
     // { fade: look, de, a, ms }: la luz se va apagando suave (una sola orden, la lámpara hace el fundido; máx. 10 s)
@@ -188,6 +200,8 @@ window.TRIVIA = {
 
   /* La pregunta aparece estos milisegundos después de que arranca su música (la de "¿Quién quiere ser millonario?") */
   entradaPregunta: 4500,
+  /* El número de la pregunta entra antes que el texto (si no se pone, 1,5 s antes: 3000) */
+  entradaNumero: 3000,
 
   /* Fotos: 'duotono' (todas con el mismo tratamiento dorado, para que fotos muy distintas queden como un set), 'byn' o 'color' */
   fotos: { estilo: 'duotono' },
@@ -207,8 +221,13 @@ window.TRIVIA = {
   /* Presentador: entra después de la intro y antes de presentar a los contendientes */
   presentador: {
     nombre: 'Lautaro', foto: '', rol: 'Responsable de Bioingeniería', antiguedad: 'En Bioingeniería desde 2021', frase: '',
-    textos: ['Damas y caballeros…', 'con ustedes…'],   // lo que aparece a oscuras mientras entrás
+    // Lo que aparece a oscuras mientras entrás. El primero dura 5,5 s y los demás 4,3 s; el último queda hasta el golpe.
+    // Para cambiar la duración de uno: { texto: '…', ms: 6000 }
+    textos: ['Damas y caballeros…', 'bienvenidos a la segunda edición…', 'el que armó todo esto…', 'con ustedes…'],
     golpeAuto: 0,   // ms: si es mayor que 0, el golpe de entrada sale solo a ese tiempo (si no lo tocás antes)
+    // Ritmo del tema para que la tele destelle en el bombo. Lo más fácil: calibrarlo en el ensayo desde el celu (🥁 Calibrar).
+    // fase: segundo del video en que cae un golpe (lo da la calibración). Sin fase, el compás arranca cuando tocás el golpe.
+    ritmo: { bpm: 128, fase: null },
   },
 
   /* ---------- Reglas ----------
