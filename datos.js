@@ -73,6 +73,7 @@ window.TRIVIA = {
     //   modo 'vivo' → solo la orden en vivo (usar si la volvés a "Standard Instruction")
     //   escenas: false → sin escenas (si las escenas no le andan, los fundidos usan la orden en vivo)
     //   vMin1000: brillo mínimo (0-1000) para que no se apague en los looks muy oscuros
+    //   Es solo RGB: los blancos se arman con color (si algún día tuviera canal blanco: blanco: true)
     tira:  { id: 'eb65b658340d7685eatgz1', modo: 'dp', vMin1000: 10 },
   },
 
@@ -130,6 +131,10 @@ window.TRIVIA = {
     ganadorRedoble: 'oscuro',
     ganador: 'fiesta',
   },
+
+  /* Velocidad de las escenas de las luces: segundos por cada punto de velocidad de Tuya (calibrado con la tira: velocidad 5 ≈ 6 s).
+     Si los efectos salen más lentos de lo pedido, subilo un poco; si salen más rápidos, bajalo. */
+  escalaEscena: 0.065,
 
   /* La pregunta aparece estos milisegundos después de que arranca su música (la de "¿Quién quiere ser millonario?") */
   entradaPregunta: 4500,

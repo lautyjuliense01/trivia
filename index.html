@@ -620,7 +620,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 <script>
 (() => {
 'use strict';
-const VERSION = 'v18 · 31/10 22:45';
+const VERSION = 'v19 · 31/10 23:00';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2137,10 +2137,13 @@ function initControl() {
     } catch (e) { throw new Error(e.name === 'AbortError' ? 'sin respuesta del intermediario' : (e.message === 'Failed to fetch' ? 'no se pudo conectar con el intermediario' : e.message)); }
     finally { clearTimeout(to); }
   }
+  // En las escenas de Tuya el valor 0-100 es una VELOCIDAD (100 = lo más rápido). Con 5 la tira tardaba ~6 s por salto.
+  const ESC = D.escalaEscena || 0.065;
+  const speedFor = seconds => Math.max(1, Math.min(100, Math.round(100 - seconds / ESC)));
   const p10 = (v, min = 10) => Math.max(min, Math.min(1000, Math.round((+v || 0) * 10)));
   // Fundido suave en UNA sola orden: escena de un paso con transición gradual (la lámpara hace el fundido)
   function fadeCommand(L, ms, sceneNum = 2) {
-    const dur = Math.max(1, Math.min(100, Math.round(ms / 100)));
+    const dur = speedFor(ms / 1000);
     const unit = L.tipo === 'blanco'
       ? { unit_change_mode: 'gradient', unit_switch_duration: dur, unit_gradient_duration: dur, h: 0, s: 0, v: 0, bright: p10(L.brillo), temperature: p10(L.calidez, 0) }
       : { unit_change_mode: 'gradient', unit_switch_duration: dur, unit_gradient_duration: dur, h: Math.round(L.h || 0), s: p10(L.s == null ? 100 : L.s, 0), v: p10(L.brillo == null ? 100 : L.brillo), bright: 0, temperature: 0 };
@@ -2153,7 +2156,7 @@ function initControl() {
     if (L.tipo === 'apagado') return [{ code: 'switch_led', value: false }];
     if (L.tipo === 'blanco') return [on, { code: 'work_mode', value: 'white' }, { code: 'bright_value_v2', value: p10(L.brillo) }, { code: 'temp_value_v2', value: p10(L.calidez, 0) }];
     if (L.tipo === 'efecto') {
-      const dur = L.paso != null ? Math.max(1, Math.min(100, Math.round(L.paso * 10))) : Math.max(0, Math.min(100, Math.round(100 - (L.velocidad == null ? 50 : L.velocidad))));
+      const dur = speedFor(L.paso != null ? L.paso : (100 - (L.velocidad == null ? 50 : L.velocidad)) / 10);
       const mode = L.modo === 'salto' ? 'jump' : 'gradient';
       return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: sceneNum || 1, scene_units: (L.colores || []).map(([h, sat, b]) => ({ unit_change_mode: mode, unit_switch_duration: dur, unit_gradient_duration: dur, h: Math.round(h), s: p10(sat, 0), v: p10(b), bright: 0, temperature: 0 })) } }];
     }
@@ -2170,7 +2173,7 @@ function initControl() {
   // Color en formato "en vivo": h 0-360, s y v 0-255. El blanco se arma con color (estas tiras suelen ser solo RGB).
   function vivoColor(L, cfg) {
     const vMin = cfg.vMin == null ? 8 : cfg.vMin;
-    if (L.tipo === 'blanco') { const w = (L.calidez || 0) / 100; return { h: Math.round(32 + (210 - 32) * w), s: Math.round(45 - 37 * w), b: L.brillo == null ? 60 : L.brillo, vMin }; }
+    if (L.tipo === 'blanco') { const w = (L.calidez || 0) / 100; return { h: w < 0.5 ? 30 : 210, s: w < 0.5 ? Math.round(45 - 50 * w) : Math.round((w - 0.5) * 30), b: L.brillo == null ? 60 : L.brillo, vMin }; }
     return { h: L.h || 0, s: L.s == null ? 100 : L.s, b: L.brillo == null ? 100 : L.brillo, vMin };
   }
   function liveCmd(c, mode = 'gradient') {
@@ -2188,18 +2191,18 @@ function initControl() {
     const vMin = cfg.vMin1000 == null ? 10 : cfg.vMin1000;
     if (L.apagar || L.tipo === 'apagado') return [{ code: 'switch_led', value: false }];
     if (L.tipo === 'efecto') {
-      const dur = Math.max(1, Math.min(100, Math.round((L.paso == null ? 0.6 : L.paso) * 10)));
+      const dur = speedFor(L.paso == null ? 0.6 : L.paso);
       const mode = L.modo === 'salto' ? 1 : 2;
       return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: dpScene(cfg.escena || 1, (L.colores || []).map(([h, sat, b]) => ({ sw: dur, gr: dur, mode, h, s: p10(sat, 0), v: Math.max(vMin, p10(b, 0)) }))) }];
     }
     const tr = (L.transicion || 0) * 1000;
     if (L.tipo === 'blanco') {
-      if (tr > 0 && cfg.escenas !== false) return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: dpScene(cfg.escena || 2, [{ sw: Math.min(100, Math.round(tr / 100)), gr: Math.min(100, Math.round(tr / 100)), mode: 2, b: p10(L.brillo), t: p10(L.calidez, 0) }]) }];
-      return [on, { code: 'work_mode', value: 'white' }, { code: 'bright_value', value: p10(L.brillo) }, { code: 'temp_value', value: p10(L.calidez, 0) }];
+      if (cfg.blanco === true) return [on, { code: 'work_mode', value: 'white' }, { code: 'bright_value', value: p10(L.brillo) }, { code: 'temp_value', value: p10(L.calidez, 0) }];
+      const w = (L.calidez || 0) / 100;                    // tira solo RGB: el blanco se arma con color
+      L = { ...L, tipo: 'color', h: w < 0.5 ? 30 : 210, s: w < 0.5 ? Math.round(45 - 50 * w) : Math.round((w - 0.5) * 30) };
     }
     const h = L.h || 0, s1 = p10(L.s == null ? 100 : L.s, 0), v1 = Math.max(vMin, p10(L.brillo == null ? 100 : L.brillo, 0));
-    if (tr > 0 && cfg.escenas !== false) return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: dpScene(cfg.escena || 2, [{ sw: Math.min(100, Math.round(tr / 100)), gr: Math.min(100, Math.round(tr / 100)), mode: 2, h, s: s1, v: v1 }]) }];
-    if (tr > 0) return [on, { code: 'control_data', value: '1' + dpColour(h, s1, v1) + '00000000' }];
+    if (tr > 0 && cfg.escenas !== false) { const sp = speedFor(tr / 1000); return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: dpScene(cfg.escena || 2, [{ sw: sp, gr: sp, mode: 2, h, s: s1, v: v1 }]) }]; }
     return [on, { code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: dpColour(h, s1, v1) }];
   }
   const loops = {};
