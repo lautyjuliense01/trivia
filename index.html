@@ -161,6 +161,8 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
   <div class="status-chip"><span class="dot" id="scr-dot"></span><span id="scr-status">Conectando…</span></div>
   <div class="yt-wrap"><div class="yt-label" id="scr-yt-label">Música: —</div><div id="yt-screen"></div></div>
 
+  <button class="btn" id="scr-sound" hidden style="position:fixed;top:18px;right:18px;z-index:8;font-size:20px;padding:14px 22px">🔊 Activar sonido</button>
+
   <div id="unlock">
     <div class="script">Trivia Night</div>
     <button class="btn" id="unlock-btn" style="font-size:20px;padding:16px 28px">Tocá para activar la pantalla</button>
@@ -193,7 +195,7 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
     <div class="row" style="margin-top:12px">
       <label class="toggle"><input type="checkbox" id="ctl-localmusic"> Reproducir la música en este celu (prueba sin tele)</label>
     </div>
-    <div id="yt-local-wrap" hidden><div id="yt-local"></div></div>
+    <div id="yt-local-wrap" hidden><button class="btn small" id="ctl-sound" style="margin-bottom:8px">🔊 Activar sonido en este celu</button><div id="yt-local"></div></div>
   </div>
 
   <div class="card">
@@ -252,6 +254,7 @@ const hhmmss = () => new Date().toLocaleTimeString('es-AR', { hour12: false });
 let logEl = null;
 function log(msg, kind = '') {
   console.log('[trivia]', msg);
+  if (window.__logSink) { try { window.__logSink(msg, kind); } catch {} }
   if (!logEl) return;
   const line = document.createElement('div');
   if (kind) line.className = kind;
@@ -378,38 +381,65 @@ const YT_ERRORS = {
   153: 'YouTube rechazó la página (falta referencia de origen: hay que abrirla desde una dirección https, no como archivo)',
 };
 
-function createMusic(containerId, onLabel) {
-  let player = null, ready = false, current = null, fadeTimer = null;
+function createMusic(containerId, onLabel, onMutedBlock) {
+  let player = null, ready = false, current = null, fadeTimer = null, needsFadeIn = false, muteCheck = null;
+  const S = () => (window.YT && YT.PlayerState) || { PLAYING: 1, ENDED: 0 };
 
   loadYouTubeApi().then(YT => {
     player = new YT.Player(containerId, {
       width: 240, height: 135,
-      playerVars: { playsinline: 1, controls: 0, rel: 0, disablekb: 1, fs: 0, iv_load_policy: 3 },
+      playerVars: { playsinline: 1, controls: 1, rel: 0, fs: 0, iv_load_policy: 3 },
       events: {
-        onReady: () => { ready = true; log('Reproductor de YouTube listo', 'o'); },
+        onReady: () => {
+          ready = true;
+          try { player.unMute(); player.setVolume(VOLUME); } catch {}
+          log('Reproductor de YouTube listo', 'o');
+        },
         onError: e => {
           const t = current ? TRACKS[current].name : '?';
           log(`YouTube no reproduce «${t}»: ${YT_ERRORS[e.data] || 'error ' + e.data}`, 'e');
           onLabel && onLabel(`⚠️ ${t}: no se puede reproducir`);
         },
         onStateChange: e => {
-          if (e.data === YT.PlayerState.ENDED && current) {
+          if (e.data === S().ENDED && current) {
             player.seekTo(TRACKS[current].start || 0, true);
             player.playVideo();
           }
-          if (e.data === YT.PlayerState.PLAYING && current) {
+          if (e.data === S().PLAYING && current) {
             onLabel && onLabel('♪ ' + TRACKS[current].name);
+            if (needsFadeIn) {
+              // El volumen se ajusta recién cuando el video ya suena: antes YouTube lo ignora.
+              needsFadeIn = false;
+              try { player.unMute(); } catch {}
+              fadeTo(VOLUME, 900, 0);
+              clearTimeout(muteCheck);
+              muteCheck = setTimeout(checkAudible, 1200);
+            }
           }
         },
       },
     });
   }).catch(err => log(err.message, 'e'));
 
-  function fadeTo(target, ms) {
+  function checkAudible() {
+    if (!ready || !current) return;
+    let muted = false, vol = -1;
+    try { muted = player.isMuted(); vol = player.getVolume(); } catch {}
+    if (muted) {
+      log(`«${TRACKS[current].name}» suena SILENCIADA: el navegador bloqueó el audio automático. Tocá «Activar sonido».`, 'e');
+      onMutedBlock && onMutedBlock(true);
+    } else {
+      log(`«${TRACKS[current].name}» sonando · volumen ${vol}`, 'o');
+      onMutedBlock && onMutedBlock(false);
+    }
+  }
+
+  function fadeTo(target, ms, fromOverride) {
     return new Promise(resolve => {
       clearInterval(fadeTimer);
       if (!ready) return resolve();
-      const from = player.getVolume();
+      let from = typeof fromOverride === 'number' ? fromOverride : player.getVolume();
+      if (typeof from !== 'number' || isNaN(from)) from = target ? 0 : VOLUME;
       const t0 = performance.now();
       fadeTimer = setInterval(() => {
         const k = Math.min(1, (performance.now() - t0) / ms);
@@ -423,30 +453,44 @@ function createMusic(containerId, onLabel) {
     if (!ready) { log('El reproductor todavía no está listo', 'e'); return; }
     const tr = TRACKS[key];
     if (!tr) return;
-    if (current === key && player.getPlayerState() === 1) return;
-    if (player.getPlayerState() === 1) await fadeTo(0, 600);
+    if (current === key && player.getPlayerState() === S().PLAYING) return;
+    if (player.getPlayerState() === S().PLAYING) await fadeTo(0, 600);
     current = key;
-    player.setVolume(0);
+    needsFadeIn = true;
     player.loadVideoById({ videoId: tr.id, startSeconds: tr.start || 0 });
     onLabel && onLabel('Cargando: ' + tr.name);
-    await fadeTo(VOLUME, 900);
   }
 
   async function stop() {
     if (!ready) return;
+    needsFadeIn = false;
     await fadeTo(0, 900);
     try { player.pauseVideo(); } catch {}
     current = null;
     onLabel && onLabel('Música: en pausa');
   }
 
-  function warmUp() {
-    // Toque inicial: habilita el audio del reproductor dentro del gesto del usuario.
-    if (!ready) return;
-    try { player.mute(); player.playVideo(); player.pauseVideo(); player.unMute(); } catch {}
+  // Llamar SIEMPRE desde un toque del usuario: es lo que habilita el audio.
+  function enableSound(playIfIdle = true) {
+    if (!ready) return false;
+    try {
+      clearInterval(fadeTimer);
+      player.unMute();
+      player.setVolume(VOLUME);
+      if (!current && playIfIdle) {
+        current = 'pregunta';
+        needsFadeIn = false;
+        player.loadVideoById({ videoId: TRACKS.pregunta.id, startSeconds: TRACKS.pregunta.start || 0 });
+      } else if (current) {
+        player.playVideo();
+      }
+      clearTimeout(muteCheck);
+      muteCheck = setTimeout(checkAudible, 1500);
+    } catch {}
+    return true;
   }
 
-  return { play, stop, warmUp, isReady: () => ready };
+  return { play, stop, enableSound, isReady: () => ready };
 }
 
 function musicForCue(music, cue) {
@@ -470,7 +514,8 @@ function initScreen() {
   if (!/^\d{4}$/.test(code || '')) { code = String(Math.floor(1000 + Math.random() * 9000)); store.set('screen_code', code); }
   $('#scr-code').textContent = code;
 
-  const music = createMusic('yt-screen', t => { $('#scr-yt-label').textContent = t; });
+  const music = createMusic('yt-screen', t => { $('#scr-yt-label').textContent = t; }, muted => { $('#scr-sound').hidden = !muted; });
+  $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
 
   const link = createLink(code, 'screen', msg => {
     if (msg.type === 'cue') {
@@ -484,12 +529,13 @@ function initScreen() {
     $('#scr-status').textContent = `${text} · código ${code}`;
   });
   setInterval(() => link.send({ type: 'hello' }), 3000);
+  window.__logSink = (text, kind) => link.send({ type: 'log', text, kind });
 
   $('#unlock-btn').addEventListener('click', async () => {
     $('#unlock').hidden = true;
     try { await document.documentElement.requestFullscreen(); } catch {}
     keepAwake();
-    music.warmUp();
+    music.enableSound(false);
   });
 
   function applyCue(cue) {
@@ -568,6 +614,7 @@ function initControl() {
     lastHello = 0;
     link = createLink(code, 'control', msg => {
       if (msg.type === 'hello') { lastHello = Date.now(); }
+      if (msg.type === 'log') { lastHello = Date.now(); log('📺 ' + msg.text, msg.kind || ''); }
       if (msg.type === 'ack' && pending.has(msg.ack)) {
         const p = pending.get(msg.ack); pending.delete(msg.ack);
         lastHello = Date.now();
@@ -594,9 +641,11 @@ function initControl() {
   const localToggle = $('#ctl-localmusic');
   localToggle.addEventListener('change', () => {
     $('#yt-local-wrap').hidden = !localToggle.checked;
-    if (localToggle.checked && !localMusic) localMusic = createMusic('yt-local', t => log(t));
+    if (localToggle.checked && !localMusic) localMusic = createMusic('yt-local', t => log(t), muted => { $('#ctl-sound').textContent = muted ? '🔊 Tocá acá: el audio quedó bloqueado' : '🔊 Activar sonido en este celu'; });
     if (!localToggle.checked && localMusic) localMusic.stop();
   });
+
+  $('#ctl-sound').addEventListener('click', () => localMusic && localMusic.enableSound(true));
 
   /* --- SmartThings --- */
   const tokenInput = $('#st-token');
