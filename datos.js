@@ -25,14 +25,13 @@ window.TRIVIA = {
   apertura: {
     credito: 2800,          // ms de cada crédito
     golpes: 'extremos',     // golpes de tráiler en los créditos: 'todos', 'extremos' o 'ninguno'
-    voz: true,              // los avisos se leen en voz alta (voz en español del navegador de la tele)
-    vozVelocidad: 0.92,
-    // Avisos de sala antes de los créditos (en silencio, con voz). ms opcional; si no, se calcula por el largo del texto.
+    // Avisos de sala antes de los créditos (en silencio). ms opcional; si no, se calcula por el largo del texto.
+    // audio opcional: 'audio/archivo.mp3' subido al repositorio (por ejemplo, una voz en off grabada).
     avisos: [
-      { icono: '📵', texto: 'Por favor, apaguen sus celulares', sub: 'La función está por comenzar', voz: 'Por favor, apaguen sus celulares. La función está por comenzar.' },
-      { icono: '🤫', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe', voz: 'Se ruega no soplar las respuestas.' },
-      { icono: '🖊️', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan', voz: 'Tengan a mano su pizarra y su marcador.' },
-      { icono: '🚪', texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final', voz: 'Las salidas de emergencia están señalizadas. Pero nadie se va hasta el final.' },
+      { icono: '📵', texto: 'Por favor, apaguen sus celulares', sub: 'La función está por comenzar' },
+      { icono: '🤫', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe' },
+      { icono: '🖊️', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan' },
+      { icono: '🚪', texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final' },
     ],
   },
 
@@ -63,7 +62,7 @@ window.TRIVIA = {
     final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
-    anfitrion:    { id: '',            nombre: 'A definir: entrada del presentador' },
+    anfitrion:    { id: 'Jt0qUO4pqWQ', nombre: 'I Gotta Feeling (Live, Stade de France)', inicio: 0 },   // tu entrada
     redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
     respuesta:    { id: '',            nombre: 'A definir: golpe de respuesta' },      // al revelar; después pasa a "datos"
 
@@ -145,7 +144,7 @@ window.TRIVIA = {
     flash:     { tipo: 'blanco', brillo: 100, calidez: 60, respaldo: 'festejo' },    // destello corto
     noche:     { tipo: 'color', h: 232, s: 90, brillo: 7, respaldo: 'tension' },       // azul de noche para los reflectores de la intro
     pulso:     { tipo: 'color', h: 30, s: 85, brillo: 45, respaldo: 'normal' },       // destello cálido con cada crédito
-    foco:      { tipo: 'blanco', brillo: 70, calidez: 25, respaldo: 'normal' },       // foco del presentador
+    foco:      { tipo: 'blanco', brillo: 75, calidez: 25, respaldo: 'normal', tira: { tipo: 'color', h: 38, s: 90, brillo: 55 } },   // foco del presentador (la tira, dorada)
     destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },  // celebración corta
     apagado:   { tipo: 'apagado' },   // apaga todo; el look siguiente las vuelve a prender solo
     estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },   // titila lo más rápido posible, 100 ↔ 0
@@ -164,7 +163,8 @@ window.TRIVIA = {
     intro: [[0, 'noche'], [15300, 'dorado'], [16500, 'destello'], [17900, 'dorado'], [19700, 'calido']],   // golpe dorado con el título (seg. 15)
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
     contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],   // primero baja el último a la fila a oscuras
-    presentador: [[0, 'oscuro'], [1600, 'foco']],              // apagón y un único foco
+    presentador: 'oscuro',                                      // tu entrada: a oscuras mientras entrás
+    presentadorGolpe: [[0, 'estrobo'], [1500, 'foco']],         // al tocar "Golpe de entrada": estrobo y foco
     reglas: 'sala',
     ronda: 'sala',
     // { fade: look, de, a, ms }: la luz se va apagando suave (una sola orden, la lámpara hace el fundido; máx. 10 s)
@@ -204,8 +204,12 @@ window.TRIVIA = {
     { nombre: 'Nicolás',  foto: '', genero: 'm', edad: 23, rol: 'Pasante',                      antiguedad: 'En Bioingeniería desde septiembre de 2026', frase: '' },
   ],
 
-  /* Presentador: aparece después de los participantes, con un único foco */
-  presentador: { nombre: 'Lautaro', foto: '', rol: 'Responsable de Bioingeniería', antiguedad: 'En Bioingeniería desde 2021', frase: '' },
+  /* Presentador: entra después de la intro y antes de presentar a los contendientes */
+  presentador: {
+    nombre: 'Lautaro', foto: '', rol: 'Responsable de Bioingeniería', antiguedad: 'En Bioingeniería desde 2021', frase: '',
+    textos: ['Damas y caballeros…', 'con ustedes…'],   // lo que aparece a oscuras mientras entrás
+    golpeAuto: 0,   // ms: si es mayor que 0, el golpe de entrada sale solo a ese tiempo (si no lo tocás antes)
+  },
 
   /* ---------- Reglas ----------
      La primera línea (cuántas preguntas hay de cada tipo) la arma la app sola. */

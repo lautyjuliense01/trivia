@@ -431,6 +431,29 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 #seq-msg{font-weight:800;font-size:16px}
 #seq-bar{transition:width .1s linear}
 
+/* v25: entrada del presentador */
+.v-host{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.host-wait{position:relative;height:1.4em;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:clamp(40px,5.5vw,88px);color:#f4ead8;width:100%}
+.hw{position:absolute;left:0;right:0;opacity:0;animation:hwInOut 3s ease-in-out forwards;text-shadow:0 0 30px rgba(255,220,160,.35)}
+.hw:last-child{animation-name:hwIn}
+@keyframes hwInOut{0%{opacity:0;letter-spacing:.2em}25%,70%{opacity:1;letter-spacing:.04em}100%{opacity:0}}
+@keyframes hwIn{0%{opacity:0;letter-spacing:.2em}30%,100%{opacity:1;letter-spacing:.04em}}
+.host-reveal{display:none}
+.v-host.golpe .host-wait{display:none}
+.v-host.golpe .host-reveal{display:block}
+.v-host .host-tag{font-family:'Cinzel',serif;letter-spacing:.5em;font-size:clamp(14px,1.6vw,24px);margin-bottom:22px;opacity:0;animation:fadeIn .8s .5s forwards}
+.v-host .pl-photo{animation:photoIn 1s cubic-bezier(.2,1.3,.4,1) both}
+.host-name{font-size:clamp(64px,9vw,140px)!important;margin:10px 0 14px!important;animation:slam .7s .15s cubic-bezier(.2,1.6,.4,1) both}
+.host-reveal .pl-card{flex-direction:column;gap:6px;text-align:center}
+.host-reveal .pl-photo{width:clamp(150px,17vw,230px)!important}
+.host-reveal .pl-chips{flex-direction:row;justify-content:center;flex-wrap:wrap}
+.v-host.golpe .pl-card{opacity:1;animation:none}
+.v-host.golpe .pl-photo{animation-delay:0s}
+.v-host.golpe .ring{animation-delay:.1s}.v-host.golpe .ring.r2{animation-delay:.3s}
+.v-host.golpe .pl-name{animation-delay:.2s}
+.v-host.golpe .pl-chips span:nth-child(1){animation-delay:.8s}.v-host.golpe .pl-chips span:nth-child(2){animation-delay:1s}
+.v-host .pl-chips span:nth-child(1){animation-delay:.9s}.v-host .pl-chips span:nth-child(2){animation-delay:1.1s}
+
 /* Control v5 */
 #control{padding-bottom:120px}
 .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -689,7 +712,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v24 · 31/10 18:30';
+const VERSION = 'v25 · 31/10 18:27';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1138,7 +1161,7 @@ const fmtNum = n => (typeof n === 'number' ? n.toLocaleString('es-AR') : esc(n))
 const TIPO_LABEL = { opciones: 'Opción múltiple', quien: '¿Quién dijo?', aprox: 'Aproximación' };
 const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
-D.momentos = Object.assign({ premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
+D.momentos = Object.assign({ presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
 D.luces = Object.assign({ contendientes: 'festejo', cuenta: 'tension' }, D.luces || {});
 /* Lámparas Tuya: nombre → ID (tienen que estar también en TUYA_DEVICE del intermediario) */
 const LAMP_CFG = {};
@@ -1170,7 +1193,7 @@ const AVISOS = (D.apertura && D.apertura.avisos) || [
   { icono: '🖊️', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan', voz: 'Tengan a mano su pizarra y su marcador.' },
   { icono: '🚪', texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final', voz: 'Las salidas de emergencia están señalizadas. Pero nadie se va hasta el final.' },
 ];
-const avDur = a => (a.ms || Math.max(3800, (a.voz || a.texto || '').length * 70 + 1600));
+const avDur = a => (a.ms || Math.max(4200, ((a.texto || '') + ' ' + (a.sub || '')).length * 55 + 1500));
 const AV_MS = AVISOS.reduce((t, a) => t + avDur(a), 0) + 400;
 const CEL = AV_MS;
 /* Voz para los avisos (la voz en español del navegador) */
@@ -1208,7 +1231,7 @@ const LOOKS = Object.assign({
   flash:     { tipo: 'blanco', brillo: 100, calidez: 60, respaldo: 'festejo' },
   noche:     { tipo: 'color', h: 232, s: 90, brillo: 7, respaldo: 'tension' },
   pulso:     { tipo: 'color', h: 30, s: 85, brillo: 45, respaldo: 'normal' },
-  foco:      { tipo: 'blanco', brillo: 70, calidez: 25, respaldo: 'normal' },
+  foco:      { tipo: 'blanco', brillo: 75, calidez: 25, respaldo: 'normal', tira: { tipo: 'color', h: 38, s: 90, brillo: 55 } },
   destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },
   apagado:   { tipo: 'apagado' },
   estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },
@@ -1224,7 +1247,8 @@ const GUION = Object.assign({
   intro: [[0, 'noche'], [T_TITULO + 300, 'dorado'], [T_TITULO + 1500, 'destello'], [T_TITULO + 2900, 'dorado'], [T_TITULO + 4700, 'calido']],
   presentacion: [[0, 'flash'], [650, 'escenario']],
   contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],
-  presentador: [[0, 'oscuro'], [1600, 'foco']],
+  presentador: 'oscuro',
+  presentadorGolpe: [[0, 'estrobo'], [1500, 'foco']],
   reglas: 'sala', ronda: 'sala',
   pregunta: { fade: 'azul', de: 36, a: 12, ms: 10000 },
   pizarras: null,
@@ -1243,10 +1267,11 @@ Object.entries(D.musica || {}).forEach(([k, v]) => {
 });
 
 function buildScript() {
-  const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }, { k: 'cine', label: 'Apertura de cine: celulares y créditos' }, { k: 'intro', label: 'Intro de película (fanfarria)' }, { k: 'presentamos', label: 'Título: presentamos a los contendientes' }];
+  const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }, { k: 'cine', label: 'Apertura de cine: celulares y créditos' }, { k: 'intro', label: 'Intro de película (fanfarria)' }];
+  if (D.presentador) s.push({ k: 'presentador', label: 'Entrada del presentador: ' + D.presentador.nombre });
+  s.push({ k: 'presentamos', label: 'Título: presentamos a los contendientes' });
   P.forEach((p, i) => s.push({ k: 'presentacion', p: i, label: 'Presentación: ' + p.nombre }));
   s.push({ k: 'contendientes', label: 'Todos los contendientes' });
-  if (D.presentador) s.push({ k: 'presentador', label: 'Presentador: ' + D.presentador.nombre });
   s.push({ k: 'reglas', label: 'Reglas' });
   let n = 0;
   D.rondas.forEach((r, ri) => {
@@ -1346,6 +1371,7 @@ function momentOf(st) {
   const sl = SCRIPT[st.slide] || SCRIPT[0];
   if (isQ(sl)) return st.step || 'pregunta';
   if (sl.k === 'ganador' && st.step === 'redoble') return 'redoble';
+  if (sl.k === 'presentador' && st.step === 'golpe') return 'presentadorGolpe';
   return sl.k === 'desempate' ? 'pregunta' : sl.k;
 }
 function musicKeyOf(st) {
@@ -1636,8 +1662,13 @@ function initScreen() {
         scanLock(() => [sq('.pl-photo')], 650);
         break;
       case 'presentador':
-        beams.setup('solo'); beams.clearPools(); beams.level(0);
-        later(1500, () => { const ph = sq('.pl-photo'); beams.aimEls([ph], { ms: 0 }); beams.level(1); beams.pools([ph]); });
+        if (st.step === 'golpe') {
+          beams.setup('top5'); beams.clearPools(); beams.level(1); beams.play('scan');
+          later(1450, () => { const ph = sq('.pl-photo'); beams.aimEls([ph], { ms: 300 }); beams.pools([ph]); });
+        } else {
+          // a oscuras, los reflectores buscan lento entre el público mientras entrás
+          beams.setup('top3'); beams.clearPools(); beams.level(.55); beams.play('search');
+        }
         break;
       case 'contendientes': {
         if (!st._fase2 && (SCRIPT[cur.slide] || {}).k === 'presentacion' && changed) { beams.setup('top5'); beams.clearPools(); beams.level(0); break; }
@@ -1731,7 +1762,6 @@ function initScreen() {
     $('#unlock').hidden = true;
     try { await document.documentElement.requestFullscreen(); } catch {}
     keepAwake(); audioCtx();
-    try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch {}
     music.enableSound(false);
     if (fxPlayer) fxPlayer.enableSound(false);
   });
@@ -1785,7 +1815,7 @@ function initScreen() {
         return `${c.chico ? `<div class="cred-s">${esc(c.chico)}</div>` : ''}${c.grande ? `<div class="cred-t">${esc(c.grande)}</div>` : ''}`;
       };
       h = `<div class="cine"><div class="cine-dim"></div>
-        ${(() => { let t = 200; return AVISOS.map(a => { const d = avDur(a), html = `<div class="cine-card" style="animation-delay:${t}ms;animation-duration:${d - 200}ms"><div class="cel-ico">${esc(a.icono || '')}</div><div class="cel-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="cel-s">${esc(a.sub)}</div>` : ''}</div>`; const at = t; cineHits.push(setTimeout(() => say(a.voz), at + 350)); t += d; return html; }).join(''); })()}
+        ${(() => { let t = 200; return AVISOS.map(a => { const d = avDur(a), html = `<div class="cine-card" style="animation-delay:${t}ms;animation-duration:${d - 200}ms"><div class="cel-ico">${esc(a.icono || '')}</div><div class="cel-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="cel-s">${esc(a.sub)}</div>` : ''}</div>`; const at = t; if (a.audio) cineHits.push(setTimeout(() => { try { const au = new Audio(a.audio); au.play().catch(() => {}); } catch {} }, at + 350)); t += d; return html; }).join(''); })()}
         ${CREDITS.map((c, i) => `<div class="cine-card" style="animation-delay:${CEL + i * CRED}ms;animation-duration:${CRED}ms">${credHTML(c)}</div>`).join('')}
       </div>`;
       const golpes = (D.apertura && D.apertura.golpes) || (TRACKS.cine ? 'extremos' : 'todos');
@@ -1821,10 +1851,14 @@ function initScreen() {
     } else if (sl.k === 'presentador') {
       const p = D.presentador;
       const chips = [esc(p.rol), esc(p.antiguedad)].filter(Boolean).map(c => `<span>${c}</span>`).join('');
-      h = `<div class="v v-host">
-          <div class="host-pre">Y conduciendo esta noche…</div>
-          <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo host">${photoHTML(p)}</div><div class="host-mic">🎤</div></div>
-          <div><div class="host-tag">Su anfitrión</div><h2 class="script pl-name">${esc(p.nombre)}</h2><div class="pl-chips">${chips}</div>${p.frase ? `<p class="pl-frase">“${esc(p.frase)}”</p>` : ''}</div></div>
+      const t = p.textos || ['Damas y caballeros…', 'con ustedes…'];
+      h = `<div class="v v-host" id="vhost">
+          <div class="host-wait">${t.map((x, i) => `<div class="hw" style="animation-delay:${1 + i * 3.2}s">${esc(x)}</div>`).join('')}</div>
+          <div class="host-reveal">
+            <div class="host-tag">Su anfitrión</div>
+            <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo host">${photoHTML(p)}</div></div>
+            <div><h2 class="script pl-name host-name">${esc(p.nombre)}</h2><div class="pl-chips">${chips}</div>${p.frase ? `<p class="pl-frase">“${esc(p.frase)}”</p>` : ''}</div></div>
+          </div>
         </div>`;
     } else if (sl.k === 'contendientes' && (SCRIPT[cur.slide] || {}).k === 'presentacion' && !st._fase2) {
       // primero: el último participante baja a su lugar en la fila, con las luces apagándose
@@ -2010,6 +2044,13 @@ function initScreen() {
           confetti(); confettiLoop = setInterval(confetti, 3500);
         }
       }
+    } else if (sl.k === 'presentador') {
+      const vh = $('#vhost');
+      if (vh && st.step === 'golpe' && !vh.classList.contains('golpe')) {
+        // ráfaga de flashes en la tele, junto con el estrobo de las luces
+        for (let k = 0; k < 7; k++) setTimeout(() => { const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 400); }, k * 190);
+        setTimeout(() => { vh.classList.add('golpe'); confetti(); }, 1350);
+      } else if (vh && st.step !== 'golpe') vh.classList.remove('golpe');
     } else if (sl.k === 'previa' && !changed && st.previaModo !== cur.previaModo) {
       buildSlide(st, sl);
     } else if (sl.k === 'marcador' && !changed && JSON.stringify(st.results) !== JSON.stringify(cur.results)) {
@@ -2593,7 +2634,7 @@ function initControl() {
   /* --- Luces según el momento --- */
   let lastLightKey = null;
   function lightsFor(m) {
-    const key = m + (m === 'presentacion' || m === 'presentador' ? ':' + S.slide : '');
+    const key = m + (m === 'presentacion' || m === 'presentador' || m === 'presentadorGolpe' ? ':' + S.slide : '');
     if (key === lastLightKey) return;
     lastLightKey = key;
     if (m === 'redoble' || m === 'revelado') return; // los maneja reveal()
@@ -2623,9 +2664,10 @@ function initControl() {
     i = Math.max(0, Math.min(SCRIPT.length - 1, i));
     if (typeof seq !== 'undefined' && seq && SCRIPT[i].k !== 'previa') { seq = null; clearInterval(seqTick); $('#seq-toast').hidden = true; }
     S.slide = i; S.overlay = null; S.sub = 0; S.manual = null;
-    S.step = isQ(SCRIPT[i]) ? 'pregunta' : null;
+    S.step = isQ(SCRIPT[i]) ? 'pregunta' : (SCRIPT[i].k === 'presentador' ? 'espera' : null);
     clearTimeout(revealT);
     if (SCRIPT[i].k === 'ganador') return revealWinner();
+    if (SCRIPT[i].k === 'presentador' && D.presentador && D.presentador.golpeAuto > 0) revealT = setTimeout(() => { if (SCRIPT[S.slide].k === 'presentador' && S.step === 'espera') { S.step = 'golpe'; commit(); } }, D.presentador.golpeAuto);
     commit();
   }
   function revealWinner() {
@@ -2669,6 +2711,7 @@ function initControl() {
     if (S.overlay) { S.overlay = null; commit(); return; }
     if (sl.k === 'cuenta' && (S.sub || 0) < countdownGroups(S.results).length) { S.sub = (S.sub || 0) + 1; commit(); return; }
     if (sl.k === 'ganador' && S.step === 'redoble') return;
+    if (sl.k === 'presentador' && S.step !== 'golpe') { clearTimeout(revealT); S.step = 'golpe'; commit(); return; }
     if (isQ(sl) && S.step !== 'revelado') {
       if (S.step === 'redoble') return;
       const order = ['pregunta', 'pizarras', 'tension'];
@@ -2726,6 +2769,7 @@ function initControl() {
       return tieNow() ? '⚔️ Desempate ▶' : '👑 ¡Anunciar al ganador! ▶';
     }
     if (sl.k === 'ganador' && S.step === 'redoble') return '🥁 …';
+    if (sl.k === 'presentador' && S.step !== 'golpe') return '💥 ¡Golpe de entrada!';
     const n = SCRIPT[nextIndex(S.slide, 1)];
     if (!n) return 'Fin';
     return { premios: '🎁 Premios ▶', cierre: '🎬 Cierre ▶', intro: 'Intro ▶', presentamos: 'Presentamos ▶', presentacion: 'Participante ▶', contendientes: 'Todos juntos ▶', presentador: '🎤 Presentador ▶', reglas: 'Reglas ▶', ronda: 'Ronda ▶', pregunta: 'Pregunta ▶', marcador: 'Marcador ▶', cuenta: 'Cuenta final ▶', desempate: '⚔️ Desempate ▶', ganador: '👑 Ganador ▶' }[n.k] || 'Siguiente ▶';
@@ -2747,7 +2791,9 @@ function initControl() {
     else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round((CEL + CREDITS.length * CRED) / 1000)} s.</p>`;
     else if (sl.k === 'intro') h = `<div class="now-title">Intro de película · ${esc(TRACKS.intro ? TRACKS.intro.name : 'sin música')}</div><p class="muted">Dura unos 10 s con la fanfarria. Las luces arrancan en tensión y pasan a festejo cuando aparece el título.</p>`;
     else if (sl.k === 'presentacion') { const p = P[sl.p]; h = `<div class="now-title">${esc(p.nombre)}</div><p class="muted">${[p.edad ? p.edad + ' años' : '', p.rol, p.antiguedad].filter(Boolean).map(esc).join(' · ')}</p>`; }
-    else if (sl.k === 'presentador') h = `<div class="now-title">🎤 ${esc(D.presentador.nombre)}, el presentador</div><p class="muted">Se apaga la luz, "Y conduciendo esta noche…" y se enciende un único foco sobre vos.</p>`;
+    else if (sl.k === 'presentador') h = S.step === 'golpe'
+      ? `<div class="now-title">🎤 ¡${esc(D.presentador.nombre)}!</div><p class="muted">Estrobo, foco sobre vos y tu nombre en grande. Cuando quieras, seguís con la presentación de los contendientes.</p>`
+      : `<div class="now-title">🎤 Tu entrada</div><p class="muted">Sala a oscuras, suena tu tema y los reflectores buscan. Entrá, ponete en tu lugar y tocá <b>💥 ¡Golpe de entrada!</b>: estrobo, foco sobre vos y tu nombre en la tele.${D.presentador.golpeAuto > 0 ? ` Si no lo tocás, sale solo a los ${Math.round(D.presentador.golpeAuto / 1000)} s.` : ''}</p>`;
     else if (sl.k === 'contendientes') h = `<div class="now-title">Los ${P.length} contendientes juntos</div><p class="muted">Aparecen uno a uno con flash. Luces en festejo.</p>`;
     else if (sl.k === 'cuenta') {
       const cg = countdownGroups(S.results), k = S.sub || 0, st2 = standing(S.results);
