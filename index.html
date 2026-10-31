@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Trivia Night</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Lobster&family=Anton&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Anton&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s);"></script>
 <script>document.write('<script src="datos.js?t=' + Date.now() + '"><\/script>');</script>
 <style>
@@ -426,6 +426,11 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .hring.r2{animation-delay:3s}.hring.r3{animation-delay:6s}
 @keyframes ripple{0%{transform:scale(.3);opacity:0}15%{opacity:.6}100%{transform:scale(4);opacity:0}}
 
+/* v24: secuencia con confirmación */
+#seq-toast{position:sticky;top:6px;z-index:30;margin-bottom:12px;padding:12px 14px;border-radius:16px;background:rgba(40,8,8,.96);border:2px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.6)}
+#seq-msg{font-weight:800;font-size:16px}
+#seq-bar{transition:width .1s linear}
+
 /* Control v5 */
 #control{padding-bottom:120px}
 .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -462,6 +467,35 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .idx-list button.cur{background:var(--gold);color:#3a1600;font-weight:800}
 .mini-score{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:15px}
 .mini-score b{color:var(--gold);text-align:right}
+
+/* ================= v24: diseño épico (reemplaza lo lúdico) ================= */
+body{background:
+  radial-gradient(ellipse 85% 60% at 50% 32%, rgba(130,22,24,.55), transparent 72%),
+  repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 26px, rgba(0,0,0,.28) 26px 44px, rgba(255,235,220,.025) 44px 50px, rgba(0,0,0,.2) 50px 78px),
+  linear-gradient(180deg,#240507,#120203 70%,#070101);background-color:#120203}
+.script{font-family:'Cinzel',serif!important;font-weight:700;letter-spacing:.04em;-webkit-text-stroke:0!important;text-shadow:none!important;
+  background:linear-gradient(180deg,#fff6d8 0%,#f3d282 34%,#b98a2e 58%,#f6dc93 82%,#d8ab4f 100%);-webkit-background-clip:text;background-clip:text;color:transparent!important;
+  filter:drop-shadow(0 2px 0 rgba(70,35,0,.55)) drop-shadow(0 0 22px rgba(255,190,90,.28))}
+.marquee{border:1px solid rgba(238,198,118,.75)!important;border-radius:4px!important;box-shadow:0 0 0 8px rgba(0,0,0,.25),0 0 0 9px rgba(238,198,118,.32),0 20px 60px rgba(0,0,0,.55)!important;
+  background:linear-gradient(180deg,rgba(28,6,6,.78),rgba(10,2,2,.9))!important;padding:30px 60px!important}
+.marquee::before,.marquee::after{content:"◆";position:absolute;top:50%;transform:translateY(-50%);color:rgba(238,198,118,.85);font-size:12px}
+.marquee::before{left:-22px}.marquee::after{right:-22px}
+.edition{font-family:Montserrat,sans-serif;color:#e8d3a6;letter-spacing:.5em}
+.q-num{font-family:'Cinzel',serif!important;font-weight:900;text-shadow:none!important;
+  background:linear-gradient(180deg,#fff6d8,#f3d282 40%,#b98a2e 62%,#f6dc93);-webkit-background-clip:text;background-clip:text;color:transparent!important;filter:drop-shadow(0 0 24px rgba(255,190,90,.35))}
+.ticket{font-family:'Cinzel',serif!important;font-weight:700;border-radius:4px!important;color:#3d1a00!important;
+  background:linear-gradient(180deg,#fbe7b0,#e9c46a 45%,#c99a3c 70%,#efd38a)!important;box-shadow:0 0 0 1px #fff2c9 inset,0 0 0 5px rgba(0,0,0,.18) inset,0 0 0 6px rgba(120,70,10,.6) inset,0 18px 50px rgba(0,0,0,.55)!important}
+.opt{border-radius:4px!important;border-width:1px!important;background:rgba(15,3,3,.72)!important}
+.opt b{border-radius:2px!important;font-family:'Cinzel',serif!important}
+.s-revelado .opt.ok{background:linear-gradient(180deg,#fbe7b0,#e9c46a 50%,#c99a3c)!important}
+.round-num,.cont-title,.win-pre{font-family:'Cinzel',serif!important;font-weight:700}
+.pt-pre,.host-pre,.cont-sub,.cd-banner,#unlock .script{font-family:'Cormorant Garamond',serif!important;font-style:italic;font-weight:600;letter-spacing:.02em}
+.studio-mark span{font-family:'Cinzel',serif!important;font-size:clamp(40px,4.4vw,66px)!important}
+.pl-chips span,.res,.cd-row,.bar-row .br-track{border-radius:4px!important}
+.pl-photo,.br-av,.cd-av,.slot-ph{border-width:2px!important}
+.intro-curtain{background:
+  linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,0) 30%,rgba(0,0,0,.55)),
+  repeating-linear-gradient(90deg,#1e0305 0,#4a0a0e 14px,#7d171c 24px,#9b2227 28px,#7d171c 32px,#4a0a0e 42px,#1e0305 56px)!important}
 </style>
 </head>
 <body>
@@ -503,9 +537,14 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 <section id="control" class="view" hidden>
   <div class="top-row">
     <h1 class="script" style="font-size:30px">Trivia Night</h1>
-    <span class="chip"><span class="dot" id="ctl-dot"></span><span id="ctl-status">Sin vincular</span></span>
+    <button class="chip" id="ctl-chip" style="border:0;cursor:pointer"><span class="dot" id="ctl-dot"></span><span id="ctl-status">Sin vincular</span> <span style="opacity:.8">🔄</span></button>
   </div>
   <p class="lead"><b class="ver" style="color:var(--gold)"></b></p>
+  <div id="seq-toast" hidden>
+    <div id="seq-msg"></div>
+    <div class="br-track" style="height:8px;margin:8px 0"><div class="br-fill" id="seq-bar" style="width:100%"></div></div>
+    <div class="row"><button class="btn" id="seq-undo" style="flex:1;background:linear-gradient(180deg,#ff8a7a,#c0392b);color:#fff;box-shadow:none">✋ Deshacer y frenar todo</button><button class="btn ghost small" id="seq-now">Ya</button></div>
+  </div>
   <div class="card" id="mus-card" style="padding:10px 14px">
     <div class="row" style="justify-content:space-between"><span id="mus-name" class="muted">♪ Sin música</span><b id="mus-left" style="color:var(--gold)"></b></div>
     <div class="br-track" style="height:8px;margin-top:6px"><div class="br-fill" id="mus-bar" style="width:0;transition:width 1s linear"></div></div>
@@ -650,7 +689,7 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 <script>
 (() => {
 'use strict';
-const VERSION = 'v23 · 01/11 03:00';
+const VERSION = 'v24 · 31/10 18:30';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -682,7 +721,8 @@ function log(msg, kind = '') {
   logEl.prepend(line);
 }
 
-function bulbify() {
+function bulbify() { return; }
+function bulbifyOld() {
   document.querySelectorAll('.marquee').forEach(el => {
     if (el.offsetParent === null) return;
     el.querySelectorAll('.bulb').forEach(b => b.remove());
@@ -716,10 +756,12 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 /* ================= Vínculo (MQTT público + BroadcastChannel) ================= */
 function createLink(code, role, onMessage, onStatus) {
+  // Se conecta a LOS DOS servidores a la vez y manda todo por ambos: si uno se cuelga, el otro sigue entregando.
   const topic = `biotrivia/v1/${code}`;
   const seen = new Set();
-  let client = null, gen = 0, idx = 0, stopped = false, fails = 0, lastRx = 0, hiddenAt = 0;
-  let outbox = [];   // mensajes recientes: se reenvían al reconectar (el receptor descarta duplicados)
+  let stopped = false, lastRx = 0, hiddenAt = 0;
+  let outbox = [];
+  const conns = BROKERS.map(url => ({ url, client: null, gen: 0, up: false }));
   let bc = null;
   try { bc = new BroadcastChannel('biotrivia-' + code); } catch {}
 
@@ -732,49 +774,44 @@ function createLink(code, role, onMessage, onStatus) {
     onMessage(msg);
   }
   if (bc) bc.onmessage = e => handle(e.data);
-
-  function prune() {
-    const now = Date.now();
-    outbox = outbox.filter(o => now - o.t < (o.msg.type === 'state' ? 600000 : 2500));
+  const prune = () => { const now = Date.now(); outbox = outbox.filter(o => now - o.t < (o.msg.type === 'state' ? 600000 : 2500)); };
+  function status() {
+    const n = conns.filter(c => c.up).length;
+    onStatus(n ? 'ok' : 'down', n ? `Conectado (${n}/${conns.length})` : 'Reconectando…');
   }
-  function flush() {
-    prune();
-    outbox.forEach(o => { try { client.publish(topic, JSON.stringify(o.msg), { qos: 0 }); } catch {} });
-  }
-  function connect() {
+  function open(cn) {
     if (stopped) return;
-    if (typeof window.mqtt === 'undefined') { onStatus('down', 'Cargando librería de conexión…'); setTimeout(connect, 800); return; }
-    const my = ++gen;
-    if (fails >= 2) { idx++; fails = 0; }   // si un servidor falla dos veces seguidas, probamos el otro
-    const url = BROKERS[idx % BROKERS.length];
-    try { client && client.end(true); } catch {}
-    onStatus('down', 'Conectando…');
-    const c = window.mqtt.connect(url, { clientId: 'bt_' + role + '_' + uid(), clean: true, reconnectPeriod: 0, connectTimeout: 6000, keepalive: 10 });
-    client = c;
+    if (typeof window.mqtt === 'undefined') { setTimeout(() => open(cn), 800); return; }
+    const my = ++cn.gen;
+    try { cn.client && cn.client.end(true); } catch {}
+    cn.up = false;
+    const c = window.mqtt.connect(cn.url, { clientId: 'bt_' + role + '_' + uid(), clean: true, reconnectPeriod: 0, connectTimeout: 5000, keepalive: 8 });
+    cn.client = c;
     c.on('connect', () => {
-      if (my !== gen) return;
-      fails = 0;
-      c.subscribe(topic, { qos: 0 }, () => { if (my === gen) flush(); });
-      onStatus('ok', 'Conectado (' + new URL(url).hostname + ')');
+      if (my !== cn.gen) return;
+      c.subscribe(topic, { qos: 0 }, () => {
+        if (my !== cn.gen) return;
+        cn.up = true; status();
+        prune(); outbox.forEach(o => { try { c.publish(topic, JSON.stringify(o.msg), { qos: 0 }); } catch {} });
+      });
     });
-    c.on('message', (_t, payload) => { if (my !== gen) return; try { handle(JSON.parse(payload.toString())); } catch {} });
+    c.on('message', (_t, payload) => { if (my !== cn.gen) return; try { handle(JSON.parse(payload.toString())); } catch {} });
     c.on('error', () => {});
     c.on('close', () => {
-      if (my !== gen || stopped) return;
-      fails++;
-      onStatus('down', 'Reconectando…');
-      setTimeout(() => { if (my === gen) connect(); }, 700);
+      if (my !== cn.gen || stopped) return;
+      cn.up = false; status();
+      setTimeout(() => { if (my === cn.gen) open(cn); }, 600);
     });
   }
-  connect();
-  // Al volver a la pestaña: conexión nueva al instante (la vieja suele quedar "colgada" aunque parezca conectada)
+  const reconnectAll = () => conns.forEach(open);
+  status(); reconnectAll();
   document.addEventListener('visibilitychange', () => {
     if (stopped) return;
     if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
-    if (!client || !client.connected || Date.now() - hiddenAt > 1500) connect();
+    if (Date.now() - hiddenAt > 1200 || !conns.some(c => c.up)) reconnectAll();
   });
-  addEventListener('online', () => { if (!stopped) connect(); });
-  addEventListener('pageshow', e => { if (!stopped && e.persisted) connect(); });
+  addEventListener('online', () => { if (!stopped) reconnectAll(); });
+  addEventListener('pageshow', e => { if (!stopped && e.persisted) reconnectAll(); });
 
   return {
     send(obj) {
@@ -782,13 +819,14 @@ function createLink(code, role, onMessage, onStatus) {
       seen.add(msg.id);
       try { bc && bc.postMessage(msg); } catch {}
       if (msg.type === 'state') outbox = outbox.filter(o => o.msg.type !== 'state');
-      if (msg.type !== 'hello' && msg.type !== 'musica' && msg.type !== 'log') { outbox.push({ msg, t: Date.now() }); prune(); }
-      try { if (client && client.connected) client.publish(topic, JSON.stringify(msg), { qos: 0 }); } catch {}
+      if (!['hello', 'musica', 'log'].includes(msg.type)) { outbox.push({ msg, t: Date.now() }); prune(); }
+      const raw = JSON.stringify(msg);
+      conns.forEach(cn => { try { if (cn.client && cn.client.connected) cn.client.publish(topic, raw, { qos: 0 }); } catch {} });
       return msg;
     },
-    stop() { stopped = true; try { client && client.end(true); } catch {} try { bc && bc.close(); } catch {} },
-    reconnect() { if (!stopped) connect(); },
-    isUp() { return !!(client && client.connected); },
+    stop() { stopped = true; conns.forEach(cn => { cn.gen++; try { cn.client && cn.client.end(true); } catch {} }); try { bc && bc.close(); } catch {} },
+    reconnect: reconnectAll,
+    isUp: () => conns.some(c => c.up),
     lastRx: () => lastRx,
   };
 }
@@ -821,6 +859,7 @@ const YT_ERRORS = {
 
 let musicVol = VOLUME;
 function createMusic(containerId, tracks, onLabel, onMutedBlock) {
+  let rampOn = false;
   let player = null, ready = false, current = null, fadeTimer = null, needsFadeIn = false, muteCheck = null;
   const S = () => (window.YT && YT.PlayerState) || { PLAYING: 1, ENDED: 0 };
 
@@ -944,8 +983,10 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
     try { t = player.getCurrentTime() || 0; d = player.getDuration() || 0; } catch {}
     return { key: current, name: tracks[current].name, t, d, loop: tracks[current].loop !== false };
   }
+  function ramp(to, ms) { if (!ready) return; rampOn = true; musicVol = to; fadeTo(to, Math.max(300, ms)).then(() => { rampOn = false; }); }
+  function cancelRamp() { if (!rampOn) return; clearInterval(fadeTimer); rampOn = false; try { musicVol = player.getVolume(); } catch {} }
   function setLevel(now) { if (!ready || !current) return; try { if (needsFadeIn) return; if (now) { clearInterval(fadeTimer); player.setVolume(musicVol); } else fadeTo(musicVol, 300); } catch {} }
-  return { play, stop, cue, enableSound, status, setLevel, isReady: () => ready, current: () => current };
+  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, isReady: () => ready, current: () => current };
 }
 
 
@@ -1123,7 +1164,36 @@ const CREDITS = D.creditos || [
   { chico: 'agradecimiento especial', grande: 'Al enchufe' },
   { grande: 'Segunda edición' },
 ];
-const CEL = (D.apertura && D.apertura.celulares) || 5500;
+const AVISOS = (D.apertura && D.apertura.avisos) || [
+  { icono: '📵', texto: 'Por favor, apaguen sus celulares', sub: 'La función está por comenzar', voz: 'Por favor, apaguen sus celulares. La función está por comenzar.' },
+  { icono: '🤫', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe', voz: 'Se ruega no soplar las respuestas.' },
+  { icono: '🖊️', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan', voz: 'Tengan a mano su pizarra y su marcador.' },
+  { icono: '🚪', texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final', voz: 'Las salidas de emergencia están señalizadas. Pero nadie se va hasta el final.' },
+];
+const avDur = a => (a.ms || Math.max(3800, (a.voz || a.texto || '').length * 70 + 1600));
+const AV_MS = AVISOS.reduce((t, a) => t + avDur(a), 0) + 400;
+const CEL = AV_MS;
+/* Voz para los avisos (la voz en español del navegador) */
+let voiceEs = null;
+function pickVoice() {
+  try {
+    const vs = speechSynthesis.getVoices();
+    const pref = ['es-AR', 'es-US', 'es-MX', 'es-419', 'es-ES', 'es'];
+    for (const p of pref) { const v = vs.find(x => x.lang && x.lang.replace('_', '-').startsWith(p) && /google/i.test(x.name)) || vs.find(x => x.lang && x.lang.replace('_', '-').startsWith(p)); if (v) { voiceEs = v; return; } }
+  } catch {}
+}
+try { speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); } catch {}
+function say(text) {
+  if (!text || (D.apertura && D.apertura.voz === false)) return;
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    if (!voiceEs) pickVoice();
+    if (voiceEs) u.voice = voiceEs;
+    u.lang = voiceEs ? voiceEs.lang : 'es-AR';
+    u.rate = (D.apertura && D.apertura.vozVelocidad) || 0.92; u.pitch = 0.85; u.volume = 1;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch {}
+}
 const CRED = (D.apertura && D.apertura.credito) || 2800;
 /* Looks de luz: estados de la lámpara. Se pueden redefinir en datos.js (looks / guion) */
 const LOOKS = Object.assign({
@@ -1456,8 +1526,14 @@ function createDirector(music, fx) {
   return function apply(st) {
     const m = st.manual ? 'manual:' + st.manual : momentOf(st), key = musicKeyOf(st);
     if (m === lastMoment && key === lastKey) return;
-    if (m !== lastMoment) clearTimeout(afterT);
+    if (m !== lastMoment) { clearTimeout(afterT); try { if (lastMoment === 'cine') speechSynthesis.cancel(); } catch {} }
     if (m === 'cine' && lastMoment !== 'cine' && !TRACKS.cine) setTimeout(() => music.cue('intro'), 300); // la fanfarria queda cargada
+    if (m === 'cine' && lastMoment !== 'cine' && TRACKS.cine) {
+      // los avisos van en silencio (con voz); la música de los créditos entra con el primer crédito
+      music.stop(800); setTimeout(() => music.cue('cine'), 1200);
+      afterT = setTimeout(() => music.play('cine'), Math.max(0, AV_MS - 300));
+      lastKey = 'cine'; lastMoment = m; return;
+    }
     if (fx && ['pizarras', 'tension'].includes(m) && TRACKS.redoble) fx.cue('redoble');
     if (m === 'redoble') {
       music.stop(250);
@@ -1636,7 +1712,8 @@ function initScreen() {
 
   const link = createLink(code, 'screen', msg => {
     if (msg.type === 'luz') { applyTint(msg.L || LOOKS[msg.look], msg.ms); return; }
-    if (msg.type === 'vol') { musicVol = msg.v; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); return; }
+    if (msg.type === 'vol') { music.cancelRamp(); musicVol = msg.v; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); return; }
+    if (msg.type === 'volRamp') { if (msg.cancel) music.cancelRamp(); else music.ramp(msg.to, msg.ms); return; }
     if (msg.type === 'flashDuro') { const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); return; }
     if (msg.type === 'state' && msg.state) {
       if (msg.state.rev !== curRev) { curRev = msg.state.rev; const pc = $('#previa-code'); if (pc) pc.hidden = true; render(msg.state); }
@@ -1654,6 +1731,7 @@ function initScreen() {
     $('#unlock').hidden = true;
     try { await document.documentElement.requestFullscreen(); } catch {}
     keepAwake(); audioCtx();
+    try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch {}
     music.enableSound(false);
     if (fxPlayer) fxPlayer.enableSound(false);
   });
@@ -1693,7 +1771,7 @@ function initScreen() {
       h = `<div class="v enter"><div class="marquee" style="display:inline-block"><div class="edition">${esc(D.edicion)}</div><h1 class="script" style="font-size:clamp(70px,11vw,150px);margin:0;line-height:.95">${esc(D.titulo)}</h1></div>
            <div class="code-box">Código para el control<b>${code}</b></div></div>`;
     } else if (sl.k === 'previa') {
-      const modo = st.previaModo || 'hipnotico';
+      const modo = st.previaModo || 'apagado';
       const fondo = modo === 'apagado' ? '' : modo === 'polvo' ? '<div class="dust"></div><div class="dust d2"></div>'
         : '<div class="hypno"></div><div class="hypno h2"></div><div class="hypno-core"></div><div class="hring"></div><div class="hring r2"></div><div class="hring r3"></div>';
       h = `<div class="previa">${fondo}
@@ -1707,7 +1785,7 @@ function initScreen() {
         return `${c.chico ? `<div class="cred-s">${esc(c.chico)}</div>` : ''}${c.grande ? `<div class="cred-t">${esc(c.grande)}</div>` : ''}`;
       };
       h = `<div class="cine"><div class="cine-dim"></div>
-        <div class="cine-card" style="animation-delay:200ms;animation-duration:${CEL - 400}ms"><div class="cel-ico">📵</div><div class="cel-t">Por favor, apaguen sus celulares</div><div class="cel-s">La función está por comenzar</div></div>
+        ${(() => { let t = 200; return AVISOS.map(a => { const d = avDur(a), html = `<div class="cine-card" style="animation-delay:${t}ms;animation-duration:${d - 200}ms"><div class="cel-ico">${esc(a.icono || '')}</div><div class="cel-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="cel-s">${esc(a.sub)}</div>` : ''}</div>`; const at = t; cineHits.push(setTimeout(() => say(a.voz), at + 350)); t += d; return html; }).join(''); })()}
         ${CREDITS.map((c, i) => `<div class="cine-card" style="animation-delay:${CEL + i * CRED}ms;animation-duration:${CRED}ms">${credHTML(c)}</div>`).join('')}
       </div>`;
       const golpes = (D.apertura && D.apertura.golpes) || (TRACKS.cine ? 'extremos' : 'todos');
@@ -1981,7 +2059,7 @@ function initControl() {
       if (msg.type === 'hello') lastHello = Date.now();
       if (msg.type === 'ping') { lastHello = Date.now(); sendState(); }
       if (msg.type === 'log') { lastHello = Date.now(); log('📺 ' + msg.text, msg.kind || ''); }
-      if (msg.type === 'musica') { lastHello = Date.now(); showMusic(msg.a, msg.b); }
+      if (msg.type === 'musica') { lastHello = Date.now(); showMusic(msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a); }
     }, (st, text) => {
       setLinkStatus(st, st === 'ok' ? 'Esperando pantalla…' : text);
       if (st === 'ok') sendState();
@@ -1991,6 +2069,7 @@ function initControl() {
     setTimeout(sendState, 300);
   }
   $('#ctl-link').addEventListener('click', doLink);
+  $('#ctl-chip').addEventListener('click', () => { if (link) { link.reconnect(); setLinkStatus('bad', 'Reconectando…'); log('🔄 Reconexión a mano'); setTimeout(sendState, 400); } else $('#link-card').open = true; });
   if (codeInput.value) doLink();
   setInterval(() => {
     if (!link) return;
@@ -2542,6 +2621,7 @@ function initControl() {
 
   function goSlide(i) {
     i = Math.max(0, Math.min(SCRIPT.length - 1, i));
+    if (typeof seq !== 'undefined' && seq && SCRIPT[i].k !== 'previa') { seq = null; clearInterval(seqTick); $('#seq-toast').hidden = true; }
     S.slide = i; S.overlay = null; S.sub = 0; S.manual = null;
     S.step = isQ(SCRIPT[i]) ? 'pregunta' : null;
     clearTimeout(revealT);
@@ -2660,7 +2740,9 @@ function initControl() {
     else if (sl.k === 'premios') h = `<div class="now-title">Entrega de premios</div><p class="muted">Muestra el orden en que eligen (ganador primero) con música de fondo y luz cálida.</p>`;
     else if (sl.k === 'cierre') h = `<div class="now-title">Créditos finales</div><p class="muted">Créditos que suben como en el cine, con la música de cierre y luz ambiente.</p>`;
     else if (sl.k === 'previa') h = `<div class="now-title">Previa</div><p class="muted">No adelanta nada del show. Elegí cómo se ve la tele:</p>
-      <div class="players">${[['hipnotico', '🌀 Hipnótica'], ['polvo', '✨ Polvo de luz'], ['apagado', '⬛ Tele apagada']].map(([v, t]) => `<button class="pbtn ${(S.previaModo || 'hipnotico') === v ? 'on' : ''}" data-pm="${v}">${t}</button>`).join('')}</div>`;
+      <div class="players">${[['apagado', '⬛ Tele apagada'], ['hipnotico', '🌀 Hipnótica'], ['polvo', '✨ Polvo de luz']].map(([v, t]) => `<button class="pbtn ${(S.previaModo || 'apagado') === v ? 'on' : ''}" data-pm="${v}">${t}</button>`).join('')}</div>
+      ${D.previa ? (seq ? `<p class="muted" style="margin-top:10px">▶ Previa en marcha · próximo: <b>${esc(seqDescribe((D.previa.pasos || [])[seq.i] || { aviso: 'nada más' }))}</b></p><button class="btn ghost small" id="seq-abort">✋ Frenar la secuencia</button>`
+        : `<button class="btn" id="seq-start" style="width:100%;margin-top:10px;font-size:17px">▶ Comenzar previa automática</button><p class="muted" style="margin-top:6px">${esc((D.previa.resumen) || '')}</p>`) : ''}`;
     else if (sl.k === 'presentamos') h = `<div class="now-title">"Presentamos a los contendientes"</div><p class="muted">Apagón, arranca la música de presentación y entra el título con los reflectores.</p>`;
     else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round((CEL + CREDITS.length * CRED) / 1000)} s.</p>`;
     else if (sl.k === 'intro') h = `<div class="now-title">Intro de película · ${esc(TRACKS.intro ? TRACKS.intro.name : 'sin música')}</div><p class="muted">Dura unos 10 s con la fanfarria. Las luces arrancan en tensión y pasan a festejo cuando aparece el título.</p>`;
@@ -2694,6 +2776,8 @@ function initControl() {
     }
     body.innerHTML = h;
     body.querySelectorAll('[data-pm]').forEach(b => b.addEventListener('click', () => { S.previaModo = b.dataset.pm; commit(); }));
+    const ss = body.querySelector('#seq-start'); if (ss) ss.addEventListener('click', startPrevia);
+    const sa = body.querySelector('#seq-abort'); if (sa) sa.addEventListener('click', () => abortSeq());
 
     // Pasos
     $('#steps-card').hidden = !isQ(sl);
@@ -2773,6 +2857,72 @@ function initControl() {
     const c = box.querySelector('.cur');
     if (c) box.scrollTop = c.offsetTop - box.offsetTop - 80;
   }
+
+  // ---------- Secuencia de la previa (con aviso y opción de deshacer antes de cada paso)
+  const PREVIA = D.previa || null;
+  let seq = null, seqTick = null, lastMus = null;
+  function seqStepTime(step, a) {
+    if (step.en != null) return step.en;
+    if (step.resta != null) return a.d - step.resta;
+    if (step.fin) return a.d - 1.2;
+    return null;
+  }
+  function seqDescribe(step) { return step.aviso || [step.pantalla && 'pantalla', step.luz && 'luz ' + step.luz, step.volumen != null && 'volumen ' + step.volumen, step.siguiente && 'arranca el show'].filter(Boolean).join(' · '); }
+  function startPrevia() {
+    if (!PREVIA) return;
+    const ini = PREVIA.inicio || {};
+    if (ini.volumen != null) { S.vol = ini.volumen; $('#set-vol').value = S.vol; $('#set-vol-v').textContent = S.vol; if (link) link.send({ type: 'vol', v: S.vol }); }
+    if (ini.pantalla) S.previaModo = ini.pantalla;
+    if (ini.pista) S.manual = ini.pista;
+    commit();
+    if (ini.luz) { clearLights(); fireLook(ini.luz, true); }
+    seq = { i: 0, pending: false, pista: ini.pista };
+    log('▶ Previa en marcha', 'o');
+    renderControl();
+  }
+  function abortSeq(msg = '✋ Secuencia frenada: seguís a mano') {
+    if (!seq) return;
+    seq = null; clearInterval(seqTick); $('#seq-toast').hidden = true;
+    if (link) link.send({ type: 'volRamp', cancel: true });
+    log(msg, 'e'); renderControl();
+  }
+  function execStep(step) {
+    const a = lastMus || {};
+    if (step.pantalla) S.previaModo = step.pantalla;
+    if (step.luz) { clearLights(); fireLook(step.luz, true); }
+    if (step.volumen != null) {
+      const ms = step.rampa ? Math.max(2000, ((a.d || 0) - (a.t || 0)) * 1000 - 1500) : 0;
+      S.vol = step.volumen; $('#set-vol').value = S.vol; $('#set-vol-v').textContent = S.vol;
+      if (link) link.send(ms ? { type: 'volRamp', to: step.volumen, ms } : { type: 'vol', v: step.volumen });
+    }
+    log('✔ ' + seqDescribe(step), 'o');
+    if (step.siguiente) { seq = null; goSlide(SCRIPT.findIndex(x => x.k === 'cine')); return; }
+    commit();
+  }
+  function armStep(step, secs) {
+    seq.pending = true;
+    const total = Math.max(1, secs), t0 = Date.now();
+    $('#seq-msg').textContent = `⏱ ${seqDescribe(step)} en ${Math.ceil(total)} s`;
+    $('#seq-toast').hidden = false;
+    clearInterval(seqTick);
+    const fire = () => { clearInterval(seqTick); $('#seq-toast').hidden = true; if (!seq) return; seq.i++; seq.pending = false; execStep(step); };
+    $('#seq-now').onclick = fire;
+    seqTick = setInterval(() => {
+      const left = total - (Date.now() - t0) / 1000;
+      $('#seq-bar').style.width = Math.max(0, 100 * left / total) + '%';
+      $('#seq-msg').textContent = `⏱ ${seqDescribe(step)} en ${Math.max(0, Math.ceil(left))} s`;
+      if (left <= 0) fire();
+    }, 100);
+  }
+  $('#seq-undo').addEventListener('click', () => abortSeq());
+  window.__onMusicStatus = a => {
+    lastMus = a;
+    if (!seq || seq.pending || !PREVIA || !a || !a.d || a.key !== seq.pista) return;
+    const step = (PREVIA.pasos || [])[seq.i];
+    if (!step) return;
+    const at = seqStepTime(step, a), aviso = PREVIA.avisoSeg || 8;
+    if (at != null && a.t >= at - aviso) armStep(step, at - a.t);
+  };
 
   // Pistas a mano
   const manualKeys = Object.keys(TRACKS).filter(k => k.startsWith('pista'));

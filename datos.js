@@ -22,7 +22,34 @@ window.TRIVIA = {
     { chico: 'agradecimiento especial', grande: 'Al enchufe' },
     { grande: 'Segunda edición' },
   ],
-  apertura: { celulares: 5500, credito: 2800, golpes: 'extremos' },   // ms del cartel de celulares y de cada crédito · golpes: 'todos', 'extremos' o 'ninguno'
+  apertura: {
+    credito: 2800,          // ms de cada crédito
+    golpes: 'extremos',     // golpes de tráiler en los créditos: 'todos', 'extremos' o 'ninguno'
+    voz: true,              // los avisos se leen en voz alta (voz en español del navegador de la tele)
+    vozVelocidad: 0.92,
+    // Avisos de sala antes de los créditos (en silencio, con voz). ms opcional; si no, se calcula por el largo del texto.
+    avisos: [
+      { icono: '📵', texto: 'Por favor, apaguen sus celulares', sub: 'La función está por comenzar', voz: 'Por favor, apaguen sus celulares. La función está por comenzar.' },
+      { icono: '🤫', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe', voz: 'Se ruega no soplar las respuestas.' },
+      { icono: '🖊️', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan', voz: 'Tengan a mano su pizarra y su marcador.' },
+      { icono: '🚪', texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final', voz: 'Las salidas de emergencia están señalizadas. Pero nadie se va hasta el final.' },
+    ],
+  },
+
+  /* ---------- Previa automática ----------
+     Desde el celu tocás "Comenzar previa automática". Antes de cada paso aparece un aviso con cuenta regresiva
+     y un botón para deshacer: si lo tocás, se frena toda la secuencia y seguís a mano.
+     en: segundo de la pista · resta: segundos antes del final · fin: cuando termina la pista */
+  previa: {
+    resumen: 'Luz de sala y Hold the Line al 50 → al 1:30, pantalla hipnótica → a 1 min del final, luz ambiente y volumen subiendo hasta 100 → al terminar, arranca la apertura.',
+    inicio: { luz: 'sala', pista: 'pista0', volumen: 50, pantalla: 'apagado' },
+    pasos: [
+      { en: 90, pantalla: 'hipnotico', aviso: 'Pantalla hipnótica' },
+      { resta: 60, luz: 'ambiente', volumen: 100, rampa: true, aviso: 'Luz ambiente y volumen subiendo hasta 100' },
+      { fin: true, siguiente: true, aviso: 'Arranca la apertura de cine' },
+    ],
+    avisoSeg: 8,             // segundos de aviso antes de cada paso
+  },
 
   /* ---------- Música (ID del video de YouTube / YouTube Music) ----------
      El ID es lo que va después de "watch?v=" en el link.
