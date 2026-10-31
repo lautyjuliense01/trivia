@@ -10,6 +10,18 @@ window.TRIVIA = {
   titulo: 'Trivia Night',
   edicion: 'Edición Bioingeniería 2026',
 
+  /* ---------- Apertura de cine ----------
+     Antes de la fanfarria: "Apaguen sus celulares" mientras baja la luz, y después estos créditos, uno por vez.
+     { estudio, texto } = logo de productora · { chico, grande } = texto chico arriba y grande abajo. */
+  creditos: [
+    { estudio: 'Lautaro Entertainment', texto: 'presenta' },
+    { chico: 'en asociación con', grande: 'Claude' },
+    { chico: 'con datos provistos por', grande: 'GLPI y Metabase' },
+    { grande: 'Basada en hechos reales' },
+    { grande: 'Segunda edición' },
+  ],
+  apertura: { celulares: 5500, credito: 2800 },   // milisegundos del cartel de celulares y de cada crédito
+
   /* ---------- Música (ID del video de YouTube / YouTube Music) ----------
      El ID es lo que va después de "watch?v=" en el link.
      "inicio" = segundo desde el que arranca (opcional). */
@@ -57,6 +69,9 @@ window.TRIVIA = {
     tension:   { tipo: 'efecto', modo: 'respirar', colores: [[0, 100, 55], [0, 100, 6]], paso: 1.2, respaldo: 'tension' },
     dorado:    { tipo: 'color', h: 38, s: 95, brillo: 100, respaldo: 'festejo' },    // el golpe de la respuesta
     flash:     { tipo: 'blanco', brillo: 100, calidez: 60, respaldo: 'festejo' },    // destello corto
+    noche:     { tipo: 'color', h: 232, s: 90, brillo: 7, respaldo: 'tension' },       // azul de noche para los reflectores de la intro
+    pulso:     { tipo: 'color', h: 222, s: 80, brillo: 22, respaldo: 'normal' },      // golpe azul con cada crédito
+    destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },  // celebración corta
     fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
   },
 
@@ -65,7 +80,8 @@ window.TRIVIA = {
      La app la dispara antes según la "demora de la lámpara" que configures en el control. */
   guion: {
     logo: 'sala',
-    intro: [[0, 'oscuro'], [6100, 'dorado'], [9800, 'sala']],   // golpe dorado cuando aparece el título
+    // cine: lo arma la app sola (baja la luz y un pulso por crédito). Para personalizarlo, agregá cine: [[ms, look], ...]
+    intro: [[0, 'noche'], [6100, 'dorado'], [7300, 'destello'], [8700, 'dorado'], [10500, 'sala']],   // golpe dorado con el título
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
     contendientes: [[0, 'flash'], [600, 'fiesta']],
     reglas: 'sala',
