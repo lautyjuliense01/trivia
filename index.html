@@ -434,11 +434,22 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 
 /* v25: entrada del presentador */
 .v-host{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.host-wait{position:relative;height:1.4em;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:clamp(40px,5.5vw,88px);color:#f4ead8;width:100%}
-.hw{position:absolute;left:0;right:0;opacity:0;animation:hwInOut 3s ease-in-out forwards;text-shadow:0 0 30px rgba(255,220,160,.35)}
-.hw:last-child{animation-name:hwIn}
-@keyframes hwInOut{0%{opacity:0;letter-spacing:.2em}25%,70%{opacity:1;letter-spacing:.04em}100%{opacity:0}}
-@keyframes hwIn{0%{opacity:0;letter-spacing:.2em}30%,100%{opacity:1;letter-spacing:.04em}}
+/* v28: textos de la espera con tipografía de tráiler */
+.host-wait{position:relative;height:34vh;width:100vw;margin-left:calc(50% - 50vw);overflow:hidden}
+.hw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;animation-name:hwInOut;animation-timing-function:linear;animation-fill-mode:both}
+.hw span{position:relative;white-space:nowrap;font-family:'Cinzel',serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:var(--fs);line-height:1;padding-left:.14em;
+  background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.95) 50%,transparent 58%) no-repeat,linear-gradient(180deg,#ffffff 0%,#fff0c8 34%,#e8bd62 60%,#fff2c6 100%);
+  background-size:300% 100%,100% 100%;background-position:120% 0,0 0;-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,205,120,.55)) drop-shadow(0 0 60px rgba(255,170,60,.25));animation:hwShine 1.8s cubic-bezier(.3,.1,.3,1) calc(var(--d) + .35s) both}
+@keyframes hwShine{from{background-position:120% 0,0 0}to{background-position:-20% 0,0 0}}
+.hw.two span{white-space:normal;text-wrap:balance;max-width:86vw;text-align:center;line-height:1.18}
+.hw.last{animation-name:hwIn}
+@keyframes hwInOut{0%{opacity:0;transform:scale(1.14)}16%{opacity:1}22%{transform:scale(1.02)}84%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.98)}}
+@keyframes hwIn{0%{opacity:0;transform:scale(1.14)}16%{opacity:1}30%,100%{opacity:1;transform:scale(1)}}
+.hw-flare{position:absolute;left:50%;top:50%;width:110vw;height:3px;margin:-1.5px 0 0 -55vw;border-radius:50%;
+  background:linear-gradient(90deg,transparent,rgba(255,214,150,.0) 10%,rgba(255,230,190,.9) 50%,rgba(255,214,150,0) 90%,transparent);
+  box-shadow:0 0 18px 4px rgba(255,200,120,.35);opacity:0;transform:scaleX(.1);animation:hwFlare 1.6s cubic-bezier(.2,.7,.3,1) both}
+@keyframes hwFlare{0%{opacity:0;transform:scaleX(.1)}20%{opacity:1}100%{opacity:0;transform:scaleX(1)}}
 .host-reveal{display:none}
 .v-host.golpe .host-wait{display:none}
 .v-host.golpe .host-reveal{display:block}
@@ -498,6 +509,29 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 @keyframes nameIn{from{opacity:0;letter-spacing:.6em}to{opacity:1;letter-spacing:.28em}}
 .id-sub{position:absolute;z-index:3;left:0;right:0;top:calc(42% + min(30vh,25vw) + 2vh + clamp(40px,4.6vw,72px));text-align:center;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;
   font-size:clamp(24px,2.6vw,42px);color:#f1e2c2;letter-spacing:.06em;text-shadow:0 0 18px rgba(255,200,120,.35);opacity:0;animation-name:fadeIn;animation-fill-mode:both}
+/* v29: ensayo en el celu */
+body.ens-body{overflow:hidden}
+#ensayo{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;background:#000}
+#ens-tv-wrap{position:relative;width:100%;aspect-ratio:16/9;flex:none;overflow:hidden;background:#000}
+#ens-tv{position:absolute;left:0;top:0;width:1280px;height:720px;border:0;transform-origin:0 0}
+#ens-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:#1a0f06;border-top:1px solid rgba(233,196,106,.35);border-bottom:1px solid rgba(233,196,106,.35);color:#e9dcc6;font-size:13px}
+#ens-bar button,#ens-big-nav button{background:#2b1a0a;color:#f3d282;border:1px solid rgba(233,196,106,.5);border-radius:6px;padding:6px 10px;font-weight:800;font-size:13px}
+#ens-ctl{flex:1;width:100%;border:0;background:#000}
+#ens-big-nav{display:none;position:absolute;right:10px;bottom:10px;gap:8px;z-index:2}
+#ensayo.big #ens-tv-wrap{flex:1;aspect-ratio:auto}
+#ensayo.big #ens-bar,#ensayo.big #ens-ctl{display:none}
+#ensayo.big #ens-big-nav{display:flex}
+#ensayo.big #ens-next{font-size:16px;padding:10px 16px;background:linear-gradient(180deg,#ffe9a3,#e9c46a);color:#3d1a00}
+#ens-start{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;background:rgba(10,4,0,.92);color:#e9dcc6}
+#ens-start[hidden]{display:none}
+#ens-start .script{font-size:clamp(36px,10vw,64px)}
+#ens-start p{max-width:460px;line-height:1.5;color:#cdbb9a}
+@media (orientation:landscape){
+  #ensayo{flex-direction:row;flex-wrap:wrap}
+  #ens-tv-wrap{width:auto;flex:1;height:calc(100% - 38px);aspect-ratio:auto}
+  #ens-ctl{flex:none;width:min(390px,42vw);height:calc(100% - 38px)}
+  #ens-bar{order:3;width:100%}
+}
 /* v26: entrada al ritmo */
 .v-host.golpe-pre .host-wait{opacity:0;transition:opacity .12s}
 #beat-layer{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0;will-change:opacity}
@@ -609,6 +643,7 @@ body{background:
     <div class="big-choices">
       <a href="?modo=pantalla">📺 Esta es la pantalla<small>Abrila en la tele o en la notebook</small></a>
       <a href="?modo=control">📱 Este es el control<small>Abrilo en tu celu</small></a>
+      <a href="?modo=ensayo">🧪 Ensayo en este celu<small>Tele y control juntos, sin luces ni tele</small></a>
     </div>
     <p class="muted" style="max-width:520px">Abrí la misma dirección en los dos dispositivos y elegí el rol de cada uno. La pantalla muestra un código: lo escribís en el control y quedan vinculados.</p>
   </div>
@@ -664,7 +699,8 @@ body{background:
   </div>
 
   <details class="card" id="pistas-card">
-    <summary>🎵 Pistas a mano</summary>
+    <summary>🎵 Pistas y efectos a mano</summary>
+    <div class="row" style="margin:6px 0 10px"><button class="btn small" id="fx-flash-tele">⚡ Flash de pantalla</button><button class="btn ghost small" id="fx-flash-unico">💡 Flash pantalla + techo</button></div>
     <p class="muted" style="margin:6px 0">Suena en la tele hasta que pases a otra pantalla o toques Automático.</p>
     <div class="players" id="pistas"></div>
     <div class="row" style="margin-top:8px"><button class="btn ghost small" id="pista-auto">↩ Automático</button><button class="btn ghost small" id="pista-stop">⏹ Silencio</button></div>
@@ -788,7 +824,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v27 · 31/10 19:53';
+const VERSION = 'v29 · 31/10 20:14';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -801,9 +837,12 @@ if (!D) {
 
 /* ================= Utilidades ================= */
 const $ = s => document.querySelector(s);
+/* Ensayo en el celu: tele y control en la misma pantalla, con su propia partida guardada aparte y sin luces */
+const ENSAYO = (() => { const e = new URLSearchParams(location.search).get('ensayo'); return /^\d{4}$/.test(e || '') ? e : null; })();
+const STORE_PFX = ENSAYO ? 'bt_ens_' : 'bt_';
 const store = {
-  get(k, d = null) { try { const v = localStorage.getItem('bt_' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('bt_' + k, JSON.stringify(v)); } catch {} },
+  get(k, d = null) { try { const v = localStorage.getItem(STORE_PFX + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(STORE_PFX + k, JSON.stringify(v)); } catch {} },
 };
 const uid = () => Math.random().toString(36).slice(2, 10);
 const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -862,7 +901,7 @@ function createLink(code, role, onMessage, onStatus, opts = {}) {
   const seen = new Set();
   let stopped = false, lastRx = 0;
   let outbox = [];
-  const conns = BROKERS.map(url => ({ url, client: null, gen: 0, up: false }));
+  const conns = (ENSAYO ? [] : BROKERS).map(url => ({ url, client: null, gen: 0, up: false }));
   let bc = null;
   try { bc = new BroadcastChannel('biotrivia-' + code); } catch {}
 
@@ -877,6 +916,7 @@ function createLink(code, role, onMessage, onStatus, opts = {}) {
   if (bc) bc.onmessage = e => handle(e.data);
   const prune = () => { const now = Date.now(); outbox = outbox.filter(o => now - o.t < (o.msg.type === 'state' ? 600000 : 2500)); };
   function status() {
+    if (ENSAYO) { setTimeout(() => onStatus('ok', 'Ensayo en este celu'), 0); return; }
     const n = conns.filter(c => c.up).length;
     onStatus(n ? 'ok' : 'down', n ? `Conectado (${n}/${conns.length})` : (AUTO ? 'Reconectando…' : 'Desconectado · tocá 🔄'));
   }
@@ -1375,6 +1415,7 @@ const LOOKS = Object.assign({
   estroboHost: { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo', tele: 'ritmo' },
   fiestaHost:  { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 38], [325, 95, 38], [268, 90, 38], [195, 90, 38]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { colores: [[268, 90, 70], [195, 90, 70], [38, 95, 70], [325, 95, 70]] } },
   flashSolo:   { tipo: 'flashUnico', ms: 40, lamparas: ['techo'], tele: false, respaldo: 'festejo' },
+  flashTele:   { tipo: 'flashTele' },   // destello solo en la pantalla, sin tocar las lámparas
   contraluz:   { tipo: 'color', h: 270, s: 90, brillo: 4, respaldo: 'festejo', tele: 'ritmo', tira: { tipo: 'efecto', modo: 'salto', colores: [[320, 95, 100], [195, 95, 100], [38, 95, 100], [268, 95, 100]], paso: 0.47 } },
   fiestaDorada: { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 40], [15, 95, 40], [355, 95, 40], [45, 90, 40]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { colores: [[195, 90, 75], [268, 90, 75]] } },
   barrido:     { tipo: 'efecto', modo: 'respirar', colores: [[320, 95, 40], [190, 95, 40]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { modo: 'salto', colores: [[38, 95, 80], [268, 95, 80]], paso: 0.47 } },
@@ -1382,8 +1423,8 @@ const LOOKS = Object.assign({
 /* Entrada del presentador: cuándo entra cada texto de la espera (ms desde que arranca la pantalla) */
 function hostTexts() {
   const p = D.presentador || {};
-  let at = 1200;
-  return (p.textos || ['Damas y caballeros…', 'con ustedes…']).map((x, i) => {
+  let at = p.inicioTextos != null ? p.inicioTextos : 1200;
+  return (p.textos || ['Damas y caballeros', 'Con ustedes']).map((x, i) => {
     const o = typeof x === 'string' ? { texto: x } : (x || {});
     const r = { texto: o.texto || '', at, dur: o.ms || (i === 0 ? 5500 : 4300) };
     at += r.dur; return r;
@@ -1430,7 +1471,7 @@ const TRACKS = {};
 (D.pistas || []).forEach((v, i) => { if (v && v.id) TRACKS['pista' + i] = { id: v.id, name: v.nombre || 'Pista ' + (i + 1), start: v.inicio || 0, loop: v.repetir !== false }; });
 Object.entries(D.musica || {}).forEach(([k, v]) => {
   const t = typeof v === 'string' ? { id: v } : (v || {});
-  if (t.id) TRACKS[k] = { id: t.id, name: t.nombre || k, start: t.inicio || 0, loop: t.repetir != null ? !!t.repetir : !['redoble', 'respuesta'].includes(k) };
+  if (t.id) TRACKS[k] = { id: t.id, name: t.nombre || k, start: t.inicio || 0, loop: t.repetir != null ? !!t.repetir : !['redoble', 'respuesta', 'anfitrionVoz'].includes(k) };
 });
 
 function buildScript() {
@@ -1595,12 +1636,48 @@ function growBars(root) {
   requestAnimationFrame(() => requestAnimationFrame(() => root.querySelectorAll('.br-fill').forEach(f => { f.style.width = Math.max(f.dataset.w, 2) + '%'; })));
 }
 
+/* ================= ENSAYO (tele + control en el mismo celu) ================= */
+function initEnsayo() {
+  const code = String(Math.floor(1000 + Math.random() * 9000));
+  document.body.classList.add('ens-body');
+  const box = document.createElement('div');
+  box.id = 'ensayo';
+  box.innerHTML = `
+    <div id="ens-tv-wrap"><iframe id="ens-tv" src="?modo=pantalla&ensayo=${code}" allow="autoplay; encrypted-media"></iframe>
+      <div id="ens-big-nav"><button id="ens-prev">◀</button><button id="ens-next">Siguiente ▶</button><button id="ens-close">✕</button></div></div>
+    <div id="ens-bar"><span>🧪 Ensayo · sin luces</span><button id="ens-big">⤢ Tele grande</button></div>
+    <iframe id="ens-ctl" src="?modo=control&ensayo=${code}"></iframe>
+    <div id="ens-start"><div class="script">${esc(D.titulo)}</div><p>Ensayo en este celu: arriba ves la tele y abajo usás el control como el día del show. Las luces quedan apagadas y la partida se guarda aparte, así que no toca la de verdad.</p><button class="btn" id="ens-go">▶ Empezar ensayo (con sonido)</button></div>`;
+  document.body.appendChild(box);
+  const tv = $('#ens-tv'), wrap = $('#ens-tv-wrap');
+  const fit = () => {
+    const k = Math.min(wrap.clientWidth / 1280, wrap.clientHeight / 720);
+    tv.style.transform = `translate(${(wrap.clientWidth - 1280 * k) / 2}px, ${(wrap.clientHeight - 720 * k) / 2}px) scale(${k})`;
+  };
+  addEventListener('resize', fit); new ResizeObserver(fit).observe(wrap); fit();
+  const ctlDoc = () => { try { return $('#ens-ctl').contentDocument; } catch { return null; } };
+  const tvDoc = () => { try { return tv.contentDocument; } catch { return null; } };
+  $('#ens-go').addEventListener('click', () => {
+    $('#ens-start').hidden = true;
+    const b = tvDoc() && tvDoc().querySelector('#unlock-btn');   // activa la pantalla con este mismo toque
+    if (b) b.click();
+  });
+  const big = on => { box.classList.toggle('big', on); setTimeout(fit, 50); };
+  $('#ens-big').addEventListener('click', () => big(true));
+  $('#ens-close').addEventListener('click', () => big(false));
+  $('#ens-next').addEventListener('click', () => { const b = ctlDoc() && ctlDoc().querySelector('#nav-next'); if (b) b.click(); });
+  $('#ens-prev').addEventListener('click', () => { const b = ctlDoc() && ctlDoc().querySelector('#nav-prev'); if (b) b.click(); });
+  // el texto del botón "Siguiente" copia el del control
+  setInterval(() => { const b = ctlDoc() && ctlDoc().querySelector('#nav-next'); if (b) $('#ens-next').textContent = b.textContent; }, 500);
+}
+
 /* ================= Router ================= */
 const modo = new URLSearchParams(location.search).get('modo');
 document.querySelectorAll('.ver').forEach(e => e.textContent = VERSION);
 document.title = D.titulo || 'Trivia Night';
 if (modo === 'pantalla') initScreen();
 else if (modo === 'control') initControl();
+else if (modo === 'ensayo') initEnsayo();
 else {
   $('#inicio').hidden = false;
   $('#home-title').textContent = D.titulo; $('#home-edition').textContent = D.edicion;
@@ -1810,12 +1887,37 @@ function playFile(src) { try { const au = new Audio(src); au.play().catch(() => 
 
 /* Director de música: aplica el estado a un reproductor */
 function createDirector(music, fx) {
-  let lastKey, lastMoment, afterT = null;
+  let lastKey, lastMoment, afterT = null, vozT = null;
   const RESP_MS = D.respuestaMs == null ? 4000 : D.respuestaMs;
   return function apply(st) {
     const m = st.manual ? 'manual:' + st.manual : momentOf(st), key = musicKeyOf(st);
     if (m === lastMoment && key === lastKey) return;
-    if (m !== lastMoment) { clearTimeout(afterT); try { if (lastMoment === 'cine') speechSynthesis.cancel(); } catch {} }
+    if (m !== lastMoment) {
+      clearTimeout(afterT);
+      if (vozT) { clearInterval(vozT); vozT = null; if (fx) fx.stop(250); }   // si se sigue antes de que termine la voz, se corta
+    }
+    // la voz de presentación queda cargada durante la intro, para que arranque al instante
+    if (m === 'intro' && lastMoment !== 'intro' && fx && TRACKS.anfitrionVoz) setTimeout(() => fx.cue('anfitrionVoz'), 1500);
+    // Entrada del presentador: primero la voz ("Damas y caballeros…") y el tema entra cuando la voz termina
+    if (m === 'presentador' && lastMoment !== 'presentador' && fx && TRACKS.anfitrionVoz && key) {
+      const v = (D.musica && D.musica.anfitrionVoz) || {}, solape = v.solape != null ? v.solape : 0.3, t0 = Date.now();
+      music.stop(300);
+      setTimeout(() => music.cue(key), 380);
+      fx.play('anfitrionVoz', { instant: true });
+      vozT = setInterval(() => {
+        const s = fx.status(), el = Date.now() - t0;
+        const fin = s && s.key === 'anfitrionVoz' && s.d > 0 ? (v.fin || s.d) : null;
+        const ya = (fin != null && s.t >= fin - solape)   // llegó al final (o al segundo "fin")
+          || (!s && el > 1200)                               // terminó y se descargó
+          || (s && !(s.d > 0) && el > 4000)                  // no cargó: que no quede la sala en silencio
+          || el > (v.max || 15000);
+        if (!ya) return;
+        clearInterval(vozT); vozT = null;
+        fx.stop(v.fin ? 400 : 250);
+        music.play(key, { instant: true });
+      }, 100);
+      lastKey = key; lastMoment = m; return;
+    }
     if (m === 'cine' && lastMoment !== 'cine' && !TRACKS.cine) setTimeout(() => music.cue('intro'), 300); // la fanfarria queda cargada
     if (m === 'cine' && lastMoment !== 'cine' && TRACKS.cine) {
       // los avisos van en silencio (con voz); la música de los créditos entra con el primer crédito
@@ -1847,7 +1949,7 @@ function createDirector(music, fx) {
 function initScreen() {
   $('#pantalla').hidden = false;
   $('#unlock-title').textContent = D.titulo;
-  let code = store.get('screen_code');
+  let code = ENSAYO || store.get('screen_code');
   if (!/^\d{4}$/.test(code || '')) { code = String(Math.floor(1000 + Math.random() * 9000)); store.set('screen_code', code); }
 
   const music = createMusic('yt-screen', TRACKS, t => {
@@ -1856,7 +1958,7 @@ function initScreen() {
     $('#yt-toast').hidden = !bad; if (bad) $('#yt-toast').textContent = t;
   }, muted => { $('#scr-sound').hidden = !muted; });
 
-  const fxPlayer = Object.values(TRACKS).length && (TRACKS.redoble) ? createMusic('yt-fx', TRACKS, () => {}, () => {}) : null;
+  const fxPlayer = Object.values(TRACKS).length && (TRACKS.redoble || TRACKS.anfitrionVoz) ? createMusic('yt-fx', TRACKS, () => {}, () => {}) : null;
   const direct = createDirector(music, fxPlayer);
   setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: fxPlayer ? fxPlayer.status() : null }); }, 1000);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
@@ -2185,7 +2287,7 @@ function initScreen() {
 
   $('#unlock-btn').addEventListener('click', async () => {
     $('#unlock').hidden = true;
-    try { await document.documentElement.requestFullscreen(); } catch {}
+    if (!ENSAYO) { try { await document.documentElement.requestFullscreen(); } catch {} }
     keepAwake(); audioCtx();
     music.enableSound(false);
     if (fxPlayer) fxPlayer.enableSound(false);
@@ -2299,7 +2401,8 @@ function initScreen() {
       const chips = [esc(p.rol), esc(p.antiguedad)].filter(Boolean).map(c => `<span>${c}</span>`).join('');
       const t = hostTexts();
       h = `<div class="v v-host" id="vhost">
-          <div class="host-wait">${t.map(x => `<div class="hw" style="animation-delay:${x.at}ms;animation-duration:${x.dur}ms">${esc(x.texto)}</div>`).join('')}</div>
+          <div class="host-wait">${t.map((x, i) => { const len = Math.max(8, x.texto.length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2), last = i === t.length - 1;
+            return `<div class="hw ${last ? 'last' : ''} ${two ? 'two' : ''}" style="--fs:${fs}vw;--d:${x.at}ms;animation-delay:${x.at}ms;animation-duration:${x.dur}ms"><div class="hw-flare" style="animation-delay:${x.at}ms"></div><span>${esc(x.texto)}</span></div>`; }).join('')}</div>
           <div class="host-reveal">
             <div class="host-tag">Su anfitrión</div>
             <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo host">${photoHTML(p)}</div></div>
@@ -2539,7 +2642,8 @@ function initControl() {
   /* --- Vínculo --- */
   let link = null, lastHello = 0;
   const codeInput = $('#ctl-code');
-  codeInput.value = store.get('ctl_code', '');
+  codeInput.value = ENSAYO || store.get('ctl_code', '');
+  if (ENSAYO) $('#link-card').hidden = true;   // en el ensayo ya está vinculado solo
   if (!codeInput.value) $('#link-card').open = true;
   function setLinkStatus(st, text) { $('#ctl-dot').className = 'dot ' + (st === 'ok' ? 'ok' : 'bad'); $('#ctl-status').textContent = text; }
   function doLink() {
@@ -2958,6 +3062,7 @@ function initControl() {
     const L = typeof look === 'object' ? look : LOOKS[look];
     const name = typeof look === 'object' ? (look.nombre || 'transición') : look;
     if (!L) { log('Look desconocido en el guion: ' + name, 'e'); return; }
+    if (L.tipo === 'flashTele') { if (link) link.send({ type: 'flashDuro' }); log('⚡ flash de pantalla', 'o'); return; }
     if (L.tipo === 'flashUnico') {
       // un único destello: blanco al 100% sin fundido y vuelta inmediata a lo que había
       const back = prevLookObj || LOOKS.oscuro;
@@ -3052,6 +3157,8 @@ function initControl() {
     runSteps(cue);
   }
 
+  $('#fx-flash-tele').addEventListener('click', () => fireLook('flashTele', true));
+  $('#fx-flash-unico').addEventListener('click', () => fireLook('flashUnico', true));
   function renderLooks() {
     const box = $('#ty-looks');
     box.innerHTML = Object.keys(LOOKS).map(k => `<button class="pbtn" data-look="${k}">${esc(k)}</button>`).join('');
@@ -3272,7 +3379,7 @@ function initControl() {
     else if (sl.k === 'presentador') {
       h = S.step === 'golpe'
         ? `<div class="now-title">🎤 ¡${esc(D.presentador.nombre)}!</div><p class="muted">Un compás de estrobo, tu nombre en el segundo y después fiesta al ritmo del tema. Cuando quieras, seguís con los contendientes.</p>`
-        : `<div class="now-title">🎤 Tu entrada</div><p class="muted">Sala a oscuras, suena tu tema, aparecen los textos y la luz late cada vez más rápido. Entrá y, cuando estés en tu lugar (idealmente en un golpe fuerte del tema), tocá <b>💥 ¡Golpe de entrada!</b>.${D.presentador.golpeAuto > 0 ? ` Si no lo tocás, sale solo a los ${Math.round(D.presentador.golpeAuto / 1000)} s.` : ''}</p>`;
+        : `<div class="now-title">🎤 Tu entrada</div><p class="muted">Sala a oscuras${TRACKS.anfitrionVoz ? ', la voz de presentación y después tu tema' : ', suena tu tema'}, aparecen los textos y la luz late cada vez más rápido. Entrá y, cuando estés en tu lugar (idealmente en un golpe fuerte del tema), tocá <b>💥 ¡Golpe de entrada!</b>.${D.presentador.golpeAuto > 0 ? ` Si no lo tocás, sale solo a los ${Math.round(D.presentador.golpeAuto / 1000)} s.` : ''}</p>`;
       const rd = D.presentador.ritmo || {}, rit = S.ritmo || (rd.fase != null ? rd : null);
       const ritTxt = rit ? `${rit.bpm || HOST_BPM} bpm · fase ${(+rit.fase).toFixed(3)} s${S.ritmo && S.ritmo.ajuste ? ` · ajuste ${S.ritmo.ajuste > 0 ? '+' : ''}${S.ritmo.ajuste} ms` : ''}` : 'sin calibrar: el compás arranca cuando tocás el golpe';
       h += `<p class="muted" style="margin:12px 0 6px">🥁 Ritmo de la tele: <b>${ritTxt}</b></p>

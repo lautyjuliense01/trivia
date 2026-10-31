@@ -76,6 +76,8 @@ window.TRIVIA = {
     final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
+    anfitrionVoz: { id: 'q9C_euAFpW8', nombre: 'Voz: Damas y caballeros', inicio: 0 },   // suena antes de tu tema; el tema entra cuando termina
+                  // opcionales: fin: segundo en que se corta la voz · solape: segundos que se pisan voz y tema (0.3)
     anfitrion:    { id: 'Jt0qUO4pqWQ', nombre: 'I Gotta Feeling (Live, Stade de France)', inicio: 0 },   // tu entrada
     redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
     respuesta:    { id: '',            nombre: 'A definir: golpe de respuesta' },      // al revelar; después pasa a "datos"
@@ -234,9 +236,14 @@ window.TRIVIA = {
   /* Presentador: entra después de la intro y antes de presentar a los contendientes */
   presentador: {
     nombre: 'Lautaro', foto: '', rol: 'Responsable de Bioingeniería', antiguedad: 'En Bioingeniería desde 2021', frase: '',
-    // Lo que aparece a oscuras mientras entrás. El primero dura 5,5 s y los demás 4,3 s; el último queda hasta el golpe.
-    // Para cambiar la duración de uno: { texto: '…', ms: 6000 }
-    textos: ['Damas y caballeros…', 'bienvenidos a la segunda edición…', 'el que armó todo esto…', 'con ustedes…'],
+    // Lo que aparece a oscuras mientras entrás, estilo tráiler. ms: cuánto dura cada uno; el último queda hasta el golpe.
+    textos: [
+      { texto: 'Damas y caballeros', ms: 5500 },
+      { texto: 'Esta noche', ms: 3400 },
+      { texto: 'Solo uno conoce todas las respuestas', ms: 5200 },
+      'Con ustedes',
+    ],
+    inicioTextos: 1200,   // ms hasta el primer texto (para acomodarlo a la voz de "Damas y caballeros")
     golpeAuto: 0,   // ms: si es mayor que 0, el golpe de entrada sale solo a ese tiempo (si no lo tocás antes)
     // Ritmo del tema para que la tele destelle en el bombo. Lo más fácil: calibrarlo en el ensayo desde el celu (🥁 Calibrar).
     // fase: segundo del video en que cae un golpe (lo da la calibración). Sin fase, el compás arranca cuando tocás el golpe.
