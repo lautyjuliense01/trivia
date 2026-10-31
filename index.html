@@ -559,6 +559,10 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
         <button class="btn small" id="ty-fade-up">Probar: fundido a sala (8 s)</button>
       </div>
       <p class="muted" style="margin:4px 0 0">Si la lámpara baja y sube de forma gradual, dejalo activado. Si salta de golpe o hace algo raro, desactivalo y la app hace el fundido por pasos.</p>
+      <details style="margin-top:8px"><summary>Diagnóstico de escenas</summary>
+        <p class="muted" style="margin:6px 0">Manda a las lámparas elegidas una escena a medida en <b>rojo fijo</b> con cada número. Si con alguno queda en rojo quieto, ese número sirve: ponelo en datos.js como <code>escena: N</code> en esa lámpara y sacale <code>escenas: false</code>.</p>
+        <div class="row" id="ty-scn"></div>
+      </details>
       <div class="muted" style="margin-top:8px">Looks (tocá para probar en la lámpara y la tele):</div>
       <div class="players" id="ty-looks" style="margin-top:6px"></div>
       <details style="margin-top:14px"><summary>Respaldo SmartThings (si Tuya falla)</summary><div style="margin-top:10px">
@@ -612,7 +616,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 <script>
 (() => {
 'use strict';
-const VERSION = 'v14 · 31/10 21:45';
+const VERSION = 'v15 · 31/10 22:00';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2131,28 +2135,51 @@ function initControl() {
   }
   const p10 = (v, min = 10) => Math.max(min, Math.min(1000, Math.round((+v || 0) * 10)));
   // Fundido suave en UNA sola orden: escena de un paso con transición gradual (la lámpara hace el fundido)
-  function fadeCommand(L, ms) {
+  function fadeCommand(L, ms, sceneNum = 2) {
     const dur = Math.max(1, Math.min(100, Math.round(ms / 100)));
     const unit = L.tipo === 'blanco'
       ? { unit_change_mode: 'gradient', unit_switch_duration: dur, unit_gradient_duration: dur, h: 0, s: 0, v: 0, bright: p10(L.brillo), temperature: p10(L.calidez, 0) }
       : { unit_change_mode: 'gradient', unit_switch_duration: dur, unit_gradient_duration: dur, h: Math.round(L.h || 0), s: p10(L.s == null ? 100 : L.s, 0), v: p10(L.brillo == null ? 100 : L.brillo), bright: 0, temperature: 0 };
-    return [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: 2, scene_units: [unit] } }];
+    return [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: sceneNum, scene_units: [unit] } }];
   }
-  function lookCommands(L) {
+  function lookCommands(L, sceneNum) {
     const on = { code: 'switch_led', value: true };
     const tr = L.transicion != null ? L.transicion * 1000 : (D.transicionLuz == null ? 0 : D.transicionLuz);
-    if (tr > 0 && (L.tipo === 'color' || L.tipo === 'blanco' || !L.tipo) && suaveOK()) return fadeCommand(L, tr);
+    if (tr > 0 && (L.tipo === 'color' || L.tipo === 'blanco' || !L.tipo) && suaveOK()) return fadeCommand(L, tr, sceneNum || 2);
     if (L.tipo === 'apagado') return [{ code: 'switch_led', value: false }];
     if (L.tipo === 'blanco') return [on, { code: 'work_mode', value: 'white' }, { code: 'bright_value_v2', value: p10(L.brillo) }, { code: 'temp_value_v2', value: p10(L.calidez, 0) }];
     if (L.tipo === 'efecto') {
       const dur = L.paso != null ? Math.max(1, Math.min(100, Math.round(L.paso * 10))) : Math.max(0, Math.min(100, Math.round(100 - (L.velocidad == null ? 50 : L.velocidad))));
       const mode = L.modo === 'salto' ? 'jump' : 'gradient';
-      return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: 1, scene_units: (L.colores || []).map(([h, sat, b]) => ({ unit_change_mode: mode, unit_switch_duration: dur, unit_gradient_duration: dur, h: Math.round(h), s: p10(sat, 0), v: p10(b), bright: 0, temperature: 0 })) } }];
+      return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: sceneNum || 1, scene_units: (L.colores || []).map(([h, sat, b]) => ({ unit_change_mode: mode, unit_switch_duration: dur, unit_gradient_duration: dur, h: Math.round(h), s: p10(sat, 0), v: p10(b), bright: 0, temperature: 0 })) } }];
     }
     return [on, { code: 'work_mode', value: 'colour' }, { code: 'colour_data_v2', value: { h: Math.round(L.h || 0), s: p10(L.s == null ? 100 : L.s, 0), v: p10(L.brillo == null ? 100 : L.brillo) } }];
   }
 
   const suaveOK = () => store.get('ty_suave', true);
+  const postLamp = (lamp, commands) => tuyaFetch('/cmd', { method: 'POST', body: JSON.stringify({ commands, device: LAMPS[lamp] || undefined }) });
+  // Transición suave "en vivo" (la misma que usa la app al mover el selector de color)
+  function ctrlCmd(h, sat, b, withMode) {
+    const c = [{ code: 'control_data', value: { change_mode: 'gradient', h: Math.round(h || 0), s: Math.round((sat == null ? 100 : sat) * 2.55), v: Math.max(3, Math.round(b * 2.55)), bright: 0, temperature: 0 } }];
+    return withMode ? [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'colour' }, ...c] : c;
+  }
+  const loops = {};
+  function stopLoop(lamp) { if (loops[lamp]) { clearInterval(loops[lamp].i); clearTimeout(loops[lamp].t); delete loops[lamp]; } }
+  async function startLoop(lamp, L, cfg) {
+    const cols = (L.colores && L.colores.length) ? L.colores : [[0, 0, 60]];
+    const period = Math.max((cfg.pasoMin || 0.5) * 1000, (L.paso == null ? 0.6 : L.paso) * 1000);
+    let k = 0, first = true;
+    const send = () => {
+      const c = cols[k % cols.length]; k++;
+      const cmd = L.modo === 'salto'
+        ? [...(first ? [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'colour' }] : []), { code: 'colour_data_v2', value: { h: Math.round(c[0]), s: p10(c[1], 0), v: p10(c[2]) } }]
+        : ctrlCmd(c[0], c[1], c[2], first);
+      first = false;
+      return postLamp(lamp, cmd).catch(e => { log(`💡 ${lamp}: efecto cortado — ${e.message}`, 'e'); stopLoop(lamp); });
+    };
+    await send();
+    loops[lamp] = { i: setInterval(send, period), t: setTimeout(() => stopLoop(lamp), cfg.maxEfecto || 60000) };
+  }
   const activeLamps = () => {
     const m = store.get('ty_lamps', LAMP_NAMES.join('+'));
     const list = m.split('+').filter(n => LAMP_NAMES.includes(n));
@@ -2172,11 +2199,22 @@ function initControl() {
     if (tuyaReady()) {
       const t0 = performance.now();
       const res = await Promise.all(activeLamps().map(async lamp => {
-        let Lx = L[lamp] ? { ...L, ...L[lamp] } : L;               // cada lámpara puede tener su variante (ej.: tira: { h: 280 })
-        if (LAMP_CFG[lamp] && LAMP_CFG[lamp].escenas === false) Lx = plainLook(Lx);
-        if (Lx.apagar) return tuyaFetch('/cmd', { method: 'POST', body: JSON.stringify({ commands: [{ code: 'switch_led', value: false }], device: LAMPS[lamp] || undefined }) }).then(() => true, () => false);
-        try { await tuyaFetch('/cmd', { method: 'POST', body: JSON.stringify({ commands: lookCommands(Lx), device: LAMPS[lamp] || undefined }) }); return true; }
-        catch (e) { log(`💡 ${lamp} · ${name}: Tuya falló — ${e.message}`, 'e'); return false; }
+        stopLoop(lamp);
+        const cfg = LAMP_CFG[lamp] || {};
+        const Lx = L[lamp] ? { ...L, ...L[lamp] } : L;               // cada lámpara puede tener su variante (ej.: tira: { h: 280 })
+        try {
+          if (Lx.apagar) { await postLamp(lamp, [{ code: 'switch_led', value: false }]); return true; }
+          if (cfg.escenas === false) {
+            // Esta luz no acepta escenas a medida: la app hace los efectos y fundidos con órdenes sueltas
+            if (Lx.tipo === 'efecto') { await startLoop(lamp, Lx, cfg); return true; }
+            const tr = Lx.transicion || 0;
+            if (tr > 0 && Lx.tipo !== 'blanco') { await postLamp(lamp, ctrlCmd(Lx.h, Lx.s == null ? 100 : Lx.s, Lx.brillo == null ? 100 : Lx.brillo, true)); return true; }
+            await postLamp(lamp, lookCommands(plainLook(Lx)));
+            return true;
+          }
+          await postLamp(lamp, lookCommands(Lx, cfg.escena));
+          return true;
+        } catch (e) { log(`💡 ${lamp} · ${name}: Tuya falló — ${e.message}`, 'e'); return false; }
       }));
       ok = res.some(Boolean);
       if (ok) log(`💡 ${name} → ${activeLamps().join(' + ')} (${Math.round(performance.now() - t0)} ms)`, 'o');
@@ -2237,6 +2275,18 @@ function initControl() {
     sel.addEventListener('change', () => { store.set('ty_lamps', sel.value); lastLook = null; log('Lámparas: ' + sel.value.replace(/\+/g, ' + '), 'o'); });
     $('#ty-lamps-row').hidden = LAMP_NAMES.length < 2;
   })();
+  $('#ty-scn').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8].map(n => `<button class="btn small" data-n="${n}">${n}</button>`).join('');
+  $('#ty-scn').querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
+    const n = +b.dataset.n;
+    clearLights();
+    for (const lamp of activeLamps()) {
+      stopLoop(lamp);
+      try {
+        await postLamp(lamp, [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: n, scene_units: [{ unit_change_mode: 'static', unit_switch_duration: 50, unit_gradient_duration: 50, h: 0, s: 1000, v: 800, bright: 0, temperature: 0 }] } }]);
+        log(`Escena ${n} (rojo fijo) → ${lamp}. ¿Quedó en rojo quieto?`, 'o');
+      } catch (e) { log(`Escena ${n} → ${lamp}: ${e.message}`, 'e'); }
+    }
+  }));
   $('#ty-suave').checked = suaveOK();
   $('#ty-suave').addEventListener('change', () => store.set('ty_suave', $('#ty-suave').checked));
   $('#ty-fade-dn').addEventListener('click', () => { clearLights(); fireLook({ ...LOOKS.oscuro, transicion: 8, nombre: 'prueba fundido a oscuro' }, true); });
