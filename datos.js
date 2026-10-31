@@ -63,7 +63,18 @@ window.TRIVIA = {
     ganador: 'ganador',       // suena después del redoble
   },
 
+  /* ---------- Lámparas ----------
+     Nombre → ID de Tuya. Los mismos IDs tienen que estar en TUYA_DEVICE del intermediario (separados por coma).
+     En el control elegís si se usa una, la otra o todas juntas. */
+  lamparas: {
+    techo: 'eba75b70df50a7545c9thx',
+    tira:  'eb65b658340d7685eatgz1',    // tira LED detrás del sillón
+  },
+
   /* ---------- Luces (Tuya directo) ----------
+     Si querés que una lámpara haga algo distinto en un look, agregale una variante con su nombre:
+       ej.  escenario: { tipo: 'color', h: 230, s: 75, brillo: 12, tira: { h: 280, brillo: 30 } }
+       o    tira: { apagar: true } para que en ese look la tira se apague.
      Cada "look" es un estado de la lámpara del techo:
        tipo 'color'  → h: tono 0-360 (0 rojo, 40 dorado, 120 verde, 220 azul, 280 violeta), s: saturación 0-100, brillo 1-100
        tipo 'blanco' → brillo 1-100, calidez 0-100 (0 = cálido, 100 = frío)

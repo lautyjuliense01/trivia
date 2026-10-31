@@ -547,6 +547,10 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
         <input type="number" id="ty-scr" min="-1000" max="3000" step="50" style="flex:0 0 110px"> <span class="muted">ms</span>
       </div>
       <p class="muted" style="margin:6px 0">La app dispara la luz antes para que llegue justo con la pantalla. Ajustá la demora hasta que el golpe de luz y el de la tele coincidan.</p>
+      <div class="row" id="ty-lamps-row" style="margin-top:8px">
+        <label class="muted" for="ty-lamps">Lámparas que se usan</label>
+        <select id="ty-lamps" style="flex:0 0 auto"></select>
+      </div>
       <div class="row" style="margin-top:8px">
         <label class="toggle"><input type="checkbox" id="ty-suave"> Fundidos suaves en una sola orden</label>
       </div>
@@ -608,7 +612,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 <script>
 (() => {
 'use strict';
-const VERSION = 'v12 · 31/10 21:00';
+const VERSION = 'v13 · 31/10 21:30';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1045,6 +1049,9 @@ const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
 D.momentos = Object.assign({ previa: 'previa', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
 D.luces = Object.assign({ contendientes: 'festejo', cuenta: 'tension' }, D.luces || {});
+/* Lámparas Tuya: nombre → ID (tienen que estar también en TUYA_DEVICE del intermediario) */
+const LAMPS = D.lamparas || { techo: '' };
+const LAMP_NAMES = Object.keys(LAMPS);
 /* Apertura de cine */
 const CREDITS = D.creditos || [
   { estudio: 'Lautaro Entertainment', texto: 'presenta' },
@@ -2138,6 +2145,11 @@ function initControl() {
   }
 
   const suaveOK = () => store.get('ty_suave', true);
+  const activeLamps = () => {
+    const m = store.get('ty_lamps', LAMP_NAMES.join('+'));
+    const list = m.split('+').filter(n => LAMP_NAMES.includes(n));
+    return list.length ? list : [LAMP_NAMES[0]];
+  };
   let lastLook = null;
   async function fireLook(look, force = false) {
     const L = typeof look === 'object' ? look : LOOKS[look];
@@ -2151,8 +2163,15 @@ function initControl() {
     let ok = false;
     if (tuyaReady()) {
       const t0 = performance.now();
-      try { await tuyaFetch('/cmd', { method: 'POST', body: JSON.stringify({ commands: lookCommands(L) }) }); ok = true; log(`💡 ${name} (${Math.round(performance.now() - t0)} ms)`, 'o'); }
-      catch (e) { log(`💡 ${name}: Tuya falló — ${e.message}${L.respaldo ? '. Uso SmartThings' : ''}`, 'e'); }
+      const res = await Promise.all(activeLamps().map(async lamp => {
+        const Lx = L[lamp] ? { ...L, ...L[lamp] } : L;             // cada lámpara puede tener su variante (ej.: tira: { h: 280 })
+        if (Lx.apagar) return tuyaFetch('/cmd', { method: 'POST', body: JSON.stringify({ commands: [{ code: 'switch_led', value: false }], device: LAMPS[lamp] || undefined }) }).then(() => true, () => false);
+        try { await tuyaFetch('/cmd', { method: 'POST', body: JSON.stringify({ commands: lookCommands(Lx), device: LAMPS[lamp] || undefined }) }); return true; }
+        catch (e) { log(`💡 ${lamp} · ${name}: Tuya falló — ${e.message}`, 'e'); return false; }
+      }));
+      ok = res.some(Boolean);
+      if (ok) log(`💡 ${name} → ${activeLamps().join(' + ')} (${Math.round(performance.now() - t0)} ms)`, 'o');
+      else if (L.respaldo) log('Uso el respaldo de SmartThings', 'e');
     }
     if (!ok) { const mood = L.respaldo || (['tension', 'festejo', 'normal'].includes(name) ? name : null); if (mood) applyMood(mood, true); }
   }
@@ -2200,6 +2219,15 @@ function initControl() {
     box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { clearLights(); fireLook(b.dataset.look, true); }));
   }
   renderLooks();
+  (() => {
+    const sel = $('#ty-lamps');
+    const opts = LAMP_NAMES.map(n => [n, n]);
+    if (LAMP_NAMES.length > 1) opts.push([LAMP_NAMES.join('+'), 'todas juntas']);
+    sel.innerHTML = opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+    sel.value = activeLamps().join('+');
+    sel.addEventListener('change', () => { store.set('ty_lamps', sel.value); lastLook = null; log('Lámparas: ' + sel.value.replace(/\+/g, ' + '), 'o'); });
+    $('#ty-lamps-row').hidden = LAMP_NAMES.length < 2;
+  })();
   $('#ty-suave').checked = suaveOK();
   $('#ty-suave').addEventListener('change', () => store.set('ty_suave', $('#ty-suave').checked));
   $('#ty-fade-dn').addEventListener('click', () => { clearLights(); fireLook({ ...LOOKS.oscuro, transicion: 8, nombre: 'prueba fundido a oscuro' }, true); });
@@ -2209,9 +2237,13 @@ function initControl() {
     if (!tuyaReady()) { log('Cargá la dirección del intermediario y la clave', 'e'); return; }
     const t0 = performance.now();
     try {
-      const j = await tuyaFetch('/estado');
-      const st = Object.fromEntries((j.result || []).map(x => [x.code, x.value]));
-      log(`Tuya OK (${Math.round(performance.now() - t0)} ms) · lámpara ${st.switch_led ? 'encendida' : 'apagada'} · modo ${st.work_mode || '?'}`, 'o');
+      for (const lamp of LAMP_NAMES) {
+        try {
+          const j = await tuyaFetch('/estado' + (LAMPS[lamp] ? '?device=' + encodeURIComponent(LAMPS[lamp]) : ''));
+          const st = Object.fromEntries((j.result || []).map(x => [x.code, x.value]));
+          log(`Tuya OK · ${lamp} (${Math.round(performance.now() - t0)} ms) · ${st.switch_led ? 'encendida' : 'apagada'} · modo ${st.work_mode || '?'}`, 'o');
+        } catch (e) { log(`Tuya · ${lamp}: ${e.message}`, 'e'); }
+      }
     } catch (e) { log('Tuya: ' + e.message, 'e'); }
   });
 
