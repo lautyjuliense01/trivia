@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Anton&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s);"></script>
-<script src="datos.js"></script>
+<script>document.write('<script src="datos.js?t=' + Date.now() + '"><\/script>');</script>
 <style>
 :root{
   --gold:#f7c948; --gold-deep:#d99a1e; --bulb:#fff4c2;
@@ -507,6 +507,13 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
     <div id="now-body"></div>
   </div>
 
+  <details class="card" id="pistas-card">
+    <summary>🎵 Pistas a mano</summary>
+    <p class="muted" style="margin:6px 0">Suena en la tele hasta que pases a otra pantalla o toques Automático.</p>
+    <div class="players" id="pistas"></div>
+    <div class="row" style="margin-top:8px"><button class="btn ghost small" id="pista-auto">↩ Automático</button><button class="btn ghost small" id="pista-stop">⏹ Silencio</button></div>
+  </details>
+
   <div class="card" id="steps-card" hidden>
     <div class="steps">
       <button class="step" data-step="pregunta">❓ Pregunta</button>
@@ -625,7 +632,7 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 <script>
 (() => {
 'use strict';
-const VERSION = 'v21 · 01/11 01:30';
+const VERSION = 'v22 · 01/11 02:00';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1106,6 +1113,7 @@ const LOOKS = Object.assign({
   pulso:     { tipo: 'color', h: 30, s: 85, brillo: 45, respaldo: 'normal' },
   foco:      { tipo: 'blanco', brillo: 70, calidez: 25, respaldo: 'normal' },
   destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },
+  apagado:   { tipo: 'apagado' },
   estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },
   flashUnico: { tipo: 'flashUnico', ms: 90, lamparas: ['techo'], respaldo: 'festejo' },
   calido:    { tipo: 'color', h: 32, s: 75, brillo: 26, transicion: 2, respaldo: 'normal' },
@@ -1131,6 +1139,7 @@ const GUION = Object.assign({
 }, D.guion || {});
 
 const TRACKS = {};
+(D.pistas || []).forEach((v, i) => { if (v && v.id) TRACKS['pista' + i] = { id: v.id, name: v.nombre || 'Pista ' + (i + 1), start: v.inicio || 0, loop: v.repetir !== false }; });
 Object.entries(D.musica || {}).forEach(([k, v]) => {
   const t = typeof v === 'string' ? { id: v } : (v || {});
   if (t.id) TRACKS[k] = { id: t.id, name: t.nombre || k, start: t.inicio || 0, loop: t.repetir != null ? !!t.repetir : !['redoble', 'respuesta'].includes(k) };
@@ -1225,6 +1234,8 @@ function momentOf(st) {
   return sl.k === 'desempate' ? 'pregunta' : sl.k;
 }
 function musicKeyOf(st) {
+  if (st.manual === 'silencio') return null;
+  if (st.manual && TRACKS[st.manual]) return st.manual;   // pista elegida a mano desde el celu
   const m = momentOf(st);
   const sl0 = SCRIPT[st.slide] || {};
   if (isQ(sl0) && ['pregunta', 'pizarras', 'tension'].includes(m) && !st.overlay) {
@@ -1398,7 +1409,7 @@ function createDirector(music, fx) {
   let lastKey, lastMoment, afterT = null;
   const RESP_MS = D.respuestaMs == null ? 4000 : D.respuestaMs;
   return function apply(st) {
-    const m = momentOf(st), key = musicKeyOf(st);
+    const m = st.manual ? 'manual:' + st.manual : momentOf(st), key = musicKeyOf(st);
     if (m === lastMoment && key === lastKey) return;
     if (m !== lastMoment) clearTimeout(afterT);
     if (m === 'cine' && lastMoment !== 'cine' && !TRACKS.cine) setTimeout(() => music.cue('intro'), 300); // la fanfarria queda cargada
@@ -1547,6 +1558,7 @@ function initScreen() {
   let tintFlip = false, jumpT = null;
   function applyTint(L, ms) {
     if (!L) return;
+    if (L.tipo === 'apagado') { ['#tint-a', '#tint-b'].forEach(id => $(id).classList.remove('on')); clearInterval(jumpT); $('#tint-dark').style.transitionDuration = '400ms'; $('#tint-dark').style.opacity = '.8'; return; }
     const dur = Math.max(300, ms || 900) + 'ms';
     ['#tint-a', '#tint-b', '#tint-dark'].forEach(id => { $(id).style.transitionDuration = dur; });
     if (L.flash || (L.tipo === 'blanco' && L.brillo >= 95)) { const f = document.createElement('div'); f.className = 'flash'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
@@ -2464,7 +2476,7 @@ function initControl() {
 
   function goSlide(i) {
     i = Math.max(0, Math.min(SCRIPT.length - 1, i));
-    S.slide = i; S.overlay = null; S.sub = 0;
+    S.slide = i; S.overlay = null; S.sub = 0; S.manual = null;
     S.step = isQ(SCRIPT[i]) ? 'pregunta' : null;
     clearTimeout(revealT);
     if (SCRIPT[i].k === 'ganador') return revealWinner();
@@ -2525,7 +2537,7 @@ function initControl() {
     if (SCRIPT[S.slide].k === 'cuenta' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
     const i = nextIndex(S.slide, -1);
     if (i < 0) return;
-    S.slide = i; S.overlay = null;
+    S.slide = i; S.overlay = null; S.manual = null;
     S.step = isQ(SCRIPT[i]) || SCRIPT[i].k === 'ganador' ? 'revelado' : null;
     S.sub = SCRIPT[i].k === 'cuenta' ? countdownGroups(S.results).length : 0;
     clearTimeout(revealT);
@@ -2583,7 +2595,7 @@ function initControl() {
     else if (sl.k === 'previa') h = `<div class="now-title">Previa</div><p class="muted">Pantalla negra con polvo de luz, música de previa y luz cálida tenue. No adelanta nada del show. El código se oculta solo al vincular.</p>`;
     else if (sl.k === 'presentamos') h = `<div class="now-title">"Presentamos a los contendientes"</div><p class="muted">Apagón, arranca la música de presentación y entra el título con los reflectores.</p>`;
     else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round((CEL + CREDITS.length * CRED) / 1000)} s.</p>`;
-    else if (sl.k === 'intro') h = `<div class="now-title">Intro de película</div><p class="muted">Dura unos 10 s con la fanfarria. Las luces arrancan en tensión y pasan a festejo cuando aparece el título.</p>`;
+    else if (sl.k === 'intro') h = `<div class="now-title">Intro de película · ${esc(TRACKS.intro ? TRACKS.intro.name : 'sin música')}</div><p class="muted">Dura unos 10 s con la fanfarria. Las luces arrancan en tensión y pasan a festejo cuando aparece el título.</p>`;
     else if (sl.k === 'presentacion') { const p = P[sl.p]; h = `<div class="now-title">${esc(p.nombre)}</div><p class="muted">${[p.edad ? p.edad + ' años' : '', p.rol, p.antiguedad].filter(Boolean).map(esc).join(' · ')}</p>`; }
     else if (sl.k === 'presentador') h = `<div class="now-title">🎤 ${esc(D.presentador.nombre)}, el presentador</div><p class="muted">Se apaga la luz, "Y conduciendo esta noche…" y se enciende un único foco sobre vos.</p>`;
     else if (sl.k === 'contendientes') h = `<div class="now-title">Los ${P.length} contendientes juntos</div><p class="muted">Aparecen uno a uno con flash. Luces en festejo.</p>`;
@@ -2691,6 +2703,17 @@ function initControl() {
     const c = box.querySelector('.cur');
     if (c) box.scrollTop = c.offsetTop - box.offsetTop - 80;
   }
+
+  // Pistas a mano
+  const manualKeys = Object.keys(TRACKS).filter(k => k.startsWith('pista'));
+  $('#pistas-card').hidden = manualKeys.length === 0;
+  function renderPistas() {
+    $('#pistas').innerHTML = manualKeys.map(k => `<button class="pbtn ${S.manual === k ? 'on' : ''}" data-k="${k}">${S.manual === k ? '♪ ' : ''}${esc(TRACKS[k].name)}</button>`).join('');
+    $('#pistas').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { S.manual = b.dataset.k; commit(); renderPistas(); log('🎵 A mano: ' + TRACKS[b.dataset.k].name, 'o'); }));
+  }
+  renderPistas();
+  $('#pista-auto').addEventListener('click', () => { S.manual = null; commit(); renderPistas(); log('🎵 Música automática', 'o'); });
+  $('#pista-stop').addEventListener('click', () => { S.manual = 'silencio'; commit(); renderPistas(); log('🎵 Silencio', 'o'); });
 
   lastLightKey = momentOf(S) + (momentOf(S) === 'presentacion' ? ':' + S.slide : '');
   renderControl();

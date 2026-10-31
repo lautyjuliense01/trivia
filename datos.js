@@ -30,9 +30,10 @@ window.TRIVIA = {
   musica: {
     previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
     cine:         { id: 'jgyShFzdB_Q', nombre: 'Time (Inception)', inicio: 75 },   // apertura de cine, desde el 1:15
-    intro:        { id: '5jrs1DEWzx0', nombre: '20th Century Fox Fanfare' },
+    intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
     pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions' },
+    final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
     anfitrion:    { id: '',            nombre: 'A definir: entrada del presentador' },
@@ -40,7 +41,16 @@ window.TRIVIA = {
     respuesta:    { id: '',            nombre: 'A definir: golpe de respuesta' },      // al revelar; después pasa a "datos"
 
     ganador:      { id: '',            nombre: 'A definir' },   // vacío: usa la de "datos"
+    premios:      { id: '',            nombre: 'A definir: entrega de premios' },
+    cierre:       { id: '',            nombre: 'A definir: cierre' },
   },
+
+  /* ---------- Pistas a mano ----------
+     Aparecen como botones en el celu (🎵 Pistas a mano) y suenan en la tele cuando las tocás,
+     hasta que pases de pantalla o vuelvas a "Automático". */
+  pistas: [
+    { id: 'ZP69PLBqFUo', nombre: 'Hold the Line (Toto)' },
+  ],
 
   /* Cuánto dura el golpe de respuesta antes de pasar a la música de datos curiosos (ms) */
   respuestaMs: 4000,
@@ -63,7 +73,12 @@ window.TRIVIA = {
     marcador: 'datos',
     cuenta: 'tension',        // cuenta final, del último al segundo
     ganador: 'ganador',       // suena después del redoble
+    premios: 'premios',
+    cierre: 'cierre',
   },
+
+  /* Intro: milisegundo de la fanfarria en que aparece el título (con Universal, el 15) */
+  intro: { titulo: 15000 },
 
   /* ---------- Lámparas ----------
      Nombre → ID de Tuya. Los mismos IDs tienen que estar en TUYA_DEVICE del intermediario (separados por coma).
@@ -105,8 +120,9 @@ window.TRIVIA = {
     pulso:     { tipo: 'color', h: 30, s: 85, brillo: 45, respaldo: 'normal' },       // destello cálido con cada crédito
     foco:      { tipo: 'blanco', brillo: 70, calidez: 25, respaldo: 'normal' },       // foco del presentador
     destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },  // celebración corta
+    apagado:   { tipo: 'apagado' },   // apaga todo; el look siguiente las vuelve a prender solo
     estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },   // titila lo más rápido posible, 100 ↔ 0
-    flashUnico: { tipo: 'flashUnico', ms: 140, respaldo: 'festejo' },   // un solo destello blanco y vuelve a lo que había
+    flashUnico: { tipo: 'flashUnico', ms: 90, lamparas: ['techo'], respaldo: 'festejo' },   // un solo destello blanco frío (solo techo) y vuelve a lo que había
     calido:    { tipo: 'color', h: 32, s: 75, brillo: 26, transicion: 2, respaldo: 'normal' },   // después de la respuesta: tenue, sin cortar el clima
     fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
   },
@@ -118,7 +134,7 @@ window.TRIVIA = {
     previa: 'ambiente',
     presentamos: [[0, 'oscuro'], [1700, 'escenario']],
     // cine: lo arma la app sola (baja la luz y un pulso por crédito). Para personalizarlo, agregá cine: [[ms, look], ...]
-    intro: [[0, 'noche'], [6100, 'dorado'], [7300, 'destello'], [8700, 'dorado'], [10500, 'sala']],   // golpe dorado con el título
+    intro: [[0, 'noche'], [15300, 'dorado'], [16500, 'destello'], [17900, 'dorado'], [19700, 'calido']],   // golpe dorado con el título (seg. 15)
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
     contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],   // primero baja el último a la fila a oscuras
     presentador: [[0, 'oscuro'], [1600, 'foco']],              // apagón y un único foco
@@ -135,6 +151,8 @@ window.TRIVIA = {
     cuenta: 'oscuro',
     ganadorRedoble: 'oscuro',
     ganador: 'fiesta',
+    premios: 'calido',
+    cierre: 'ambiente',
   },
 
   /* Velocidad de las escenas de las luces: segundos por cada punto de velocidad de Tuya (calibrado con la tira: velocidad 5 ≈ 6 s).
