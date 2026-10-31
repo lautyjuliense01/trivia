@@ -68,7 +68,7 @@ window.TRIVIA = {
      En el control elegís si se usa una, la otra o todas juntas. */
   lamparas: {
     techo: 'eba75b70df50a7545c9thx',
-    tira:  'eb65b658340d7685eatgz1',    // tira LED detrás del sillón
+    tira:  { id: 'eb65b658340d7685eatgz1', escenas: false },   // tira LED detrás del sillón. escenas: false = solo colores fijos (sin efectos ni fundidos)
   },
 
   /* ---------- Luces (Tuya directo) ----------
