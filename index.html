@@ -302,6 +302,15 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 .win-rest{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:30px;opacity:0;animation:fadeIn 1s 2.5s forwards}
 .win-rest span{padding:8px 16px;border-radius:30px;background:rgba(0,0,0,.45);font-weight:800;font-size:clamp(14px,1.5vw,22px);color:var(--muted)}
 
+/* v7: la pantalla acompaña a la luz */
+.tint{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0;transition:opacity .9s ease}
+.tint.on{opacity:1}
+.tint.breath{animation:breath var(--bdur,2.4s) ease-in-out infinite}
+@keyframes breath{0%,100%{opacity:1}50%{opacity:.15}}
+.tint.jump{animation:hueJump var(--bdur,2s) steps(5) infinite}
+@keyframes hueJump{to{filter:hue-rotate(360deg)}}
+#tint-dark{position:fixed;inset:0;pointer-events:none;z-index:1;background:#000;opacity:0;transition:opacity .9s ease}
+
 /* Control v5 */
 #control{padding-bottom:120px}
 .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -360,6 +369,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 
 <!-- ================= PANTALLA ================= -->
 <section id="pantalla" class="view" hidden>
+  <div class="tint" id="tint-a"></div><div class="tint" id="tint-b"></div><div id="tint-dark"></div>
   <div class="spot l"></div><div class="spot r"></div>
   <canvas id="confetti"></canvas>
   <div id="stage"></div>
@@ -434,8 +444,24 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
   </details>
 
   <details class="card">
-    <summary>Luces (SmartThings)</summary>
+    <summary>Luces</summary>
     <div style="margin-top:10px">
+      <h2>Tuya directo</h2>
+      <input type="text" id="ty-url" placeholder="Dirección del intermediario (https://…workers.dev)" autocomplete="off" style="width:100%;margin-bottom:8px">
+      <div class="row">
+        <input type="password" id="ty-key" placeholder="Clave de la trivia" autocomplete="off">
+        <button class="btn" id="ty-test">Probar</button>
+      </div>
+      <div class="row">
+        <label class="muted" for="ty-lat">Demora de la lámpara</label>
+        <select id="ty-lat" style="flex:0 0 auto">
+          <option value="200">0,2 s</option><option value="350">0,35 s</option><option value="500">0,5 s</option><option value="700">0,7 s</option><option value="1000">1 s</option><option value="1500">1,5 s</option><option value="2000">2 s</option>
+        </select>
+      </div>
+      <p class="muted" style="margin:6px 0">La app dispara la luz antes para que llegue justo con la pantalla. Ajustá la demora hasta que el golpe de luz y el de la tele coincidan.</p>
+      <div class="muted" style="margin-top:8px">Looks (tocá para probar en la lámpara y la tele):</div>
+      <div class="players" id="ty-looks" style="margin-top:6px"></div>
+      <details style="margin-top:14px"><summary>Respaldo SmartThings (si Tuya falla)</summary><div style="margin-top:10px">
     <div class="row">
       <input type="password" id="st-token" placeholder="Token personal de SmartThings" autocomplete="off">
       <button class="btn" id="st-load">Cargar luces</button>
@@ -460,7 +486,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
       </div>
       <div class="row" id="st-anim-row"><label class="toggle"><input type="checkbox" id="st-anim"> Festejo animado (alterna colores; probar si las luces llegan a seguirlo)</label></div>
     </div>
-
+      </div></details>
     </div>
   </details>
 
@@ -486,7 +512,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 <script>
 (() => {
 'use strict';
-const VERSION = 'v6 · 31/10 14:30';
+const VERSION = 'v7 · 31/10 15:30';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -786,6 +812,30 @@ const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
 D.momentos = Object.assign({ contendientes: 'presentacion', cuenta: 'tension' }, D.momentos || {});
 D.luces = Object.assign({ contendientes: 'festejo', cuenta: 'tension' }, D.luces || {});
+/* Looks de luz: estados de la lámpara. Se pueden redefinir en datos.js (looks / guion) */
+const LOOKS = Object.assign({
+  sala:      { tipo: 'blanco', brillo: 60, calidez: 20, respaldo: 'normal' },
+  oscuro:    { tipo: 'color', h: 225, s: 90, brillo: 2, respaldo: 'tension' },
+  escenario: { tipo: 'color', h: 230, s: 75, brillo: 12, respaldo: 'normal' },
+  azul:      { tipo: 'color', h: 220, s: 85, brillo: 30, respaldo: 'normal' },
+  pizarras:  { tipo: 'blanco', brillo: 55, calidez: 15, respaldo: 'normal' },
+  tension:   { tipo: 'efecto', modo: 'respirar', colores: [[0, 100, 55], [0, 100, 6]], velocidad: 40, respaldo: 'tension' },
+  dorado:    { tipo: 'color', h: 38, s: 95, brillo: 100, respaldo: 'festejo' },
+  flash:     { tipo: 'blanco', brillo: 100, calidez: 60, respaldo: 'festejo' },
+  fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], velocidad: 75, respaldo: 'festejo' },
+}, D.looks || {});
+/* Guion: qué look va en cada momento. Un nombre, o una secuencia [[ms, look], ...] donde ms = cuándo se tiene que VER */
+const GUION = Object.assign({
+  logo: 'sala',
+  intro: [[0, 'oscuro'], [6100, 'dorado'], [9800, 'sala']],
+  presentacion: [[0, 'flash'], [650, 'escenario']],
+  contendientes: [[0, 'flash'], [600, 'fiesta']],
+  reglas: 'sala', ronda: 'sala',
+  pregunta: 'azul', pizarras: 'pizarras', tension: 'tension',
+  redoble: 'oscuro', revelado: 'dorado', despues: 'sala',
+  marcador: 'sala', cuenta: 'oscuro',
+  ganadorRedoble: 'oscuro', ganador: 'fiesta',
+}, D.guion || {});
 
 const TRACKS = {};
 Object.entries(D.musica || {}).forEach(([k, v]) => {
@@ -1011,7 +1061,25 @@ function initScreen() {
   let cur = { slide: -1 }, curRev = null, confettiLoop = null, introTimer = null;
   const stage = $('#stage');
 
+  let tintFlip = false;
+  function applyTint(L) {
+    if (!L) return;
+    if (L.flash || (L.tipo === 'blanco' && L.brillo >= 95)) { const f = document.createElement('div'); f.className = 'flash'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
+    const on = tintFlip ? $('#tint-a') : $('#tint-b'), off = tintFlip ? $('#tint-b') : $('#tint-a');
+    tintFlip = !tintFlip;
+    let h, sat, b, alpha;
+    if (L.tipo === 'blanco') { h = 38 - (L.calidez || 0) * 0.2; sat = 60 - (L.calidez || 0) * 0.5; b = L.brillo; alpha = 0.10 + 0.12 * b / 100; }
+    else { const c = L.tipo === 'efecto' ? (L.colores || [[0, 0, 50]])[0] : [L.h, L.s, L.brillo]; h = c[0]; sat = c[1]; b = c[2]; alpha = 0.18 + 0.32 * b / 100; }
+    on.style.background = `radial-gradient(ellipse at 50% -10%, hsla(${h},${sat}%,55%,${alpha.toFixed(2)}) 0%, hsla(${h},${sat}%,45%,${(alpha * 0.45).toFixed(2)}) 45%, transparent 80%)`;
+    on.classList.remove('breath', 'jump');
+    if (L.tipo === 'efecto') { on.style.setProperty('--bdur', (0.6 + (100 - (L.velocidad || 50)) / 25).toFixed(2) + 's'); on.classList.add(L.modo === 'salto' ? 'jump' : 'breath'); }
+    on.classList.add('on'); off.classList.remove('on', 'breath', 'jump');
+    const dark = L.tipo === 'blanco' ? (1 - b / 100) * 0.35 : Math.min(0.72, (1 - b / 100) * 0.75);
+    $('#tint-dark').style.opacity = dark.toFixed(2);
+  }
+
   const link = createLink(code, 'screen', msg => {
+    if (msg.type === 'luz') { applyTint(msg.L || LOOKS[msg.look]); return; }
     if (msg.type === 'state' && msg.state) {
       if (msg.state.rev !== curRev) { curRev = msg.state.rev; render(msg.state); }
     }
@@ -1516,20 +1584,100 @@ function initControl() {
 
   if (tokenInput.value.trim()) loadDevices();
 
-  /* --- Luces según el momento --- */
-  let lastMoment = null, introLightTimer = null;
-  function lightsFor(prevMoment, m) {
-    if (m === prevMoment) return;
-    clearTimeout(introLightTimer);
-    if (m === 'redoble' || m === 'revelado') return; // los maneja reveal()
-    clearTimeout(festejoTimer);
-    const mood = (D.luces || {})[m];
-    if (m === 'intro') {
-      if (mood) applyMood(mood);
-      introLightTimer = setTimeout(() => applyMood('festejo'), 4000);
-      return;
+  /* --- Luces: Tuya directo, con respaldo SmartThings --- */
+  const tyUrl = $('#ty-url'), tyKey = $('#ty-key'), tyLat = $('#ty-lat');
+  tyUrl.value = store.get('ty_url', ''); tyKey.value = store.get('ty_key', ''); tyLat.value = String(store.get('ty_lat', 500));
+  [tyUrl, tyKey].forEach(i => i.addEventListener('change', () => { store.set('ty_url', tyUrl.value.trim()); store.set('ty_key', tyKey.value.trim()); }));
+  tyLat.addEventListener('change', () => store.set('ty_lat', +tyLat.value));
+  const lat = () => +tyLat.value || 0;
+  const tuyaReady = () => !!(tyUrl.value.trim() && tyKey.value.trim());
+  const tyBase = () => tyUrl.value.trim().replace(/\/+$/, '');
+
+  async function tuyaFetch(path, opts = {}) {
+    const ctrl = new AbortController(), to = setTimeout(() => ctrl.abort(), 3000);
+    try {
+      const r = await fetch(tyBase() + path, { ...opts, headers: { 'Content-Type': 'application/json', 'X-Trivia-Key': tyKey.value.trim() }, signal: ctrl.signal });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+      return j;
+    } catch (e) { throw new Error(e.name === 'AbortError' ? 'sin respuesta del intermediario' : (e.message === 'Failed to fetch' ? 'no se pudo conectar con el intermediario' : e.message)); }
+    finally { clearTimeout(to); }
+  }
+  const p10 = (v, min = 10) => Math.max(min, Math.min(1000, Math.round((+v || 0) * 10)));
+  function lookCommands(L) {
+    const on = { code: 'switch_led', value: true };
+    if (L.tipo === 'apagado') return [{ code: 'switch_led', value: false }];
+    if (L.tipo === 'blanco') return [on, { code: 'work_mode', value: 'white' }, { code: 'bright_value_v2', value: p10(L.brillo) }, { code: 'temp_value_v2', value: p10(L.calidez, 0) }];
+    if (L.tipo === 'efecto') {
+      const dur = Math.max(0, Math.min(100, Math.round(100 - (L.velocidad == null ? 50 : L.velocidad))));
+      const mode = L.modo === 'salto' ? 'jump' : 'gradient';
+      return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: 1, scene_units: (L.colores || []).map(([h, sat, b]) => ({ unit_change_mode: mode, unit_switch_duration: dur, unit_gradient_duration: dur, h: Math.round(h), s: p10(sat, 0), v: p10(b), bright: 0, temperature: 0 })) } }];
     }
-    if (mood) applyMood(mood);
+    return [on, { code: 'work_mode', value: 'colour' }, { code: 'colour_data_v2', value: { h: Math.round(L.h || 0), s: p10(L.s == null ? 100 : L.s, 0), v: p10(L.brillo == null ? 100 : L.brillo) } }];
+  }
+
+  let lastLook = null;
+  async function fireLook(name, force = false) {
+    const L = LOOKS[name];
+    if (!L) { log('Look desconocido en el guion: ' + name, 'e'); return; }
+    if (!force && name === lastLook) return;
+    lastLook = name;
+    // La tele cambia cuando llega la luz (≈ demora de la lámpara, menos lo que tarda el mensaje)
+    setTimeout(() => { if (link) link.send({ type: 'luz', look: name, L }); }, Math.max(0, lat() - 250));
+    let ok = false;
+    if (tuyaReady()) {
+      const t0 = performance.now();
+      try { await tuyaFetch('/cmd', { method: 'POST', body: JSON.stringify({ commands: lookCommands(L) }) }); ok = true; log(`💡 ${name} (${Math.round(performance.now() - t0)} ms)`, 'o'); }
+      catch (e) { log(`💡 ${name}: Tuya falló — ${e.message}${L.respaldo ? '. Uso SmartThings' : ''}`, 'e'); }
+    }
+    if (!ok) { const mood = L.respaldo || (['tension', 'festejo', 'normal'].includes(name) ? name : null); if (mood) applyMood(mood, true); }
+  }
+
+  let lightTimers = [];
+  function clearLights() { lightTimers.forEach(clearTimeout); lightTimers = []; clearTimeout(festejoTimer); }
+  // pasos: [[ms en que se tiene que VER, look], ...]
+  function runSteps(steps, forceFirst = true) {
+    clearLights();
+    let lastFire = -1;
+    steps.forEach(([ms, look], k) => {
+      const at = ms <= 0 ? 0 : Math.max(lastFire + 150, ms - lat());
+      lastFire = at;
+      if (at === 0) fireLook(look, forceFirst || k > 0);
+      else lightTimers.push(setTimeout(() => fireLook(look, true), at));
+    });
+  }
+  function runCue(cue) {
+    if (!cue) return;
+    if (typeof cue === 'string') { clearLights(); fireLook(cue); return; }
+    runSteps(cue);
+  }
+
+  function renderLooks() {
+    const box = $('#ty-looks');
+    box.innerHTML = Object.keys(LOOKS).map(k => `<button class="pbtn" data-look="${k}">${esc(k)}</button>`).join('');
+    box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { clearLights(); fireLook(b.dataset.look, true); }));
+  }
+  renderLooks();
+  $('#ty-test').addEventListener('click', async () => {
+    store.set('ty_url', tyUrl.value.trim()); store.set('ty_key', tyKey.value.trim());
+    if (!tuyaReady()) { log('Cargá la dirección del intermediario y la clave', 'e'); return; }
+    const t0 = performance.now();
+    try {
+      const j = await tuyaFetch('/estado');
+      const st = Object.fromEntries((j.result || []).map(x => [x.code, x.value]));
+      log(`Tuya OK (${Math.round(performance.now() - t0)} ms) · lámpara ${st.switch_led ? 'encendida' : 'apagada'} · modo ${st.work_mode || '?'}`, 'o');
+    } catch (e) { log('Tuya: ' + e.message, 'e'); }
+  });
+
+  /* --- Luces según el momento --- */
+  let lastLightKey = null;
+  function lightsFor(m) {
+    const key = m + (m === 'presentacion' ? ':' + S.slide : '');
+    if (key === lastLightKey) return;
+    lastLightKey = key;
+    if (m === 'redoble' || m === 'revelado') return; // los maneja reveal()
+    if (SCRIPT[S.slide].k === 'ganador') return;      // lo maneja revealWinner()
+    runCue(GUION[m]);
   }
 
   /* --- Cambios de estado --- */
@@ -1538,10 +1686,12 @@ function initControl() {
     S.rev = Date.now() + Math.random();
     store.set('game', S);
     const m = momentOf(S);
-    lightsFor(lastMoment, m);
-    lastMoment = m;
+    lightsFor(m);
     if (localDirect) localDirect(S);
-    if (soft) { clearTimeout(commitT); commitT = setTimeout(sendState, 250); } else sendState();
+    const k = SCRIPT[S.slide].k;
+    if (soft) { clearTimeout(commitT); commitT = setTimeout(sendState, 250); }
+    else if ((k === 'presentacion' || k === 'contendientes') && lat() > 300) setTimeout(sendState, lat() - 300); // flash de la tele junto con el de la lámpara
+    else sendState();
     renderControl();
   }
 
@@ -1555,11 +1705,12 @@ function initControl() {
   }
   function revealWinner() {
     const decided = standing(S.results).decided;
-    if (!decided || S.delayMs <= 0) { S.step = 'revelado'; commit(); if (decided) applyMood((D.luces || {}).ganador || 'festejo', true); return; }
-    applyMood((D.luces || {}).ganador || 'festejo', true);
-    S.step = 'redoble'; commit();
+    if (!decided) { clearLights(); fireLook(GUION.despues || 'sala'); S.step = 'revelado'; commit(); return; }
     const wait = Math.max(S.delayMs, 2500);
+    if (S.delayMs <= 0) { runCue(GUION.ganador || 'fiesta'); S.step = 'revelado'; commit(); return; }
+    runSteps([[0, GUION.ganadorRedoble || 'oscuro'], [wait, GUION.ganador || 'fiesta']]);
     S.drumMs = wait;
+    S.step = 'redoble'; commit();
     revealT = setTimeout(() => { S.step = 'revelado'; commit(); }, wait);
   }
   function tieNow() { return standing(S.results).tied.length > 1; }
@@ -1572,15 +1723,15 @@ function initControl() {
   let revealT = null;
   function reveal() {
     if (S.step === 'redoble' || S.step === 'revelado') return;
-    clearTimeout(festejoTimer);
-    const mood = (D.luces || {}).revelar;
-    if (mood) applyMood(mood, true);
     const fest = +($('#st-fest-ms') ? $('#st-fest-ms').value : 6000);
-    const backToNormal = () => { if (fest > 0) festejoTimer = setTimeout(() => applyMood('normal'), fest); };
-    if (S.delayMs > 0) {
+    const D_ms = S.delayMs || 0;
+    const steps = D_ms > 0 ? [[0, GUION.redoble || 'oscuro'], [D_ms, GUION.revelado || 'dorado']] : [[0, GUION.revelado || 'dorado']];
+    if (fest > 0) steps.push([D_ms + fest, GUION.despues || 'sala']);
+    runSteps(steps);
+    if (D_ms > 0) {
       S.step = 'redoble'; commit();
-      revealT = setTimeout(() => { S.step = 'revelado'; commit(); backToNormal(); }, S.delayMs);
-    } else { S.step = 'revelado'; commit(); backToNormal(); }
+      revealT = setTimeout(() => { S.step = 'revelado'; commit(); }, D_ms);
+    } else { S.step = 'revelado'; commit(); }
   }
   function setStep(step) {
     if (step === 'revelar') return reveal();
@@ -1767,7 +1918,7 @@ function initControl() {
     if (c) box.scrollTop = c.offsetTop - box.offsetTop - 80;
   }
 
-  lastMoment = momentOf(S);
+  lastLightKey = momentOf(S) + (momentOf(S) === 'presentacion' ? ':' + S.slide : '');
   renderControl();
   sendState();
 

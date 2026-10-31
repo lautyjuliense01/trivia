@@ -40,21 +40,46 @@ window.TRIVIA = {
     ganador: 'ganador',       // suena después del redoble
   },
 
-  /* Qué ambiente de luces va en cada momento: 'tension', 'festejo', 'normal' o null (no cambia) */
-  luces: {
-    logo: null,
-    intro: 'tension',         // a los 4 s pasa sola a festejo, cuando aparece el título
-    presentacion: 'normal',
-    contendientes: 'festejo',
-    reglas: 'normal',
-    ronda: 'normal',
-    pregunta: 'tension',
-    pizarras: 'tension',
+  /* ---------- Luces (Tuya directo) ----------
+     Cada "look" es un estado de la lámpara del techo:
+       tipo 'color'  → h: tono 0-360 (0 rojo, 40 dorado, 120 verde, 220 azul, 280 violeta), s: saturación 0-100, brillo 1-100
+       tipo 'blanco' → brillo 1-100, calidez 0-100 (0 = cálido, 100 = frío)
+       tipo 'efecto' → modo 'respirar' (fundido entre colores) o 'salto' (cambio brusco),
+                       colores: [[h, s, brillo], ...], velocidad 1-100 (más alto = más rápido)
+       respaldo: escena de SmartThings que se usa si Tuya falla ('tension', 'festejo' o 'normal')
+     La pantalla se tiñe del mismo color y se oscurece cuando la luz baja. */
+  looks: {
+    sala:      { tipo: 'blanco', brillo: 60, calidez: 20, respaldo: 'normal' },
+    oscuro:    { tipo: 'color', h: 225, s: 90, brillo: 2, respaldo: 'tension' },     // casi negro azulado: antes de un golpe
+    escenario: { tipo: 'color', h: 230, s: 75, brillo: 12, respaldo: 'normal' },     // azul tenue de presentación
+    azul:      { tipo: 'color', h: 220, s: 85, brillo: 30, respaldo: 'normal' },     // mientras se lee la pregunta
+    pizarras:  { tipo: 'blanco', brillo: 55, calidez: 15, respaldo: 'normal' },      // que se vea para escribir
+    tension:   { tipo: 'efecto', modo: 'respirar', colores: [[0, 100, 55], [0, 100, 6]], velocidad: 40, respaldo: 'tension' },
+    dorado:    { tipo: 'color', h: 38, s: 95, brillo: 100, respaldo: 'festejo' },    // el golpe de la respuesta
+    flash:     { tipo: 'blanco', brillo: 100, calidez: 60, respaldo: 'festejo' },    // destello corto
+    fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], velocidad: 75, respaldo: 'festejo' },
+  },
+
+  /* Guion de luces: qué look va en cada momento.
+     Un nombre de look, o una secuencia [[ms, look], ...] donde ms es cuándo se tiene que VER la luz desde que tocás el botón.
+     La app la dispara antes según la "demora de la lámpara" que configures en el control. */
+  guion: {
+    logo: 'sala',
+    intro: [[0, 'oscuro'], [6100, 'dorado'], [9800, 'sala']],   // golpe dorado cuando aparece el título
+    presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
+    contendientes: [[0, 'flash'], [600, 'fiesta']],
+    reglas: 'sala',
+    ronda: 'sala',
+    pregunta: 'azul',
+    pizarras: 'pizarras',
     tension: 'tension',
-    revelar: 'festejo',       // se dispara al tocar Revelar (antes del redoble) y vuelve sola a normal
-    marcador: 'normal',
-    cuenta: 'tension',
-    ganador: 'festejo',       // se dispara al empezar el redoble del ganador
+    redoble: 'oscuro',        // cae la luz durante el redoble...
+    revelado: 'dorado',       // ...y explota justo con la respuesta
+    despues: 'sala',          // para los datos curiosos (a los segundos que marques en el control)
+    marcador: 'sala',
+    cuenta: 'oscuro',
+    ganadorRedoble: 'oscuro',
+    ganador: 'fiesta',
   },
 
   /* ---------- Participantes ----------
