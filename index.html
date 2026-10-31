@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trivia Night · Prueba técnica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lobster&family=Anton&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s);"></script>
+<style>
+:root{
+  --gold:#f7c948; --gold-deep:#d99a1e; --bulb:#fff4c2;
+  --red-1:#5a0606; --red-2:#8e0f0f; --red-3:#b81c1c;
+  --ink:#fff8e7; --muted:#e9c9a6; --ok:#5bd68a; --bad:#ff6b5b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:Montserrat,system-ui,sans-serif;color:var(--ink);
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(255,200,120,.18), transparent 60%),
+    repeating-linear-gradient(90deg, var(--red-1) 0 18px, var(--red-2) 18px 34px, var(--red-3) 34px 42px, var(--red-2) 42px 58px, var(--red-1) 58px 72px);
+  background-color:var(--red-1);
+  overflow-x:hidden;
+}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.6) 100%)}
+.view{min-height:100vh;position:relative;z-index:1}
+[hidden]{display:none!important}
+button{font:inherit;cursor:pointer}
+
+/* ---------- Marquesina ---------- */
+.marquee{position:relative;padding:28px 44px;border-radius:22px;background:rgba(60,0,0,.55);
+  border:5px solid var(--gold);box-shadow:0 0 28px rgba(255,190,60,.7), inset 0 0 26px rgba(255,190,60,.35)}
+.marquee .bulb{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,#fff 0 22%,#ffe07a 50%,#e09a10 100%);box-shadow:0 0 8px 2px rgba(255,204,51,.85);animation:blink .9s steps(1) infinite}
+.marquee .bulb.alt{animation-delay:.45s}
+@keyframes blink{50%{opacity:.3;box-shadow:none}}
+.script{font-family:Lobster,cursive;color:var(--gold);
+  text-shadow:0 0 2px #fff6, 3px 3px 0 var(--gold-deep), 0 0 24px rgba(255,190,60,.8);-webkit-text-stroke:1px #7a3b00}
+.block{font-family:Anton,Impact,sans-serif;letter-spacing:.04em}
+
+/* ---------- Inicio ---------- */
+#inicio{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:40px 20px;text-align:center}
+#inicio .script{font-size:clamp(48px,10vw,96px);margin:0;line-height:1}
+#inicio .sub{font-weight:800;letter-spacing:.3em;font-size:13px;color:var(--muted);text-transform:uppercase}
+.big-choices{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
+.big-choices a{display:block;min-width:240px;padding:22px 26px;border-radius:16px;text-decoration:none;color:#3a1600;
+  background:linear-gradient(180deg,#ffe28a,var(--gold) 55%,var(--gold-deep));font-weight:800;font-size:18px;box-shadow:0 6px 0 #8a5200,0 10px 30px rgba(0,0,0,.4)}
+.big-choices a small{display:block;font-weight:600;font-size:13px;margin-top:6px;opacity:.8}
+
+/* ---------- Pantalla (tele) ---------- */
+#pantalla{display:flex;align-items:center;justify-content:center;overflow:hidden}
+.stage{width:min(1200px,92vw);text-align:center;position:relative;z-index:2}
+.logo .script{font-size:clamp(70px,11vw,150px);margin:0;line-height:.95}
+.logo .edition{font-weight:800;letter-spacing:.35em;text-transform:uppercase;font-size:clamp(12px,1.4vw,20px);margin-bottom:10px}
+.code-box{margin-top:46px;font-size:clamp(14px,1.4vw,20px);color:var(--muted)}
+.code-box b{display:block;font-family:Anton,sans-serif;font-size:clamp(46px,6vw,84px);letter-spacing:.25em;color:var(--ink);margin-top:6px}
+.q-num{font-family:Anton,sans-serif;font-size:clamp(90px,13vw,190px);line-height:1;color:var(--gold);
+  text-shadow:0 0 6px #fff8,0 0 30px rgba(255,190,60,.9),4px 4px 0 var(--gold-deep)}
+.q-text{font-weight:800;font-size:clamp(28px,3.6vw,56px);line-height:1.2;margin:18px auto 0;max-width:1000px;text-shadow:0 3px 12px rgba(0,0,0,.6)}
+.hint{margin-top:30px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-size:clamp(14px,1.6vw,24px);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.ticket{display:inline-block;margin-top:36px;padding:22px 80px;border-radius:14px;color:#7a1a00;
+  background:linear-gradient(180deg,#ffe9a3,#f2c14e 60%,#d9a032);font-family:Anton,sans-serif;font-size:clamp(56px,7vw,110px);
+  box-shadow:0 0 0 6px #f7d77c inset,0 0 0 9px #b07a1c inset,0 18px 50px rgba(0,0,0,.5);
+  transform:rotateX(90deg);transition:transform .7s cubic-bezier(.2,1.6,.4,1)}
+.ticket.show{transform:none}
+.spot{position:fixed;top:-10vh;width:46vw;height:130vh;pointer-events:none;z-index:1;opacity:0;transition:opacity .8s;
+  background:conic-gradient(from 168deg at 50% 0%, transparent 0deg, rgba(255,240,200,.28) 10deg, rgba(255,240,200,.28) 14deg, transparent 24deg);mix-blend-mode:screen}
+.spot.l{left:-8vw;transform-origin:50% 0;animation:sweepL 4s ease-in-out infinite alternate}
+.spot.r{right:-8vw;transform-origin:50% 0;animation:sweepR 4.6s ease-in-out infinite alternate}
+@keyframes sweepL{from{transform:rotate(-22deg)}to{transform:rotate(14deg)}}
+@keyframes sweepR{from{transform:rotate(20deg)}to{transform:rotate(-14deg)}}
+body.tension .spot{opacity:1}
+body.suspense .stage{animation:heartbeat 1.1s ease-in-out infinite}
+@keyframes heartbeat{0%,100%{transform:scale(1)}12%{transform:scale(1.015)}24%{transform:scale(1)}36%{transform:scale(1.01)}}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:3}
+.status-chip{position:fixed;left:14px;bottom:12px;z-index:5;font-size:12px;color:var(--muted);background:rgba(0,0,0,.45);padding:6px 10px;border-radius:20px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)}
+.yt-wrap{position:fixed;right:14px;bottom:12px;z-index:5;width:240px;border-radius:10px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5);background:#000}
+.yt-wrap .yt-label{font-size:11px;padding:4px 8px;background:rgba(0,0,0,.8);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yt-wrap iframe{display:block;width:240px;height:135px}
+#unlock{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(20,0,0,.82);text-align:center;padding:20px}
+#unlock .script{font-size:clamp(40px,6vw,80px)}
+#unlock p{max-width:560px;color:var(--muted);line-height:1.5}
+
+/* ---------- Control (celu) ---------- */
+#control{padding:16px 14px 40px;max-width:560px;margin:0 auto}
+#control h1{margin:4px 0 2px;font-size:34px}
+#control .lead{margin:0 0 14px;color:var(--muted);font-size:13px}
+.card{background:rgba(25,0,0,.62);border:1px solid rgba(247,201,72,.35);border-radius:16px;padding:14px;margin-bottom:14px;backdrop-filter:blur(2px)}
+.card h2{margin:0 0 10px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row+.row{margin-top:8px}
+input[type=text],input[type=password],select{font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid #a86b2b;background:#2a0505;color:var(--ink);min-width:0;flex:1}
+.btn{border:0;border-radius:12px;padding:11px 14px;font-weight:800;color:#3a1600;background:linear-gradient(180deg,#ffe28a,var(--gold) 60%,var(--gold-deep));box-shadow:0 3px 0 #8a5200}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #8a5200}
+.btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold);box-shadow:none}
+.btn.small{padding:7px 10px;font-size:13px}
+.cues{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cue{border:0;border-radius:16px;padding:18px 10px;font-weight:800;font-size:17px;color:var(--ink);box-shadow:0 4px 0 rgba(0,0,0,.4);text-align:center;line-height:1.2}
+.cue small{display:block;font-weight:600;font-size:11px;opacity:.85;margin-top:5px}
+.cue:active{transform:translateY(2px)}
+.cue.q{background:linear-gradient(180deg,#c0392b,#7d1a12)}
+.cue.s{background:linear-gradient(180deg,#6b2bb3,#3b1468)}
+.cue.r{background:linear-gradient(180deg,#e0a21b,#a8670b);color:#2a1200}
+.cue.x{background:linear-gradient(180deg,#555,#2b2b2b)}
+.cue.active{outline:3px solid var(--bulb);outline-offset:2px}
+.muted{color:var(--muted);font-size:12px;line-height:1.45}
+.scene-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.scene-list .row{justify-content:space-between;background:rgba(0,0,0,.25);padding:6px 8px;border-radius:10px}
+.map-row{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;margin-top:6px}
+.map-row label{font-weight:700;font-size:13px}
+#log{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1.5;max-height:240px;overflow:auto;background:rgba(0,0,0,.45);border-radius:10px;padding:8px 10px;white-space:pre-wrap}
+#log .e{color:#ff9b8f} #log .o{color:#9ff0b9}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px}
+details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
+#yt-local-wrap{margin-top:10px}
+#yt-local-wrap iframe{width:100%;height:160px;border-radius:10px}
+</style>
+</head>
+<body>
+
+<!-- ================= INICIO ================= -->
+<section id="inicio" class="view" hidden>
+  <div class="marquee">
+    <div class="sub">Edición Bioingeniería · 2026</div>
+    <h1 class="script">Trivia Night</h1>
+    <div class="sub">Prueba técnica</div>
+  </div>
+  <div class="big-choices">
+    <a href="?modo=pantalla">📺 Esta es la pantalla<small>Abrila en la tele o en la notebook</small></a>
+    <a href="?modo=control">📱 Este es el control<small>Abrilo en tu celu</small></a>
+  </div>
+  <p class="muted" style="max-width:520px">Abrí la misma dirección en los dos dispositivos y elegí el rol de cada uno. La pantalla muestra un código: lo escribís en el control y quedan vinculados.</p>
+</section>
+
+<!-- ================= PANTALLA ================= -->
+<section id="pantalla" class="view" hidden>
+  <div class="spot l"></div><div class="spot r"></div>
+  <canvas id="confetti"></canvas>
+
+  <div class="stage">
+    <div id="scr-idle" class="logo">
+      <div class="marquee" style="display:inline-block">
+        <div class="edition">Edición Bioingeniería</div>
+        <h1 class="script">Trivia Night</h1>
+      </div>
+      <div class="code-box">Código para el control<b id="scr-code">----</b></div>
+    </div>
+
+    <div id="scr-q" hidden>
+      <div class="q-num" id="q-num">14</div>
+      <div class="q-text" id="q-text">¿Cuántos incidentes fueron realizados a Bioingeniería en el año 2025?</div>
+      <div class="hint" id="q-hint" hidden>✍️ Escriban en sus pizarras</div>
+      <div><div class="ticket" id="q-ticket">2114</div></div>
+    </div>
+  </div>
+
+  <div class="status-chip"><span class="dot" id="scr-dot"></span><span id="scr-status">Conectando…</span></div>
+  <div class="yt-wrap"><div class="yt-label" id="scr-yt-label">Música: —</div><div id="yt-screen"></div></div>
+
+  <div id="unlock">
+    <div class="script">Trivia Night</div>
+    <button class="btn" id="unlock-btn" style="font-size:20px;padding:16px 28px">Tocá para activar la pantalla</button>
+    <p>El navegador no deja reproducir sonido hasta que alguien toca la página una vez. Este toque también pone pantalla completa y evita que se apague.</p>
+  </div>
+</section>
+
+<!-- ================= CONTROL ================= -->
+<section id="control" class="view" hidden>
+  <h1 class="script">Trivia Night</h1>
+  <p class="lead">Control del presentador · prueba de música, luces y vínculo con la tele</p>
+
+  <div class="card">
+    <h2>1 · Vincular con la pantalla</h2>
+    <div class="row">
+      <input type="text" id="ctl-code" inputmode="numeric" maxlength="4" placeholder="Código de 4 dígitos">
+      <button class="btn" id="ctl-link">Vincular</button>
+    </div>
+    <div class="row" style="margin-top:10px"><span class="dot" id="ctl-dot"></span><span id="ctl-status" class="muted">Sin vincular</span></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Momentos del juego</h2>
+    <div class="cues">
+      <button class="cue q" data-cue="pregunta">❓ Pregunta<small>Música de preguntas · luces tensión</small></button>
+      <button class="cue s" data-cue="suspenso">⏳ Pizarras<small>Música de tensión</small></button>
+      <button class="cue r" data-cue="revelar">🎉 Revelar<small>Respuesta · festejo · datos curiosos</small></button>
+      <button class="cue x" data-cue="stop">⏹ Pausa<small>Corta música · luces normales</small></button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="toggle"><input type="checkbox" id="ctl-localmusic"> Reproducir la música en este celu (prueba sin tele)</label>
+    </div>
+    <div id="yt-local-wrap" hidden><div id="yt-local"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Luces (SmartThings)</h2>
+    <div class="row">
+      <input type="password" id="st-token" placeholder="Token personal de SmartThings" autocomplete="off">
+      <button class="btn" id="st-load">Cargar escenas</button>
+    </div>
+    <p class="muted" style="margin:8px 0 0">El token queda guardado solo en este celu. Generalo en account.smartthings.com/tokens con permiso para <b>ver y ejecutar escenas</b>.</p>
+    <div id="st-map" hidden>
+      <div class="map-row"><label>Tensión</label><select data-role="tension"></select></div>
+      <div class="map-row"><label>Festejo</label><select data-role="festejo"></select></div>
+      <div class="map-row"><label>Normal</label><select data-role="normal"></select></div>
+      <div class="row" style="margin-top:10px">
+        <label class="muted" for="st-fest-ms">Festejo dura</label>
+        <select id="st-fest-ms" style="flex:0 0 auto">
+          <option value="4000">4 s</option><option value="6000" selected>6 s</option><option value="10000">10 s</option><option value="0">hasta el próximo momento</option>
+        </select>
+        <span class="muted">y vuelve a Normal</span>
+      </div>
+    </div>
+    <details style="margin-top:10px"><summary>Todas las escenas (probar una por una)</summary><div class="scene-list" id="st-list"></div></details>
+  </div>
+
+  <div class="card">
+    <h2>Registro</h2>
+    <div id="log"></div>
+    <div class="row" style="margin-top:8px"><button class="btn ghost small" id="log-copy">Copiar registro</button><span class="muted" id="copy-ok"></span></div>
+  </div>
+</section>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= Configuración ================= */
+const TRACKS = {
+  pregunta: { id: '7suM-GShRqw', name: 'Quiz Time (Tech Version)', start: 0 },
+  suspenso: { id: 'xznaPaJLwDw', name: 'No Time for Thoughts',     start: 0 },
+  revelar:  { id: 'aBE9EQ7gXKI', name: 'Spanish Flea',             start: 0 },
+};
+const VOLUME = 85;
+const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
+const ST_API = 'https://api.smartthings.com/v1';
+
+/* ================= Utilidades ================= */
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d = null) { try { const v = localStorage.getItem('bt_' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('bt_' + k, JSON.stringify(v)); } catch {} },
+};
+const uid = () => Math.random().toString(36).slice(2, 10);
+const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const hhmmss = () => new Date().toLocaleTimeString('es-AR', { hour12: false });
+
+let logEl = null;
+function log(msg, kind = '') {
+  console.log('[trivia]', msg);
+  if (!logEl) return;
+  const line = document.createElement('div');
+  if (kind) line.className = kind;
+  line.textContent = `${hhmmss()}  ${msg}`;
+  logEl.prepend(line);
+}
+
+function bulbify() {
+  document.querySelectorAll('.marquee').forEach(el => {
+    if (el.offsetParent === null) return;
+    el.querySelectorAll('.bulb').forEach(b => b.remove());
+    const d = 10, bw = 5, gap = 24;
+    const w = el.offsetWidth + d * 2, h = el.offsetHeight + d * 2;
+    const nx = Math.max(2, Math.round(w / gap)), ny = Math.max(2, Math.round(h / gap));
+    const pts = [];
+    for (let i = 0; i < nx; i++) pts.push([i * w / nx, 0]);
+    for (let i = 0; i < ny; i++) pts.push([w, i * h / ny]);
+    for (let i = 0; i < nx; i++) pts.push([w - i * w / nx, h]);
+    for (let i = 0; i < ny; i++) pts.push([0, h - i * h / ny]);
+    const frag = document.createDocumentFragment();
+    pts.forEach(([x, y], i) => {
+      const b = document.createElement('span');
+      b.className = 'bulb' + (i % 2 ? ' alt' : '');
+      b.style.left = (x - bw - d) + 'px';
+      b.style.top = (y - bw - d) + 'px';
+      frag.append(b);
+    });
+    el.append(frag);
+  });
+}
+let bulbT = null;
+addEventListener('resize', () => { clearTimeout(bulbT); bulbT = setTimeout(bulbify, 150); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(bulbify);
+
+async function keepAwake() {
+  try { if ('wakeLock' in navigator) { await navigator.wakeLock.request('screen'); } } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAwake(); });
+
+/* ================= Vínculo (MQTT público + BroadcastChannel) ================= */
+function createLink(code, role, onMessage, onStatus) {
+  const topic = `biotrivia/v1/${code}`;
+  const seen = new Set();
+  let client = null, gen = 0, idx = 0, stopped = false;
+  let bc = null;
+  try { bc = new BroadcastChannel('biotrivia-' + code); } catch {}
+
+  function handle(msg) {
+    if (!msg || msg.from === role || seen.has(msg.id)) return;
+    seen.add(msg.id);
+    if (seen.size > 500) seen.clear();
+    onMessage(msg);
+  }
+  if (bc) bc.onmessage = e => handle(e.data);
+
+  function connect() {
+    if (stopped) return;
+    if (typeof window.mqtt === 'undefined') {
+      onStatus('down', 'Cargando librería de conexión…');
+      setTimeout(connect, 1000);
+      return;
+    }
+    const my = ++gen;
+    const url = BROKERS[idx % BROKERS.length];
+    idx++;
+    try { client && client.end(true); } catch {}
+    onStatus('down', 'Conectando…');
+    const c = window.mqtt.connect(url, {
+      clientId: 'bt_' + role + '_' + uid(), clean: true, reconnectPeriod: 0, connectTimeout: 7000, keepalive: 20,
+    });
+    client = c;
+    c.on('connect', () => {
+      if (my !== gen) return;
+      c.subscribe(topic, { qos: 0 });
+      onStatus('ok', 'Conectado (' + new URL(url).hostname + ')');
+    });
+    c.on('message', (_t, payload) => {
+      if (my !== gen) return;
+      try { handle(JSON.parse(payload.toString())); } catch {}
+    });
+    c.on('error', () => {});
+    c.on('close', () => {
+      if (my !== gen || stopped) return;
+      onStatus('down', 'Reconectando…');
+      setTimeout(connect, 1500);
+    });
+  }
+  connect();
+
+  return {
+    send(obj) {
+      const msg = { id: uid(), from: role, t: Date.now(), ...obj };
+      seen.add(msg.id);
+      try { bc && bc.postMessage(msg); } catch {}
+      try { if (client && client.connected) client.publish(topic, JSON.stringify(msg), { qos: 0 }); } catch {}
+      return msg;
+    },
+    stop() { stopped = true; try { client && client.end(true); } catch {} try { bc && bc.close(); } catch {} },
+  };
+}
+
+/* ================= Música (YouTube IFrame API) ================= */
+let ytApiPromise = null;
+function loadYouTubeApi() {
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((resolve, reject) => {
+    if (window.YT && window.YT.Player) return resolve(window.YT);
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { prev && prev(); resolve(window.YT); };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.onerror = () => reject(new Error('No se pudo cargar YouTube'));
+    document.head.appendChild(s);
+  });
+  return ytApiPromise;
+}
+
+const YT_ERRORS = {
+  2: 'ID de video inválido',
+  5: 'el navegador no puede reproducir este video',
+  100: 'el video no existe o es privado',
+  101: 'el dueño no permite reproducirlo fuera de YouTube',
+  150: 'el dueño no permite reproducirlo fuera de YouTube',
+  153: 'YouTube rechazó la página (falta referencia de origen: hay que abrirla desde una dirección https, no como archivo)',
+};
+
+function createMusic(containerId, onLabel) {
+  let player = null, ready = false, current = null, fadeTimer = null;
+
+  loadYouTubeApi().then(YT => {
+    player = new YT.Player(containerId, {
+      width: 240, height: 135,
+      playerVars: { playsinline: 1, controls: 0, rel: 0, disablekb: 1, fs: 0, iv_load_policy: 3 },
+      events: {
+        onReady: () => { ready = true; log('Reproductor de YouTube listo', 'o'); },
+        onError: e => {
+          const t = current ? TRACKS[current].name : '?';
+          log(`YouTube no reproduce «${t}»: ${YT_ERRORS[e.data] || 'error ' + e.data}`, 'e');
+          onLabel && onLabel(`⚠️ ${t}: no se puede reproducir`);
+        },
+        onStateChange: e => {
+          if (e.data === YT.PlayerState.ENDED && current) {
+            player.seekTo(TRACKS[current].start || 0, true);
+            player.playVideo();
+          }
+          if (e.data === YT.PlayerState.PLAYING && current) {
+            onLabel && onLabel('♪ ' + TRACKS[current].name);
+          }
+        },
+      },
+    });
+  }).catch(err => log(err.message, 'e'));
+
+  function fadeTo(target, ms) {
+    return new Promise(resolve => {
+      clearInterval(fadeTimer);
+      if (!ready) return resolve();
+      const from = player.getVolume();
+      const t0 = performance.now();
+      fadeTimer = setInterval(() => {
+        const k = Math.min(1, (performance.now() - t0) / ms);
+        try { player.setVolume(Math.round(from + (target - from) * k)); } catch {}
+        if (k >= 1) { clearInterval(fadeTimer); resolve(); }
+      }, 40);
+    });
+  }
+
+  async function play(key) {
+    if (!ready) { log('El reproductor todavía no está listo', 'e'); return; }
+    const tr = TRACKS[key];
+    if (!tr) return;
+    if (current === key && player.getPlayerState() === 1) return;
+    if (player.getPlayerState() === 1) await fadeTo(0, 600);
+    current = key;
+    player.setVolume(0);
+    player.loadVideoById({ videoId: tr.id, startSeconds: tr.start || 0 });
+    onLabel && onLabel('Cargando: ' + tr.name);
+    await fadeTo(VOLUME, 900);
+  }
+
+  async function stop() {
+    if (!ready) return;
+    await fadeTo(0, 900);
+    try { player.pauseVideo(); } catch {}
+    current = null;
+    onLabel && onLabel('Música: en pausa');
+  }
+
+  function warmUp() {
+    // Toque inicial: habilita el audio del reproductor dentro del gesto del usuario.
+    if (!ready) return;
+    try { player.mute(); player.playVideo(); player.pauseVideo(); player.unMute(); } catch {}
+  }
+
+  return { play, stop, warmUp, isReady: () => ready };
+}
+
+function musicForCue(music, cue) {
+  if (cue === 'stop') return music.stop();
+  return music.play(cue);
+}
+
+/* ================= Router ================= */
+const modo = new URLSearchParams(location.search).get('modo');
+if (modo === 'pantalla') initScreen();
+else if (modo === 'control') initControl();
+else $('#inicio').hidden = false;
+requestAnimationFrame(bulbify);
+
+/* ================= PANTALLA ================= */
+function initScreen() {
+  $('#pantalla').hidden = false;
+  document.title = 'Trivia Night · Pantalla';
+
+  let code = store.get('screen_code');
+  if (!/^\d{4}$/.test(code || '')) { code = String(Math.floor(1000 + Math.random() * 9000)); store.set('screen_code', code); }
+  $('#scr-code').textContent = code;
+
+  const music = createMusic('yt-screen', t => { $('#scr-yt-label').textContent = t; });
+
+  const link = createLink(code, 'screen', msg => {
+    if (msg.type === 'cue') {
+      applyCue(msg.cue);
+      link.send({ type: 'ack', ack: msg.id, cue: msg.cue });
+    } else if (msg.type === 'ping') {
+      link.send({ type: 'hello' });
+    }
+  }, (st, text) => {
+    $('#scr-dot').className = 'dot ' + (st === 'ok' ? 'ok' : 'bad');
+    $('#scr-status').textContent = `${text} · código ${code}`;
+  });
+  setInterval(() => link.send({ type: 'hello' }), 3000);
+
+  $('#unlock-btn').addEventListener('click', async () => {
+    $('#unlock').hidden = true;
+    try { await document.documentElement.requestFullscreen(); } catch {}
+    keepAwake();
+    music.warmUp();
+  });
+
+  function applyCue(cue) {
+    const b = document.body;
+    b.classList.remove('tension', 'suspense');
+    const ticket = $('#q-ticket');
+    if (cue === 'pregunta') {
+      $('#scr-idle').hidden = true; $('#scr-q').hidden = false;
+      $('#q-hint').hidden = true; ticket.classList.remove('show');
+      b.classList.add('tension');
+    } else if (cue === 'suspenso') {
+      $('#scr-idle').hidden = true; $('#scr-q').hidden = false;
+      $('#q-hint').hidden = false; ticket.classList.remove('show');
+      b.classList.add('tension', 'suspense');
+    } else if (cue === 'revelar') {
+      $('#scr-idle').hidden = true; $('#scr-q').hidden = false;
+      $('#q-hint').hidden = true;
+      requestAnimationFrame(() => ticket.classList.add('show'));
+      confetti();
+    } else if (cue === 'stop') {
+      $('#scr-q').hidden = true; $('#scr-idle').hidden = false;
+      ticket.classList.remove('show');
+      requestAnimationFrame(bulbify);
+    }
+    musicForCue(music, cue);
+  }
+}
+
+/* Confeti simple */
+function confetti() {
+  const cv = $('#confetti');
+  const ctx = cv.getContext('2d');
+  const W = cv.width = innerWidth, H = cv.height = innerHeight;
+  const colors = ['#f7c948', '#fff4c2', '#e63946', '#ffffff', '#ff9f1c'];
+  const parts = Array.from({ length: 180 }, () => ({
+    x: W / 2 + (Math.random() - .5) * W * .3, y: H * .55,
+    vx: (Math.random() - .5) * 18, vy: -Math.random() * 20 - 8,
+    s: 6 + Math.random() * 8, r: Math.random() * 6, vr: (Math.random() - .5) * .4,
+    c: colors[(Math.random() * colors.length) | 0],
+  }));
+  const t0 = performance.now();
+  (function frame(now) {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of parts) {
+      p.vy += .45; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c;
+      ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore();
+    }
+    if (now - t0 < 4500) requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H);
+  })(t0);
+}
+
+/* ================= CONTROL ================= */
+function initControl() {
+  $('#control').hidden = false;
+  document.title = 'Trivia Night · Control';
+  logEl = $('#log');
+  log('Control abierto');
+  keepAwake();
+
+  /* --- Vínculo --- */
+  let link = null, lastHello = 0;
+  const pending = new Map();
+  const codeInput = $('#ctl-code');
+  codeInput.value = store.get('ctl_code', '');
+
+  function setLinkStatus(st, text) {
+    $('#ctl-dot').className = 'dot ' + (st === 'ok' ? 'ok' : 'bad');
+    $('#ctl-status').textContent = text;
+  }
+  function doLink() {
+    const code = codeInput.value.trim();
+    if (!/^\d{4}$/.test(code)) { setLinkStatus('bad', 'El código son 4 dígitos'); return; }
+    store.set('ctl_code', code);
+    link && link.stop();
+    lastHello = 0;
+    link = createLink(code, 'control', msg => {
+      if (msg.type === 'hello') { lastHello = Date.now(); }
+      if (msg.type === 'ack' && pending.has(msg.ack)) {
+        const p = pending.get(msg.ack); pending.delete(msg.ack);
+        lastHello = Date.now();
+        log(`Pantalla recibió «${p.cue}» en ${Date.now() - p.t} ms`, 'o');
+      }
+    }, (st, text) => {
+      setLinkStatus(st, text + (st === 'ok' ? ' · esperando la pantalla…' : ''));
+      if (st === 'ok') link && link.send({ type: 'ping' });
+    });
+    log('Vinculando con código ' + code);
+  }
+  $('#ctl-link').addEventListener('click', doLink);
+  if (codeInput.value) doLink();
+
+  setInterval(() => {
+    if (!link) return;
+    const ago = Date.now() - lastHello;
+    if (lastHello && ago < 8000) setLinkStatus('ok', 'Pantalla conectada ✓');
+    else if (lastHello) setLinkStatus('bad', `Sin noticias de la pantalla hace ${Math.round(ago / 1000)} s`);
+  }, 1000);
+
+  /* --- Música local opcional --- */
+  let localMusic = null;
+  const localToggle = $('#ctl-localmusic');
+  localToggle.addEventListener('change', () => {
+    $('#yt-local-wrap').hidden = !localToggle.checked;
+    if (localToggle.checked && !localMusic) localMusic = createMusic('yt-local', t => log(t));
+    if (!localToggle.checked && localMusic) localMusic.stop();
+  });
+
+  /* --- SmartThings --- */
+  const tokenInput = $('#st-token');
+  tokenInput.value = store.get('st_token', '');
+  let scenes = [];
+  let mapping = store.get('st_map', {});
+  let lastScene = null, festejoTimer = null;
+
+  async function stFetch(path, opts = {}) {
+    const tok = tokenInput.value.trim();
+    if (!tok) throw new Error('Falta el token');
+    let r;
+    try {
+      r = await fetch(ST_API + path, { ...opts, headers: { Authorization: 'Bearer ' + tok } });
+    } catch {
+      throw new Error('El navegador no pudo hablar con SmartThings (bloqueo CORS o sin internet)');
+    }
+    if (!r.ok) {
+      const why = r.status === 401 ? ' — token vencido o inválido' : r.status === 403 ? ' — al token le falta permiso para escenas' : r.status === 429 ? ' — demasiadas llamadas seguidas' : '';
+      throw new Error('SmartThings respondió ' + r.status + why);
+    }
+    try { return await r.json(); } catch { return null; }
+  }
+
+  async function loadScenes() {
+    store.set('st_token', tokenInput.value.trim());
+    try {
+      const d = await stFetch('/scenes?max=200');
+      scenes = (d && d.items) || [];
+      log(`SmartThings: ${scenes.length} escenas encontradas`, scenes.length ? 'o' : 'e');
+      renderScenes();
+    } catch (e) { log(e.message, 'e'); }
+  }
+  $('#st-load').addEventListener('click', loadScenes);
+
+  function renderScenes() {
+    const list = $('#st-list');
+    list.innerHTML = '';
+    scenes.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const name = document.createElement('span');
+      name.textContent = s.sceneName || s.sceneId;
+      const b = document.createElement('button');
+      b.className = 'btn small'; b.textContent = 'Probar';
+      b.onclick = () => runScene(s.sceneId, s.sceneName);
+      row.append(name, b);
+      list.append(row);
+    });
+    const guesses = { tension: ['tension'], festejo: ['festejo', 'fiesta', 'party'], normal: ['normal', 'base', 'ambiente'] };
+    document.querySelectorAll('#st-map select').forEach(sel => {
+      const role = sel.dataset.role;
+      sel.innerHTML = '<option value="">— ninguna —</option>' + scenes.map(s => `<option value="${s.sceneId}">${(s.sceneName || s.sceneId).replace(/</g, '&lt;')}</option>`).join('');
+      let val = mapping[role];
+      if (!scenes.some(s => s.sceneId === val)) {
+        const hit = scenes.find(s => guesses[role].some(g => norm(s.sceneName).includes(g)));
+        val = hit ? hit.sceneId : '';
+      }
+      sel.value = val || '';
+      mapping[role] = sel.value;
+      sel.onchange = () => { mapping[role] = sel.value; store.set('st_map', mapping); };
+    });
+    store.set('st_map', mapping);
+    $('#st-map').hidden = scenes.length === 0;
+  }
+
+  async function runScene(id, label) {
+    if (!id) return;
+    const t0 = performance.now();
+    try {
+      await stFetch(`/scenes/${id}/execute`, { method: 'POST' });
+      lastScene = id;
+      log(`Luces «${label}»: OK en ${Math.round(performance.now() - t0)} ms`, 'o');
+    } catch (e) { log(`Luces «${label}»: ${e.message}`, 'e'); }
+  }
+  function sceneName(id) { const s = scenes.find(x => x.sceneId === id); return s ? s.sceneName : id; }
+  function lights(role) {
+    const id = mapping[role];
+    if (!id || !tokenInput.value.trim() || id === lastScene) return;
+    runScene(id, sceneName(id));
+  }
+
+  function lightsForCue(cue) {
+    clearTimeout(festejoTimer);
+    if (cue === 'pregunta' || cue === 'suspenso') lights('tension');
+    else if (cue === 'revelar') {
+      lights('festejo');
+      const ms = +$('#st-fest-ms').value;
+      if (ms > 0) festejoTimer = setTimeout(() => lights('normal'), ms);
+    } else if (cue === 'stop') lights('normal');
+  }
+
+  /* --- Botones de momentos --- */
+  document.querySelectorAll('.cue').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cue = btn.dataset.cue;
+      document.querySelectorAll('.cue').forEach(b => b.classList.toggle('active', b === btn && cue !== 'stop'));
+      log('▶ ' + btn.firstChild.textContent.trim());
+      if (link) { const m = link.send({ type: 'cue', cue }); pending.set(m.id, { cue, t: Date.now() }); }
+      if (localMusic) musicForCue(localMusic, cue);
+      lightsForCue(cue);
+    });
+  });
+
+  /* --- Copiar registro --- */
+  $('#log-copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(logEl.innerText); $('#copy-ok').textContent = 'Copiado'; }
+    catch { $('#copy-ok').textContent = 'No se pudo copiar'; }
+    setTimeout(() => $('#copy-ok').textContent = '', 2000);
+  });
+}
+})();
+</script>
+</body>
+</html>
