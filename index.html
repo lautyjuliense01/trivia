@@ -143,19 +143,19 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
 .edition{font-weight:800;letter-spacing:.35em;text-transform:uppercase;font-size:clamp(12px,1.4vw,20px);margin-bottom:10px}
 
 /* Intro */
-.intro-black{position:fixed;inset:0;background:#000;z-index:6;animation:fadeOut 1.2s 3.4s forwards}
+.intro-black{position:fixed;inset:0;background:#000;z-index:6;animation:fadeOut 1.4s var(--tNegro,3.4s) forwards}
 .intro-pre{position:fixed;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
   color:#e9c9a6;letter-spacing:.4em;text-transform:uppercase;font-size:clamp(12px,1.5vw,20px);font-weight:600;opacity:0;animation:fadeInOut 3s .5s forwards}
 .intro-pre b{font-family:Anton,sans-serif;font-weight:400;letter-spacing:.12em;color:var(--gold);font-size:clamp(34px,5vw,72px)}
 .intro-curtain{position:fixed;top:0;bottom:0;width:51vw;z-index:5;
   background:repeating-linear-gradient(90deg,#4a0303 0 16px,#8e0f0f 16px 34px,#c42222 34px 40px,#8e0f0f 40px 58px,#4a0303 58px 70px);
   box-shadow:inset 0 -60px 80px rgba(0,0,0,.5)}
-.intro-curtain.l{left:0;animation:curtL 2.6s 4.4s cubic-bezier(.7,0,.3,1) forwards;box-shadow:inset -30px 0 40px rgba(0,0,0,.6)}
-.intro-curtain.r{right:0;animation:curtR 2.6s 4.4s cubic-bezier(.7,0,.3,1) forwards;box-shadow:inset 30px 0 40px rgba(0,0,0,.6)}
+.intro-curtain.l{left:0;animation:curtL 2.6s var(--tTelon,4.4s) cubic-bezier(.7,0,.3,1) forwards;box-shadow:inset -30px 0 40px rgba(0,0,0,.6)}
+.intro-curtain.r{right:0;animation:curtR 2.6s var(--tTelon,4.4s) cubic-bezier(.7,0,.3,1) forwards;box-shadow:inset 30px 0 40px rgba(0,0,0,.6)}
 @keyframes curtL{to{transform:translateX(-102%)}} @keyframes curtR{to{transform:translateX(102%)}}
-.intro-title{opacity:0;transform:scale(.55);animation:titleIn 1.3s 5.8s cubic-bezier(.2,1.5,.4,1) forwards}
+.intro-title{opacity:0;transform:scale(.55);animation:titleIn 1.3s var(--tTitulo,5.8s) cubic-bezier(.2,1.5,.4,1) forwards}
 .intro-title .script{font-size:clamp(80px,13vw,180px);margin:0;line-height:.95}
-.intro-year{font-family:Anton,sans-serif;font-size:clamp(40px,6vw,90px);color:var(--ink);letter-spacing:.3em;margin-top:28px;opacity:0;animation:fadeIn 1s 7.4s forwards;text-shadow:0 0 20px rgba(255,200,120,.6)}
+.intro-year{font-family:Anton,sans-serif;font-size:clamp(40px,6vw,90px);color:var(--ink);letter-spacing:.3em;margin-top:28px;opacity:0;animation:fadeIn 1s var(--tAnio,7.4s) forwards;text-shadow:0 0 20px rgba(255,200,120,.6)}
 @keyframes titleIn{to{opacity:1;transform:none}}
 @keyframes fadeIn{to{opacity:1}} @keyframes fadeOut{to{opacity:0;visibility:hidden}}
 @keyframes fadeInOut{0%{opacity:0}20%,75%{opacity:1}100%{opacity:0}}
@@ -272,6 +272,8 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
 /* v6: presentación épica */
 body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25%, rgba(0,0,0,.82) 85%)}
 .flash{position:fixed;inset:0;background:#fff;z-index:9;pointer-events:none;animation:flash .55s ease-out forwards}
+.flash.duro{z-index:60;background:#f4f8ff;animation:flashDuro .32s linear forwards}
+@keyframes flashDuro{0%,22%{opacity:1}100%{opacity:0}}
 @keyframes flash{0%{opacity:.95}100%{opacity:0}}
 .v-pres{display:flex;flex-direction:column;align-items:center;min-height:86vh;justify-content:space-between}
 .pres-head{font-weight:800;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);font-size:clamp(13px,1.5vw,22px);animation:fadeIn .6s both}
@@ -388,6 +390,23 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 /* v20: fotos unificadas */
 img.foto-duotono{filter:grayscale(1) sepia(.55) saturate(1.6) hue-rotate(-12deg) contrast(1.12) brightness(.95)}
 img.foto-byn{filter:grayscale(1) contrast(1.15)}
+
+/* v21: premios y cierre */
+.v-premios .script{font-size:clamp(56px,7vw,100px);margin:0}
+.pz-list{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;margin-top:26px}
+.pz{display:flex;flex-direction:column;align-items:center;gap:10px;font-weight:800;font-size:clamp(18px,2vw,28px);opacity:0;animation:chipIn .6s forwards}
+.pz .br-av{width:clamp(80px,9vw,130px);height:clamp(80px,9vw,130px)}
+.pz .br-av .ini{font-size:clamp(34px,4vw,56px)}
+.pz-n{font-family:Anton,sans-serif;font-size:clamp(28px,3vw,44px);color:var(--gold)}
+.pz-gift{font-size:clamp(50px,6vw,90px);margin-top:26px;animation:bob 1.8s ease-in-out infinite}
+.cierre{position:fixed;inset:0;z-index:6;background:#000;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 15%,#000 85%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 15%,#000 85%,transparent)}
+.roll{position:absolute;left:0;right:0;top:100%;text-align:center;animation-name:rollUp;animation-timing-function:linear;animation-fill-mode:forwards}
+@keyframes rollUp{to{transform:translateY(calc(-100% - 100vh))}}
+.roll-title{font-size:clamp(70px,9vw,140px);color:var(--gold)}
+.roll-b{margin:70px 0}
+.roll-t{font-size:clamp(14px,1.5vw,22px);letter-spacing:.45em;text-transform:uppercase;color:#a99a86;margin-bottom:14px}
+.roll-i{font-family:Anton,sans-serif;font-size:clamp(28px,3.2vw,48px);letter-spacing:.12em;text-transform:uppercase;color:#f4ead8;margin:6px 0}
+.roll-end{font-size:clamp(70px,9vw,130px);color:var(--gold);margin:120px 0 60vh}
 
 /* Control v5 */
 #control{padding-bottom:120px}
@@ -606,7 +625,7 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 <script>
 (() => {
 'use strict';
-const VERSION = 'v20 · 01/11 00:30';
+const VERSION = 'v21 · 01/11 01:30';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1044,7 +1063,7 @@ const fmtNum = n => (typeof n === 'number' ? n.toLocaleString('es-AR') : esc(n))
 const TIPO_LABEL = { opciones: 'Opción múltiple', quien: '¿Quién dijo?', aprox: 'Aproximación' };
 const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
-D.momentos = Object.assign({ previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
+D.momentos = Object.assign({ premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
 D.luces = Object.assign({ contendientes: 'festejo', cuenta: 'tension' }, D.luces || {});
 /* Lámparas Tuya: nombre → ID (tienen que estar también en TUYA_DEVICE del intermediario) */
 const LAMP_CFG = {};
@@ -1057,6 +1076,9 @@ function plainLook(L) {
   const { transicion, ...rest } = L;
   return rest;
 }
+/* Intro: el título aparece en este milisegundo de la fanfarria; lo demás se acomoda solo */
+const T_TITULO = (D.intro && D.intro.titulo) || 15000;
+const T_NEGRO = Math.max(1500, T_TITULO - 6000), T_TELON = Math.max(2000, T_TITULO - 3600), T_ANIO = T_TITULO + 1600;
 /* Apertura de cine */
 const CREDITS = D.creditos || [
   { estudio: 'Lautaro Entertainment', texto: 'presenta' },
@@ -1085,7 +1107,7 @@ const LOOKS = Object.assign({
   foco:      { tipo: 'blanco', brillo: 70, calidez: 25, respaldo: 'normal' },
   destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },
   estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },
-  flashUnico: { tipo: 'flashUnico', ms: 140, respaldo: 'festejo' },
+  flashUnico: { tipo: 'flashUnico', ms: 90, lamparas: ['techo'], respaldo: 'festejo' },
   calido:    { tipo: 'color', h: 32, s: 75, brillo: 26, transicion: 2, respaldo: 'normal' },
   fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
 }, D.looks || {});
@@ -1094,7 +1116,7 @@ const GUION = Object.assign({
   logo: 'sala',
   previa: 'ambiente',
   presentamos: [[0, 'oscuro'], [1700, 'escenario']],
-  intro: [[0, 'noche'], [6100, 'dorado'], [7300, 'destello'], [8700, 'dorado'], [10500, 'sala']],
+  intro: [[0, 'noche'], [T_TITULO + 300, 'dorado'], [T_TITULO + 1500, 'destello'], [T_TITULO + 2900, 'dorado'], [T_TITULO + 4700, 'calido']],
   presentacion: [[0, 'flash'], [650, 'escenario']],
   contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],
   presentador: [[0, 'oscuro'], [1600, 'foco']],
@@ -1105,6 +1127,7 @@ const GUION = Object.assign({
   redoble: 'oscuro', revelado: 'dorado', despues: 'calido',
   marcador: 'sala', cuenta: 'oscuro',
   ganadorRedoble: 'oscuro', ganador: 'fiesta',
+  premios: 'calido', cierre: 'ambiente',
 }, D.guion || {});
 
 const TRACKS = {};
@@ -1128,6 +1151,8 @@ function buildScript() {
   s.push({ k: 'cuenta', label: 'Cuenta final (del último al segundo)' });
   if (D.desempate) s.push({ k: 'desempate', id: 'desempate', label: 'Desempate (solo si hay empate)' });
   s.push({ k: 'ganador', label: 'Ganador' });
+  s.push({ k: 'premios', label: 'Entrega de premios' });
+  s.push({ k: 'cierre', label: 'Cierre: créditos finales' });
   return s;
 }
 const SCRIPT = buildScript();
@@ -1201,6 +1226,12 @@ function momentOf(st) {
 }
 function musicKeyOf(st) {
   const m = momentOf(st);
+  const sl0 = SCRIPT[st.slide] || {};
+  if (isQ(sl0) && ['pregunta', 'pizarras', 'tension'].includes(m) && !st.overlay) {
+    const q = qOf(sl0);
+    if (q.musica && TRACKS[q.musica]) return q.musica;                                  // música propia de esa pregunta
+    if (TRACKS.final && (sl0.k === 'desempate' || sl0.n === TOTAL_Q)) return 'final';  // la última pregunta y el desempate
+  }
   let k = (D.momentos || {})[m];
   if (k === undefined) k = null;
   if (k === 'ganador' && !TRACKS.ganador) k = 'datos';
@@ -1452,7 +1483,11 @@ function initScreen() {
         beams.setup('top4'); beams.clearPools();
         later(100, () => { const m = sq('.marquee'); beams.aimEls([m], { ms: 1600, spread: true }); beams.pools([m], true); });
         break;
-      case 'cine': case 'previa':
+      case 'premios':
+        beams.setup('top3'); beams.clearPools(); beams.level(.8);
+        later(400, () => beams.aimEls([sq('.marquee')], { ms: 1200, spread: true }));
+        break;
+      case 'cine': case 'previa': case 'cierre':
         beams.setup('top2'); beams.level(0); beams.clearPools(); break;
       case 'presentamos':
         beams.setup('top4'); beams.clearPools(); beams.level(1);
@@ -1461,8 +1496,8 @@ function initScreen() {
       case 'intro':
         beams.setup('fox'); beams.over(true); beams.clearPools(); beams.level(0);
         later(600, () => { beams.level(1); beams.play('fox'); });
-        later(5900, () => { const m = sq('.intro-title .marquee'); beams.aimEls([m], { ms: 1000, spread: true }); beams.pools([m], true); });
-        later(9500, () => beams.over(false));
+        later(T_TITULO + 100, () => { const m = sq('.intro-title .marquee'); beams.aimEls([m], { ms: 700, spread: true }); beams.pools([m], true); });
+        later(T_TITULO + 3700, () => beams.over(false));
         break;
       case 'presentacion':
         beams.setup('top3'); beams.clearPools(); beams.level(1);
@@ -1544,6 +1579,7 @@ function initScreen() {
 
   const link = createLink(code, 'screen', msg => {
     if (msg.type === 'luz') { applyTint(msg.L || LOOKS[msg.look], msg.ms); return; }
+    if (msg.type === 'flashDuro') { const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); return; }
     if (msg.type === 'state' && msg.state) {
       if (msg.state.rev !== curRev) { curRev = msg.state.rev; const pc = $('#previa-code'); if (pc) pc.hidden = true; render(msg.state); }
     }
@@ -1627,7 +1663,9 @@ function initScreen() {
            <div class="intro-curtain l"></div><div class="intro-curtain r"></div>
            <div class="v"><div class="intro-title"><div class="marquee" style="display:inline-block"><div class="edition">${ed}</div><h1 class="script">${esc(D.titulo)}</h1></div></div>
            <div class="intro-year">${yr}</div></div>`;
-      introTimer = setTimeout(() => { bulbify(); confetti(); }, 6600);
+      stage.style.setProperty('--tNegro', T_NEGRO + 'ms'); stage.style.setProperty('--tTelon', T_TELON + 'ms');
+      stage.style.setProperty('--tTitulo', T_TITULO + 'ms'); stage.style.setProperty('--tAnio', T_ANIO + 'ms');
+      introTimer = setTimeout(() => { bulbify(); confetti(); }, T_TITULO + 800);
     } else if (sl.k === 'presentacion') {
       const p = P[sl.p];
       const chips = [p.edad ? `${esc(p.edad)} años` : '', esc(p.rol), esc(p.antiguedad)].filter(Boolean).map(c => `<span>${c}</span>`).join('');
@@ -1675,6 +1713,29 @@ function initScreen() {
       h = `<div class="v v-score enter"><h2 class="script">${final ? 'Marcador final' : 'Marcador'}</h2>
            <div class="round-sub" style="margin-top:6px">${final ? '¿Quién se lleva la corona?' : 'Después de la ronda ' + (sl.r + 1)}</div>
            <div class="bars">${scoreRowsHTML(st.results || {})}</div></div>`;
+    } else if (sl.k === 'premios') {
+      const groups = rankGroups(st.results || {});
+      const s0 = standing(st.results || {});
+      const order = [...s0.top, ...groups.flatMap(g => g.players).filter(i => !s0.top.includes(i))];
+      h = `<div class="v v-premios enter"><div class="marquee" style="display:inline-block"><h2 class="script">Entrega de premios</h2></div>
+        <div class="round-sub" style="margin-top:22px">Eligen en este orden</div>
+        <div class="pz-list">${order.map((i, k) => `<div class="pz" style="animation-delay:${0.5 + k * 0.25}s"><span class="pz-n">${k + 1}</span><span class="br-av">${photoHTML(P[i])}</span><span>${esc(P[i].nombre)}</span></div>`).join('')}</div>
+        <div class="pz-gift">🎁</div></div>`;
+    } else if (sl.k === 'cierre') {
+      const music = [...new Set(Object.values(TRACKS).map(t => t.name).filter(n => !/definir/i.test(n)))];
+      const blocks = [
+        ['Una producción de', ['Lautaro Entertainment']],
+        ['Conducción', [D.presentador ? D.presentador.nombre : 'Lautaro']],
+        ['Con la actuación estelar de', P.map(p => p.nombre)],
+        ['Datos provistos por', ['GLPI y Metabase']],
+        ['Música', music],
+        ['En asociación con', ['Claude']],
+        ['', ['Gracias por otro año de equipo']],
+      ];
+      h = `<div class="cierre"><div class="roll" style="animation-duration:${(D.cierre && D.cierre.segundos) || 45}s">
+        <div class="roll-title script">${esc(D.titulo)}</div><div class="round-sub">${esc(D.edicion)}</div>
+        ${blocks.map(([t, items]) => `<div class="roll-b">${t ? `<div class="roll-t">${esc(t)}</div>` : ''}${items.map(x => `<div class="roll-i">${esc(x)}</div>`).join('')}</div>`).join('')}
+        <div class="roll-end script">Fin</div></div></div>`;
     } else if (sl.k === 'ganador') {
       h = '<div id="win-box" style="width:100%"></div>';
     }
@@ -2243,10 +2304,11 @@ function initControl() {
     if (L.tipo === 'flashUnico') {
       // un único destello: blanco al 100% sin fundido y vuelta inmediata a lo que había
       const back = prevLookObj || LOOKS.oscuro;
-      if (link) link.send({ type: 'luz', look: 'flashUnico', L: { tipo: 'blanco', brillo: 100, calidez: 50, flash: true }, ms: 0 });
-      const white = { tipo: 'color', h: 0, s: 0, brillo: 100, nombre: 'flash' };
-      await Promise.all(activeLamps().map(lamp => sendLookTo(lamp, white).catch(() => {})));
-      setTimeout(() => activeLamps().forEach(lamp => sendLookTo(lamp, { ...back, transicion: 0 }).catch(() => {})), L.ms || 140);
+      const lamps = (L.lamparas || ['techo']).filter(n => LAMP_NAMES.includes(n));
+      setTimeout(() => { if (link) link.send({ type: 'flashDuro' }); }, scrDelay());
+      const white = { tipo: 'blanco', brillo: 100, calidez: 100, nombre: 'flash' };   // blanco frío al máximo: lo más blanco y brillante que da
+      await Promise.all(lamps.map(lamp => sendLookTo(lamp, white).catch(() => {})));
+      setTimeout(() => lamps.forEach(lamp => sendLookTo(lamp, { ...back, transicion: 0 }).catch(() => {})), L.ms || 90);
       log('💡 flash único', 'o');
       return;
     }
@@ -2507,7 +2569,7 @@ function initControl() {
     if (sl.k === 'ganador' && S.step === 'redoble') return '🥁 …';
     const n = SCRIPT[nextIndex(S.slide, 1)];
     if (!n) return 'Fin';
-    return { intro: 'Intro ▶', presentamos: 'Presentamos ▶', presentacion: 'Participante ▶', contendientes: 'Todos juntos ▶', presentador: '🎤 Presentador ▶', reglas: 'Reglas ▶', ronda: 'Ronda ▶', pregunta: 'Pregunta ▶', marcador: 'Marcador ▶', cuenta: 'Cuenta final ▶', desempate: '⚔️ Desempate ▶', ganador: '👑 Ganador ▶' }[n.k] || 'Siguiente ▶';
+    return { premios: '🎁 Premios ▶', cierre: '🎬 Cierre ▶', intro: 'Intro ▶', presentamos: 'Presentamos ▶', presentacion: 'Participante ▶', contendientes: 'Todos juntos ▶', presentador: '🎤 Presentador ▶', reglas: 'Reglas ▶', ronda: 'Ronda ▶', pregunta: 'Pregunta ▶', marcador: 'Marcador ▶', cuenta: 'Cuenta final ▶', desempate: '⚔️ Desempate ▶', ganador: '👑 Ganador ▶' }[n.k] || 'Siguiente ▶';
   }
 
   function renderControl() {
@@ -2516,6 +2578,8 @@ function initControl() {
     const body = $('#now-body');
     let h = '';
     if (sl.k === 'logo') h = `<div class="now-title">Pantalla de espera</div><p class="muted">Muestra el código. Tocá <b>Empezar</b> para lanzar la intro.</p>`;
+    else if (sl.k === 'premios') h = `<div class="now-title">Entrega de premios</div><p class="muted">Muestra el orden en que eligen (ganador primero) con música de fondo y luz cálida.</p>`;
+    else if (sl.k === 'cierre') h = `<div class="now-title">Créditos finales</div><p class="muted">Créditos que suben como en el cine, con la música de cierre y luz ambiente.</p>`;
     else if (sl.k === 'previa') h = `<div class="now-title">Previa</div><p class="muted">Pantalla negra con polvo de luz, música de previa y luz cálida tenue. No adelanta nada del show. El código se oculta solo al vincular.</p>`;
     else if (sl.k === 'presentamos') h = `<div class="now-title">"Presentamos a los contendientes"</div><p class="muted">Apagón, arranca la música de presentación y entra el título con los reflectores.</p>`;
     else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round((CEL + CREDITS.length * CRED) / 1000)} s.</p>`;
