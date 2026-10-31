@@ -72,7 +72,16 @@ button{font:inherit;cursor:pointer}
 .spot.r{right:-8vw;transform-origin:50% 0;animation:sweepR 4.6s ease-in-out infinite alternate}
 @keyframes sweepL{from{transform:rotate(-22deg)}to{transform:rotate(14deg)}}
 @keyframes sweepR{from{transform:rotate(20deg)}to{transform:rotate(-14deg)}}
-body.tension .spot{opacity:1}
+body.tension .spot{opacity:0}
+.spot{display:none}
+#beams{position:fixed;inset:0;pointer-events:none;z-index:3;mix-blend-mode:screen;transition:opacity .8s;overflow:hidden}
+#beams.over{z-index:8}
+.beam{position:absolute;filter:blur(3px)}
+.beam.top{transform-origin:50% 0;background:linear-gradient(to bottom,rgba(255,246,220,.62),rgba(255,236,190,.22) 45%,rgba(255,230,180,0) 85%);clip-path:polygon(47% 0,53% 0,100% 100%,0 100%)}
+.beam.bottom{transform-origin:50% 100%;background:linear-gradient(to top,rgba(235,240,255,.7),rgba(220,230,255,.25) 45%,rgba(220,230,255,0) 90%);clip-path:polygon(0 0,100% 0,54% 100%,46% 100%)}
+#pools{position:fixed;inset:0;pointer-events:none;z-index:1}
+.pool{position:absolute;border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,240,205,.30) 0%,rgba(255,225,170,.12) 40%,transparent 70%);opacity:0;transition:opacity .9s ease}
+.pool.on{opacity:1}
 body.suspense .stage{animation:heartbeat 1.1s ease-in-out infinite}
 @keyframes heartbeat{0%,100%{transform:scale(1)}12%{transform:scale(1.015)}24%{transform:scale(1)}36%{transform:scale(1.01)}}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:3}
@@ -83,7 +92,7 @@ body.suspense .stage{animation:heartbeat 1.1s ease-in-out infinite}
 .yt-toast{position:fixed;right:14px;bottom:12px;z-index:6;font-size:12px;color:#ffb3a8;background:rgba(0,0,0,.6);padding:6px 10px;border-radius:12px}
 .yt-wrap{position:fixed;right:14px;bottom:12px;z-index:5;width:240px;border-radius:10px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5);background:#000}
 .yt-wrap .yt-label{font-size:11px;padding:4px 8px;background:rgba(0,0,0,.8);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.yt-wrap iframe{display:block;width:240px;height:135px}
+.yt-wrap iframe{display:block;width:240px;height:200px}
 #unlock{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(20,0,0,.82);text-align:center;padding:20px}
 #unlock .script{font-size:clamp(40px,6vw,80px)}
 #unlock p{max-width:560px;color:var(--muted);line-height:1.5}
@@ -376,12 +385,11 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 <!-- ================= PANTALLA ================= -->
 <section id="pantalla" class="view" hidden>
   <div class="tint" id="tint-a"></div><div class="tint" id="tint-b"></div><div id="tint-dark"></div>
-  <div class="spot l"></div><div class="spot r"></div>
   <canvas id="confetti"></canvas>
   <div id="stage"></div>
   <div id="overlay" hidden></div>
   <div class="status-chip"><span class="dot" id="scr-dot"></span><span id="scr-status">Conectando…</span> · <span class="ver"></span></div>
-  <div class="yt-wrap hidden-player" id="yt-wrap"><div class="yt-label" id="scr-yt-label">Música: —</div><div id="yt-screen"></div></div>
+  <div class="yt-wrap" id="yt-wrap"><div class="yt-label" id="scr-yt-label">Música: —</div><div id="yt-screen"></div></div>
   <div class="yt-toast" id="yt-toast" hidden></div>
   <button class="btn" id="scr-sound" hidden style="position:fixed;top:18px;right:18px;z-index:9;font-size:20px;padding:14px 22px">🔊 Activar sonido</button>
   <div id="unlock" style="z-index:30">
@@ -443,6 +451,9 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
       <select id="set-delay" style="flex:0 0 auto">
         <option value="0">sin redoble</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option>
       </select>
+    </div>
+    <div class="row">
+      <label class="toggle"><input type="checkbox" id="set-hideplayer"> Ocultar el reproductor de YouTube en la tele (solo para el show; para probar, dejalo visible)</label>
     </div>
     <div class="row">
       <label class="toggle"><input type="checkbox" id="ctl-localmusic"> Reproducir la música en este celu (prueba sin tele)</label>
@@ -525,7 +536,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 <script>
 (() => {
 'use strict';
-const VERSION = 'v8 · 31/10 16:30';
+const VERSION = 'v9 · 31/10 17:30';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -684,7 +695,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
 
   loadYouTubeApi().then(YT => {
     player = new YT.Player(containerId, {
-      width: 240, height: 135,
+      width: 240, height: 200,
       playerVars: { playsinline: 1, controls: 1, rel: 0, fs: 0, iv_load_policy: 3 },
       events: {
         onReady: () => {
@@ -817,6 +828,97 @@ function confetti() {
   })(t0);
 }
 
+
+/* ================= Reflectores coreografiados ================= */
+function createBeams(host) {
+  const root = document.createElement('div');
+  root.id = 'beams';
+  host.appendChild(root);
+  const poolsBox = document.createElement('div');
+  poolsBox.id = 'pools';
+  host.insertBefore(poolsBox, host.querySelector('#stage') || host.firstChild);
+  let beams = [], raf = null, preset = null;
+  const PRESETS = {
+    top2: [{ x: .16, y: -.06, from: 'top' }, { x: .84, y: -.06, from: 'top' }],
+    top3: [{ x: .14, y: -.06, from: 'top' }, { x: .5, y: -.1, from: 'top' }, { x: .86, y: -.06, from: 'top' }],
+    top5: [.08, .29, .5, .71, .92].map(x => ({ x, y: -.07, from: 'top' })),
+    fox: [.1, .25, .4, .6, .75, .9].map(x => ({ x, y: 1.06, from: 'bottom', w: .11 })),
+  };
+  function setup(name) {
+    if (preset === name) return;
+    preset = name;
+    stop();
+    root.innerHTML = '';
+    beams = PRESETS[name].map(d => { const el = document.createElement('div'); el.className = 'beam ' + d.from; root.appendChild(el); return { ...d, el, ang: 0 }; });
+    layout();
+  }
+  function layout() {
+    beams.forEach(b => {
+      b.ox = b.x * innerWidth; b.oy = b.y * innerHeight;
+      const w = (b.w || .15) * innerWidth, h = 1.7 * Math.max(innerHeight, innerWidth * .6);
+      Object.assign(b.el.style, { width: w + 'px', height: h + 'px', left: (b.ox - w / 2) + 'px', top: (b.from === 'top' ? b.oy : b.oy - h) + 'px' });
+    });
+  }
+  addEventListener('resize', layout);
+  function set(b, a, ms) {
+    b.el.style.transition = ms ? `transform ${ms}ms cubic-bezier(.3,.9,.3,1), opacity .8s` : 'opacity .8s';
+    b.el.style.transform = `rotate(${a.toFixed(2)}deg)`;
+    b.ang = a;
+  }
+  function angleTo(b, tx, ty) {
+    const dx = tx - b.ox, dy = ty - b.oy;
+    return (b.from === 'top' ? -Math.atan2(dx, dy) : Math.atan2(dx, -dy)) * 180 / Math.PI;
+  }
+  function centers(els) {
+    return els.filter(Boolean).map(e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, r }; }).filter(p => p.r.width > 0);
+  }
+  function stop() { cancelAnimationFrame(raf); raf = null; }
+  function aim(points, ms = 1100) {
+    stop();
+    if (!points.length) return;
+    beams.forEach((b, i) => { const p = points[i % points.length]; set(b, angleTo(b, p.x, p.y), ms); });
+  }
+  function aimEls(els, ms, sway = true) {
+    const pts = centers(els);
+    aim(pts, ms);
+    if (sway && pts.length) setTimeout(() => { if (!raf) swayAround(pts); }, (ms || 0) + 50);
+    return pts;
+  }
+  function motion(fn) {
+    stop();
+    const t0 = performance.now();
+    const loop = now => { const t = (now - t0) / 1000; beams.forEach((b, i) => set(b, fn(t, i, b, beams.length), 0)); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+  }
+  function swayAround(pts) {
+    const base = beams.map((b, i) => { const p = pts[i % pts.length]; return angleTo(b, p.x, p.y); });
+    motion((t, i) => base[i] + 2.2 * Math.sin(t * .7 + i * 1.7));
+  }
+  const mirror = (i, n) => (i < n / 2 ? 1 : -1);
+  const patterns = {
+    fox: (t, i, b, n) => mirror(i, n) * (14 + 20 * Math.sin(t * .85 + i * .7)) - mirror(i, n) * 6,
+    search: (t, i, b, n) => (i % 2 ? -1 : 1) * (8 + 24 * Math.sin(t * .55 + i * 2.1)),
+    calm: (t, i) => 10 * Math.sin(t * .35 + i * Math.PI),
+    frenzy: (t, i, b, n) => 38 * Math.sin(t * 4.2 + i * 1.25),
+  };
+  function play(name) { motion(patterns[name]); }
+  function level(v) { root.style.opacity = v; }
+  function over(on) { root.classList.toggle('over', !!on); }
+  function pools(els) {
+    poolsBox.innerHTML = '';
+    centers(els).forEach(p => {
+      const d = document.createElement('div');
+      d.className = 'pool';
+      const size = Math.max(p.r.width, p.r.height) * 1.7;
+      Object.assign(d.style, { width: size + 'px', height: size * .8 + 'px', left: (p.x - size / 2) + 'px', top: (p.y - size * .4) + 'px' });
+      poolsBox.appendChild(d);
+      requestAnimationFrame(() => d.classList.add('on'));
+    });
+  }
+  function clearPools() { poolsBox.querySelectorAll('.pool').forEach(d => { d.classList.remove('on'); setTimeout(() => d.remove(), 900); }); }
+  function outside() { beams.forEach(b => set(b, (b.x < .5 ? 1 : -1) * 55, 0)); }
+  return { setup, aim, aimEls, play, stop, level, over, pools, clearPools, outside, layout };
+}
 
 /* ================= Modelo del juego ================= */
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1073,12 +1175,90 @@ function initScreen() {
     const bad = /⚠️/.test(t);
     $('#yt-toast').hidden = !bad; if (bad) $('#yt-toast').textContent = t;
   }, muted => { $('#scr-sound').hidden = !muted; });
-  if (new URLSearchParams(location.search).has('reproductor')) $('#yt-wrap').classList.remove('hidden-player');
+
   const direct = createDirector(music);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
 
   let cur = { slide: -1 }, curRev = null, confettiLoop = null, introTimer = null;
   const stage = $('#stage');
+  const beams = createBeams($('#pantalla'));
+  let choreoT = [], lastChoreoKey = null;
+  const later = (ms, fn) => choreoT.push(setTimeout(fn, ms));
+  const sq = sel => stage.querySelector(sel), sqa = sel => [...stage.querySelectorAll(sel)];
+  function aimQuestion(ms = 900) {
+    const els = [sq('.q-text'), sq('.opts') || sq('.chat')].filter(Boolean);
+    beams.aimEls(els, ms);
+  }
+  function questionBeams(st) {
+    beams.setup('top3');
+    if (st.step === 'pregunta') { beams.clearPools(); beams.level(1); if (qArmed) beams.play('search'); else aimQuestion(); }
+    else if (st.step === 'pizarras') { beams.level(.35); beams.clearPools(); aimQuestion(1400); }
+    else if (st.step === 'tension') { beams.level(.55); beams.play('calm'); }
+    else if (st.step === 'redoble') { beams.level(1); beams.clearPools(); beams.play('frenzy'); }
+    else if (st.step === 'revelado') {
+      beams.level(1);
+      later(60, () => { const ok = sqa('.opt.ok'); const els = ok.length ? ok : [sq('.ticket'), sq('.chat')].filter(Boolean); beams.aimEls(els, 450); beams.pools(els); });
+    }
+  }
+  function choreo(st, sl, changed) {
+    const key = [st.slide, st.step || '', st.overlay || '', st.sub || 0].join('|');
+    if (key === lastChoreoKey) return;
+    lastChoreoKey = key;
+    choreoT.forEach(clearTimeout); choreoT = [];
+    beams.over(false); beams.level(1);
+    if (st.overlay === 'marcador') {
+      beams.setup('top2'); beams.clearPools();
+      later(450, () => { const ov = $('#overlay'); const lead = [...ov.querySelectorAll('.bar-row.lead')]; beams.aimEls((lead.length ? lead : [...ov.querySelectorAll('.bar-row')]).slice(0, 2), 900); });
+      return;
+    }
+    switch (sl.k) {
+      case 'logo':
+        beams.setup('top2'); beams.clearPools(); later(100, () => beams.aimEls([sq('.marquee')], 1400)); break;
+      case 'intro':
+        beams.setup('fox'); beams.over(true); beams.clearPools(); beams.level(0);
+        later(700, () => { beams.level(1); beams.play('fox'); });
+        later(5900, () => { const m = sq('.intro-title .marquee'); beams.aimEls([m], 900); beams.pools([m]); });
+        later(9500, () => beams.over(false));
+        break;
+      case 'presentacion':
+        beams.setup('top3'); beams.clearPools(); if (changed) beams.outside();
+        later(120, () => { const ph = sq('.pl-photo'); beams.aimEls([ph], 900); beams.pools([ph]); });
+        break;
+      case 'contendientes': {
+        beams.setup('top5'); beams.clearPools(); beams.outside();
+        const cards = sqa('.cont-card');
+        cards.forEach((c, i) => later(250 + i * 400, () => beams.aimEls([c], 280, false)));
+        later(250 + cards.length * 400 + 300, () => { const ph = sqa('.cont-card .pl-photo'); beams.aimEls(ph, 900); beams.pools(ph); });
+        break;
+      }
+      case 'reglas':
+        beams.setup('top2'); beams.clearPools(); later(100, () => beams.aimEls([sq('.marquee')], 1100)); break;
+      case 'ronda':
+        beams.setup('top3'); beams.clearPools(); if (changed) beams.outside();
+        later(150, () => { const m = sq('.marquee'); beams.aimEls([m], 1000); beams.pools([m]); });
+        break;
+      case 'pregunta': case 'desempate':
+        questionBeams(st); break;
+      case 'marcador':
+        beams.setup('top2'); beams.clearPools();
+        later(700, () => { const lead = sqa('.bar-row.lead'); beams.aimEls((lead.length ? lead : sqa('.bar-row')).slice(0, 2), 1000); });
+        break;
+      case 'cuenta': {
+        beams.setup('top3');
+        const cg = countdownGroups(st.results || {}), k = st.sub || 0;
+        if (k === 0) { beams.clearPools(); beams.level(.6); beams.play('calm'); break; }
+        const rows = sqa(`.cd-row[data-g="${cg[k - 1].pos}"]`);
+        later(80, () => { beams.aimEls(rows, 450); beams.pools(rows); });
+        if (k >= cg.length) later(1700, () => { const top = sq('.cd-row.top'); beams.aimEls([top], 1100); beams.pools([top]); });
+        break;
+      }
+      case 'ganador':
+        beams.setup('top5'); beams.clearPools();
+        if (st.step === 'redoble') beams.play('frenzy');
+        else later(250, () => { const ph = sqa('.win-card .pl-photo'); beams.aimEls(ph, 500); beams.pools(ph); });
+        break;
+    }
+  }
 
   let tintFlip = false, jumpT = null;
   function applyTint(L) {
@@ -1144,6 +1324,8 @@ function initScreen() {
     const m = momentOf(st);
     document.body.classList.toggle('tension', ['intro', 'pregunta', 'pizarras', 'tension', 'redoble', 'cuenta', 'contendientes'].includes(m));
     document.body.classList.toggle('dimmed', ['presentacion', 'cuenta', 'redoble'].includes(m) || (SCRIPT[st.slide] || {}).k === 'presentacion');
+    $('#yt-wrap').classList.toggle('hidden-player', !!st.hidePlayer);
+    choreo(st, sl, changed);
     direct(st);
     cur = JSON.parse(JSON.stringify(st));
   }
@@ -1219,17 +1401,18 @@ function initScreen() {
   let qEntryT = null, qFallbackT = null, qArmed = null;
   const ENTRADA = (D.entradaPregunta == null ? 4500 : D.entradaPregunta);
   function showQuestion(vq) { clearTimeout(qEntryT); clearTimeout(qFallbackT); qArmed = null; if (vq) vq.classList.remove('q-wait'); }
+  function enterQuestion(vq) { showQuestion(vq); setTimeout(() => aimQuestion(900), 120); }
   function startEntryTimer() {
     if (!qArmed) return;
     clearTimeout(qFallbackT); clearTimeout(qEntryT);
     const vq = qArmed;
-    qEntryT = setTimeout(() => { if (qArmed === vq) showQuestion(vq); }, ENTRADA);
+    qEntryT = setTimeout(() => { if (qArmed === vq) enterQuestion(vq); }, ENTRADA);
   }
   function armQuestionEntry(vq) {
     showQuestion(null);
     if (ENTRADA <= 0) return;
     vq.classList.add('q-wait'); qArmed = vq;
-    qFallbackT = setTimeout(() => { if (qArmed === vq) showQuestion(vq); }, ENTRADA + 1000); // si la música no arranca, entra igual
+    qFallbackT = setTimeout(() => { if (qArmed === vq) enterQuestion(vq); }, ENTRADA + 1000); // si la música no arranca, entra igual
   }
   window.__onTrackPlaying = key => { if (key === musicKeyOf({ slide: cur.slide, step: 'pregunta' }) && qArmed) startEntryTimer(); };
 
@@ -1342,6 +1525,8 @@ function initControl() {
   if (S.slide >= SCRIPT.length) S.slide = 0;
   $('#set-delay').value = String(S.delayMs);
   $('#set-delay').addEventListener('change', () => { S.delayMs = +$('#set-delay').value; commit(false); });
+  $('#set-hideplayer').checked = !!S.hidePlayer;
+  $('#set-hideplayer').addEventListener('change', () => { S.hidePlayer = $('#set-hideplayer').checked; commit(false); });
 
   /* --- Vínculo --- */
   let link = null, lastHello = 0;
@@ -1826,7 +2011,7 @@ function initControl() {
     const b = $('#reset-btn');
     if (!resetArmed) { b.textContent = '¿Seguro? Tocá de nuevo para borrar todo'; resetArmed = setTimeout(() => { resetArmed = null; b.textContent = 'Reiniciar partida'; }, 4000); return; }
     clearTimeout(resetArmed); resetArmed = null; b.textContent = 'Reiniciar partida';
-    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs };
+    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer };
     log('Partida reiniciada', 'o');
     commit();
   });
