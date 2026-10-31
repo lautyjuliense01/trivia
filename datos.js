@@ -70,7 +70,8 @@ window.TRIVIA = {
     dorado:    { tipo: 'color', h: 38, s: 95, brillo: 100, respaldo: 'festejo' },    // el golpe de la respuesta
     flash:     { tipo: 'blanco', brillo: 100, calidez: 60, respaldo: 'festejo' },    // destello corto
     noche:     { tipo: 'color', h: 232, s: 90, brillo: 7, respaldo: 'tension' },       // azul de noche para los reflectores de la intro
-    pulso:     { tipo: 'color', h: 222, s: 80, brillo: 22, respaldo: 'normal' },      // golpe azul con cada crédito
+    pulso:     { tipo: 'color', h: 30, s: 85, brillo: 45, respaldo: 'normal' },       // destello cálido con cada crédito
+    foco:      { tipo: 'blanco', brillo: 70, calidez: 25, respaldo: 'normal' },       // foco del presentador
     destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },  // celebración corta
     fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
   },
@@ -84,13 +85,15 @@ window.TRIVIA = {
     intro: [[0, 'noche'], [6100, 'dorado'], [7300, 'destello'], [8700, 'dorado'], [10500, 'sala']],   // golpe dorado con el título
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
     contendientes: [[0, 'flash'], [600, 'fiesta']],
+    presentador: [[0, 'oscuro'], [1600, 'foco']],              // apagón y un único foco
     reglas: 'sala',
     ronda: 'sala',
-    pregunta: 'azul',
-    pizarras: 'pizarras',
-    tension: 'tension',
+    // { fade: look, de, a, ms, cada }: la luz se va apagando de a poco mientras dura el momento
+    pregunta: { fade: 'azul', de: 36, a: 20, ms: 12000, cada: 3000 },        // brillo de 36% a 20%
+    pizarras: { fade: 'pizarras', de: 24, a: 7, ms: 24000, cada: 3000 },     // de 24% a 7% mientras escriben
+    tension: { fade: 'tension', de: 100, a: 45, ms: 12000, cada: 3000 },     // el latido rojo pierde fuerza…
     redoble: 'oscuro',        // cae la luz durante el redoble...
-    revelado: 'dorado',       // ...y explota justo con la respuesta
+    revelado: 'dorado',       // ...y explota justo con la respuesta (vuelve a brillar)
     despues: 'sala',          // para los datos curiosos (a los segundos que marques en el control)
     marcador: 'sala',
     cuenta: 'oscuro',
@@ -112,6 +115,9 @@ window.TRIVIA = {
     { nombre: 'Tomás',    foto: '', genero: 'm', edad: 28, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '' },
     { nombre: 'Nicolás',  foto: '', genero: 'm', edad: 23, rol: 'Pasante',                      antiguedad: 'En Bioingeniería desde septiembre de 2026', frase: '' },
   ],
+
+  /* Presentador: aparece después de los participantes, con un único foco */
+  presentador: { nombre: 'Lautaro', foto: '', rol: 'Responsable de Bioingeniería', antiguedad: 'En Bioingeniería desde 2021', frase: '' },
 
   /* ---------- Reglas ----------
      La primera línea (cuántas preguntas hay de cada tipo) la arma la app sola. */
