@@ -127,7 +127,7 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
   <div class="marquee">
     <div class="sub">Edición Bioingeniería · 2026</div>
     <h1 class="script">Trivia Night</h1>
-    <div class="sub">Prueba técnica</div>
+    <div class="sub">Prueba técnica · <span class="ver"></span></div>
   </div>
   <div class="big-choices">
     <a href="?modo=pantalla">📺 Esta es la pantalla<small>Abrila en la tele o en la notebook</small></a>
@@ -158,7 +158,7 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
     </div>
   </div>
 
-  <div class="status-chip"><span class="dot" id="scr-dot"></span><span id="scr-status">Conectando…</span></div>
+  <div class="status-chip"><span class="dot" id="scr-dot"></span><span id="scr-status">Conectando…</span> · <span class="ver"></span></div>
   <div class="yt-wrap"><div class="yt-label" id="scr-yt-label">Música: —</div><div id="yt-screen"></div></div>
 
   <button class="btn" id="scr-sound" hidden style="position:fixed;top:18px;right:18px;z-index:8;font-size:20px;padding:14px 22px">🔊 Activar sonido</button>
@@ -173,7 +173,7 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
 <!-- ================= CONTROL ================= -->
 <section id="control" class="view" hidden>
   <h1 class="script">Trivia Night</h1>
-  <p class="lead">Control del presentador · prueba de música, luces y vínculo con la tele</p>
+  <p class="lead">Control del presentador · <b class="ver" style="color:var(--gold)"></b></p>
 
   <div class="card">
     <h2>1 · Vincular con la pantalla</h2>
@@ -206,8 +206,12 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
     </div>
     <p class="muted" style="margin:8px 0 0">El token queda guardado solo en este celu. En account.smartthings.com/tokens marcá, en <b>Dispositivos</b>, ver y controlar todos los dispositivos.</p>
     <div id="st-devs" class="scene-list"></div>
+    <div id="st-scenes-wrap" hidden style="margin-top:12px">
+      <div class="muted">Escenas de Smart Life que ve SmartThings:</div>
+      <div id="st-scenes" class="scene-list"></div>
+    </div>
     <div id="st-moods" hidden style="margin-top:14px">
-      <div class="muted" style="margin-bottom:6px">Ambientes (los arma la página, no hace falta crear escenas):</div>
+      <div class="muted" style="margin-bottom:6px">Ambientes: qué hacen las luces en cada momento del juego.</div>
       <div class="mood" data-mood="tension"></div>
       <div class="mood" data-mood="festejo"></div>
       <div class="mood" data-mood="normal"></div>
@@ -218,7 +222,7 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
         </select>
         <span class="muted">y vuelve a Normal</span>
       </div>
-      <div class="row"><label class="toggle"><input type="checkbox" id="st-anim"> Festejo animado (alterna colores; probar si las luces llegan a seguirlo)</label></div>
+      <div class="row" id="st-anim-row"><label class="toggle"><input type="checkbox" id="st-anim"> Festejo animado (alterna colores; probar si las luces llegan a seguirlo)</label></div>
     </div>
   </div>
 
@@ -239,6 +243,7 @@ const TRACKS = {
   suspenso: { id: 'xznaPaJLwDw', name: 'No Time for Thoughts',     start: 0 },
   revelar:  { id: 'aBE9EQ7gXKI', name: 'Spanish Flea',             start: 0 },
 };
+const VERSION = 'v4 · 31/10 11:55';
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
 const ST_API = 'https://api.smartthings.com/v1';
@@ -505,6 +510,7 @@ const modo = new URLSearchParams(location.search).get('modo');
 if (modo === 'pantalla') initScreen();
 else if (modo === 'control') initControl();
 else $('#inicio').hidden = false;
+document.querySelectorAll('.ver').forEach(e => e.textContent = VERSION);
 requestAnimationFrame(bulbify);
 
 /* ================= PANTALLA ================= */
@@ -660,7 +666,7 @@ function initControl() {
     normal:  { type: 'white', color: '#ffd6a0', kelvin: 3000, level: 80 },
   };
   let moods = Object.assign({}, DEFAULT_MOODS, store.get('st_moods', {}));
-  let devices = [];
+  let devices = [], sceneSws = [];
   let selected = new Set(store.get('st_selected', []));
   let lastMood = null, festejoTimer = null, animTimer = null;
 
@@ -695,13 +701,17 @@ function initControl() {
         const next = d && d._links && d._links.next && d._links.next.href;
         url = next ? next.replace(/^https:\/\/api\.smartthings\.com(\/v1)?/, '') : null;
       }
-      devices = all.map(d => ({ id: d.deviceId, name: d.label || d.name || d.deviceId, caps: capsOf(d), type: d.type || '' }))
-        .filter(d => d.caps.switch && LIGHT_CAPS.some(c => d.caps[c]));
-      log(`SmartThings: ${all.length} dispositivos, ${devices.length} parecen luces`, devices.length ? 'o' : 'e');
-      if (!devices.length && all.length) log('Dispositivos vistos: ' + all.map(d => (d.label || d.name) + ' [' + Object.keys(capsOf(d)).join(', ') + ']').join(' · '));
+      const mapped = all.map(d => ({ id: d.deviceId, name: d.label || d.name || d.deviceId, caps: capsOf(d), type: d.type || '' }));
+      devices = mapped.filter(d => d.caps.switch && LIGHT_CAPS.some(c => d.caps[c]));
+      // Las escenas "Tap-to-Run" de Smart Life llegan a SmartThings como interruptores sin otra función.
+      sceneSws = mapped.filter(d => d.caps.switch && Object.keys(d.caps).every(c => ['switch', 'refresh', 'healthCheck'].includes(c)));
+      log(`SmartThings: ${all.length} dispositivos · ${devices.length} luces · ${sceneSws.length} escenas de Smart Life`, (devices.length || sceneSws.length) ? 'o' : 'e');
+      if (!devices.length && !sceneSws.length && all.length) log('Dispositivos vistos: ' + all.map(d => (d.label || d.name) + ' [' + Object.keys(capsOf(d)).join(', ') + ']').join(' · '));
       if (selected.size === 0 || ![...selected].some(id => devices.some(d => d.id === id))) selected = new Set(devices.map(d => d.id));
       store.set('st_selected', [...selected]);
+      autoAssignScenes();
       renderDevices();
+      renderScenes();
       renderMoods();
     } catch (e) { log('Luces: ' + e.message, 'e'); }
   }
@@ -734,14 +744,54 @@ function initControl() {
     });
   }
 
+  function autoAssignScenes() {
+    const guesses = { tension: ['tension'], festejo: ['festejo', 'fiesta'], normal: ['normal'] };
+    Object.keys(moods).forEach(k => {
+      const m = moods[k];
+      if (m.scene && !sceneSws.some(d => d.id === m.scene)) m.scene = '';
+      if (!m.scene) {
+        const hit = sceneSws.find(d => guesses[k].some(g => norm(d.name).includes(g)));
+        if (hit) m.scene = hit.id;
+      }
+      if (!devices.length && sceneSws.length) m.type = 'scene';
+      if (m.type === 'scene' && !sceneSws.length) m.type = DEFAULT_MOODS[k].type;
+    });
+    store.set('st_moods', moods);
+  }
+
+  function renderScenes() {
+    const box = $('#st-scenes');
+    box.innerHTML = '';
+    $('#st-scenes-wrap').hidden = sceneSws.length === 0;
+    sceneSws.forEach(d => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const name = document.createElement('span');
+      name.textContent = d.name;
+      const b = document.createElement('button');
+      b.className = 'btn small'; b.textContent = 'Ejecutar';
+      b.onclick = () => runSceneSw(d.id);
+      row.append(name, b);
+      box.append(row);
+    });
+  }
+
+  function runSceneSw(id, label) {
+    const d = sceneSws.find(x => x.id === id);
+    if (!d) return Promise.resolve(false);
+    return sendDevice(d, [{ component: d.caps.switch, capability: 'switch', command: 'on' }], label ? `escena (${label})` : 'escena');
+  }
+
   function renderMoods() {
-    $('#st-moods').hidden = devices.length === 0;
+    $('#st-moods').hidden = devices.length === 0 && sceneSws.length === 0;
+    $('#st-anim-row').hidden = !devices.some(d => d.caps.colorControl);
     document.querySelectorAll('.mood').forEach(el => {
       const key = el.dataset.mood, m = moods[key];
       el.innerHTML = `
         <div class="row" style="margin-top:8px;background:rgba(0,0,0,.25);padding:8px;border-radius:10px">
           <b style="width:70px">${MOOD_LABEL[key]}</b>
-          <select class="m-type" style="flex:0 0 auto;padding:6px 8px"><option value="color">Color</option><option value="white">Blanco</option></select>
+          <select class="m-type" style="flex:0 0 auto;padding:6px 8px"><option value="scene">Escena Smart Life</option><option value="color">Color</option><option value="white">Blanco</option></select>
+          <select class="m-scene" style="flex:1;min-width:120px;padding:6px 8px"></select>
           <input type="color" class="m-color" style="width:44px;height:36px;border:0;background:none;padding:0">
           <input type="range" class="m-kelvin" min="2700" max="6500" step="100" style="flex:1;min-width:80px">
           <span class="muted m-k"></span>
@@ -753,10 +803,16 @@ function initControl() {
           </div>
         </div>`;
       const q = s => el.querySelector(s);
+      q('.m-type').querySelector('[value=scene]').hidden = !sceneSws.length;
+      q('.m-type').querySelectorAll('[value=color],[value=white]').forEach(o => o.hidden = !devices.length);
+      q('.m-scene').innerHTML = '<option value="">— elegir —</option>' + sceneSws.map(d => `<option value="${d.id}">${d.name.replace(/</g, '&lt;')}</option>`).join('');
+      q('.m-scene').value = m.scene || '';
       q('.m-type').value = m.type; q('.m-color').value = m.color; q('.m-kelvin').value = m.kelvin; q('.m-level').value = m.level;
       const sync = () => {
-        m.type = q('.m-type').value; m.color = q('.m-color').value; m.kelvin = +q('.m-kelvin').value; m.level = +q('.m-level').value;
+        m.type = q('.m-type').value; m.scene = q('.m-scene').value; m.color = q('.m-color').value; m.kelvin = +q('.m-kelvin').value; m.level = +q('.m-level').value;
         q('.m-color').hidden = m.type !== 'color';
+        q('.m-scene').hidden = m.type !== 'scene';
+        q('.m-level').parentElement.querySelectorAll('.m-level,.m-l,span:first-child').forEach(e => e.style.visibility = m.type === 'scene' ? 'hidden' : '');
         q('.m-kelvin').hidden = q('.m-k').hidden = m.type !== 'white';
         q('.m-k').textContent = m.kelvin + 'K';
         q('.m-l').textContent = m.level + '%';
@@ -803,10 +859,17 @@ function initControl() {
   function targets() { return devices.filter(d => selected.has(d.id)); }
 
   function applyMood(key, force = false, quiet = false) {
-    if (!tokenInput.value.trim() || !devices.length) return;
+    if (!tokenInput.value.trim()) return;
     if (!force && key === lastMood) return;
-    lastMood = key;
     const m = moods[key];
+    if (m.type === 'scene') {
+      if (!m.scene) { log(`Ambiente «${MOOD_LABEL[key]}»: no tiene escena asignada`, 'e'); return; }
+      lastMood = key;
+      if (!quiet) runSceneSw(m.scene, MOOD_LABEL[key]);
+      return;
+    }
+    if (!devices.length) return;
+    lastMood = key;
     const t0 = performance.now();
     Promise.all(targets().map(d => quiet
       ? stFetch(`/devices/${d.id}/commands`, { method: 'POST', body: JSON.stringify({ commands: commandsFor(d, m, false) }) }).then(() => true, e => { log(`💡 ${d.name}: ${e.message}`, 'e'); return false; })
