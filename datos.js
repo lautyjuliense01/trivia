@@ -26,27 +26,38 @@ window.TRIVIA = {
      El ID es lo que va después de "watch?v=" en el link.
      "inicio" = segundo desde el que arranca (opcional). */
   musica: {
+    previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
     intro:        { id: '5jrs1DEWzx0', nombre: '20th Century Fox Fanfare' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
     pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions' },
     trivia:       { id: '7suM-GShRqw', nombre: 'Quiz Time' },
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
+    anfitrion:    { id: '',            nombre: 'A definir: entrada del presentador' },
+    redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
+    respuesta:    { id: '',            nombre: 'A definir: golpe de respuesta' },      // al revelar; después pasa a "datos"
+
     ganador:      { id: '',            nombre: 'A definir' },   // vacío: usa la de "datos"
   },
 
+  /* Cuánto dura el golpe de respuesta antes de pasar a la música de datos curiosos (ms) */
+  respuestaMs: 4000,
+
   /* Qué música suena en cada momento (nombres de la lista de arriba, o null = silencio) */
   momentos: {
-    logo: null,
+    previa: 'previa',
+    cine: null,
     intro: 'intro',
+    presentamos: 'presentacion',  // arranca con el título "Presentamos a los contendientes"
     presentacion: 'presentacion',
     contendientes: 'presentacion', // todos juntos al final de la presentación
+    presentador: 'anfitrion',
     reglas: 'presentacion',
     ronda: 'trivia',
     pregunta: 'pregunta',     // cuando hacés la pregunta
     pizarras: 'pregunta',     // mientras escriben sigue la misma (no se reinicia)
-    tension: 'tension',       // cuando ya están por terminar
-    revelado: 'datos',        // después de la respuesta: datos curiosos
+    tension: 'pregunta',      // sigue la misma: la música de tensión queda para la cuenta final
+    revelado: 'datos',        // después del golpe de respuesta: datos curiosos
     marcador: 'datos',
     cuenta: 'tension',        // cuenta final, del último al segundo
     ganador: 'ganador',       // suena después del redoble
@@ -61,10 +72,12 @@ window.TRIVIA = {
        respaldo: escena de SmartThings que se usa si Tuya falla ('tension', 'festejo' o 'normal')
      La pantalla se tiñe del mismo color y se oscurece cuando la luz baja. */
   looks: {
-    sala:      { tipo: 'blanco', brillo: 60, calidez: 20, respaldo: 'normal' },
+    // transicion: segundos que tarda la lámpara en llegar a este look (fundido suave). Sin transicion = cambio inmediato.
+    sala:      { tipo: 'blanco', brillo: 60, calidez: 20, transicion: 2, respaldo: 'normal' },
+    ambiente:  { tipo: 'color', h: 30, s: 80, brillo: 16, transicion: 4, respaldo: 'normal' },          // previa: cálido y tenue
     oscuro:    { tipo: 'color', h: 225, s: 90, brillo: 2, respaldo: 'tension' },     // casi negro azulado: antes de un golpe
-    escenario: { tipo: 'color', h: 230, s: 75, brillo: 12, respaldo: 'normal' },     // azul tenue de presentación
-    azul:      { tipo: 'color', h: 220, s: 85, brillo: 30, respaldo: 'normal' },     // mientras se lee la pregunta
+    escenario: { tipo: 'color', h: 230, s: 75, brillo: 12, transicion: 0.8, respaldo: 'normal' },     // azul tenue de presentación
+    azul:      { tipo: 'color', h: 220, s: 85, brillo: 30, transicion: 1.5, respaldo: 'normal' },     // mientras se lee la pregunta
     pizarras:  { tipo: 'color', h: 28, s: 85, brillo: 20, respaldo: 'normal' },      // ámbar tenue mientras escriben
     tension:   { tipo: 'efecto', modo: 'respirar', colores: [[0, 100, 55], [0, 100, 6]], paso: 1.2, respaldo: 'tension' },
     dorado:    { tipo: 'color', h: 38, s: 95, brillo: 100, respaldo: 'festejo' },    // el golpe de la respuesta
@@ -80,7 +93,8 @@ window.TRIVIA = {
      Un nombre de look, o una secuencia [[ms, look], ...] donde ms es cuándo se tiene que VER la luz desde que tocás el botón.
      La app la dispara antes según la "demora de la lámpara" que configures en el control. */
   guion: {
-    logo: 'sala',
+    previa: 'ambiente',
+    presentamos: [[0, 'oscuro'], [1700, 'escenario']],
     // cine: lo arma la app sola (baja la luz y un pulso por crédito). Para personalizarlo, agregá cine: [[ms, look], ...]
     intro: [[0, 'noche'], [6100, 'dorado'], [7300, 'destello'], [8700, 'dorado'], [10500, 'sala']],   // golpe dorado con el título
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
@@ -88,10 +102,10 @@ window.TRIVIA = {
     presentador: [[0, 'oscuro'], [1600, 'foco']],              // apagón y un único foco
     reglas: 'sala',
     ronda: 'sala',
-    // { fade: look, de, a, ms, cada }: la luz se va apagando de a poco mientras dura el momento
-    pregunta: { fade: 'azul', de: 36, a: 20, ms: 12000, cada: 3000 },        // brillo de 36% a 20%
-    pizarras: { fade: 'pizarras', de: 24, a: 7, ms: 24000, cada: 3000 },     // de 24% a 7% mientras escriben
-    tension: { fade: 'tension', de: 100, a: 45, ms: 12000, cada: 3000 },     // el latido rojo pierde fuerza…
+    // { fade: look, de, a, ms }: la luz se va apagando suave (una sola orden, la lámpara hace el fundido; máx. 10 s)
+    pregunta: { fade: 'azul', de: 36, a: 12, ms: 10000 },
+    pizarras: null,           // null = no cambia: sigue la luz que venía
+    tension: 'tension',
     redoble: 'oscuro',        // cae la luz durante el redoble...
     revelado: 'dorado',       // ...y explota justo con la respuesta (vuelve a brillar)
     despues: 'sala',          // para los datos curiosos (a los segundos que marques en el control)
