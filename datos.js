@@ -14,17 +14,21 @@ window.TRIVIA = {
      Antes de la fanfarria: "Apaguen sus celulares" mientras baja la luz, y después estos créditos, uno por vez.
      { estudio, texto } = logo de productora · { chico, grande } = texto chico arriba y grande abajo. */
   creditos: [
-    { estudio: 'Lautaro Entertainment', texto: 'presenta' },
+    // Intro de estudio "El monumento" (dura 11 s; para cambiarlo: ms: 12000).
+    // monograma: letras del emblema (si no, las iniciales) · anillo: texto alrededor del emblema
+    { estudio: 'Lautaro Entertainment', texto: 'presenta', monograma: 'LE', anillo: 'Lautaro Entertainment · MMXXVI' },
+    { chico: 'una producción de', grande: 'Bioingeniería' },
     { chico: 'en asociación con', grande: 'Claude' },
-    { chico: 'con datos provistos por', grande: 'GLPI y Metabase' },
+    { chico: 'con la colaboración involuntaria de', grande: 'GLPI y Metabase' },
     { chico: 'basada en', grande: 'Datos reales' },
-    { chico: 'filmada en locaciones reales del', grande: 'Hospital Italiano' },
-    { chico: 'agradecimiento especial', grande: 'Al enchufe' },
-    { grande: 'Segunda edición' },
+    { chico: 'filmada íntegramente en el', grande: 'Hospital Italiano' },
+    { chico: 'y un agradecimiento muy especial', grande: 'al enchufe' },
+    { chico: 'MMXXVI', grande: 'Segunda edición' },
   ],
   apertura: {
     credito: 2800,          // ms de cada crédito
-    golpes: 'extremos',     // golpes de tráiler en los créditos: 'todos', 'extremos' o 'ninguno'
+    golpes: 'extremos',     // golpe grave en los créditos: 'todos', 'extremos' (solo el último) o 'ninguno'
+    graveEstudio: true,     // golpe grave cuando el emblema de la intro de estudio se asienta
     graves: true,           // cada aviso entra con un golpe grave de cine (false = avisos en silencio)
     volGraves: 1,           // volumen de los graves (0 a 1.5)
     // Avisos de sala antes de los créditos. ms opcional; si no, se calcula por el largo del texto.
@@ -40,6 +44,10 @@ window.TRIVIA = {
       { texto: 'Bioingeniería Surround', sub: 'Esta sala cuenta con sonido envolvente 7.1', sonido: 'envolvente', subida: 4800 },
     ],
   },
+
+  /* Conexión celu ↔ tele: en el celu se reconecta a mano (tocando el estado 🔄).
+     pantallaAuto: la tele rehace sola un servidor que se cae (no se la puede tocar en el show). false = también a mano. */
+  conexion: { pantallaAuto: true },
 
   /* ---------- Previa automática ----------
      Desde el celu tocás "Comenzar previa automática". Antes de cada paso aparece un aviso con cuenta regresiva
@@ -61,7 +69,7 @@ window.TRIVIA = {
      "inicio" = segundo desde el que arranca (opcional). */
   musica: {
     previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
-    cine:         { id: 'jgyShFzdB_Q', nombre: 'Time (Inception)', inicio: 75 },   // apertura de cine, desde el 1:15
+    cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (nueva)', inicio: 0 },   // entra con el primer crédito. Antes: Time (Inception) jgyShFzdB_Q desde el 75
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
     pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions' },
@@ -157,6 +165,10 @@ window.TRIVIA = {
     estroboHost: { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo', tele: 'ritmo' },
     fiestaHost:  { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 38], [325, 95, 38], [268, 90, 38], [195, 90, 38]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo',
                    tira: { colores: [[268, 90, 70], [195, 90, 70], [38, 95, 70], [325, 95, 70]] } },   // fiesta sin encandilar: techo al 38 %, la tira en contraste
+    contraluz:   { tipo: 'color', h: 270, s: 90, brillo: 4, respaldo: 'festejo', tele: 'ritmo',
+                   tira: { tipo: 'efecto', modo: 'salto', colores: [[320, 95, 100], [195, 95, 100], [38, 95, 100], [268, 95, 100]], paso: 0.47 } },   // techo casi apagado, la tira a pleno detrás del sillón
+    fiestaDorada: { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 40], [15, 95, 40], [355, 95, 40], [45, 90, 40]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { colores: [[195, 90, 75], [268, 90, 75]] } },   // cálidos arriba, fríos atrás
+    barrido:     { tipo: 'efecto', modo: 'respirar', colores: [[320, 95, 40], [190, 95, 40]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { modo: 'salto', colores: [[38, 95, 80], [268, 95, 80]], paso: 0.47 } },   // magenta ↔ celeste
     destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },  // celebración corta
     apagado:   { tipo: 'apagado' },   // apaga todo; el look siguiente las vuelve a prender solo
     estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },   // titila lo más rápido posible, 100 ↔ 0
@@ -176,7 +188,8 @@ window.TRIVIA = {
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
     contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],   // primero baja el último a la fila a oscuras
     // presentador: lo arma la app según tus textos (oscuro → latido → latido rápido en "con ustedes…")
-    presentadorGolpe: [[0, 'estroboHost'], [3750, 'fiestaHost']],   // golpe de entrada: 2 compases de estrobo (3,75 s a 128 bpm) y fiesta
+    // presentadorGolpe: lo arma la app: 2 compases de estrobo y después frases de 4 compases que van cambiando
+    //   (las frases se eligen en presentador.frases), con un compás de estrobo cada 8
     reglas: 'sala',
     ronda: 'sala',
     // { fade: look, de, a, ms }: la luz se va apagando suave (una sola orden, la lámpara hace el fundido; máx. 10 s)
@@ -228,6 +241,8 @@ window.TRIVIA = {
     // Ritmo del tema para que la tele destelle en el bombo. Lo más fácil: calibrarlo en el ensayo desde el celu (🥁 Calibrar).
     // fase: segundo del video en que cae un golpe (lo da la calibración). Sin fase, el compás arranca cuando tocás el golpe.
     ritmo: { bpm: 128, fase: null },
+    // Después del golpe: juegos de luces de 4 compases cada uno, en este orden (se repiten ~1 minuto)
+    frases: ['fiestaHost', 'contraluz', 'fiestaDorada', 'barrido'],
   },
 
   /* ---------- Reglas ----------
