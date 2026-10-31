@@ -202,13 +202,15 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
     <h2>3 · Luces (SmartThings)</h2>
     <div class="row">
       <input type="password" id="st-token" placeholder="Token personal de SmartThings" autocomplete="off">
-      <button class="btn" id="st-load">Cargar escenas</button>
+      <button class="btn" id="st-load">Cargar luces</button>
     </div>
-    <p class="muted" style="margin:8px 0 0">El token queda guardado solo en este celu. Generalo en account.smartthings.com/tokens con permiso para <b>ver y ejecutar escenas</b>.</p>
-    <div id="st-map" hidden>
-      <div class="map-row"><label>Tensión</label><select data-role="tension"></select></div>
-      <div class="map-row"><label>Festejo</label><select data-role="festejo"></select></div>
-      <div class="map-row"><label>Normal</label><select data-role="normal"></select></div>
+    <p class="muted" style="margin:8px 0 0">El token queda guardado solo en este celu. En account.smartthings.com/tokens marcá, en <b>Dispositivos</b>, ver y controlar todos los dispositivos.</p>
+    <div id="st-devs" class="scene-list"></div>
+    <div id="st-moods" hidden style="margin-top:14px">
+      <div class="muted" style="margin-bottom:6px">Ambientes (los arma la página, no hace falta crear escenas):</div>
+      <div class="mood" data-mood="tension"></div>
+      <div class="mood" data-mood="festejo"></div>
+      <div class="mood" data-mood="normal"></div>
       <div class="row" style="margin-top:10px">
         <label class="muted" for="st-fest-ms">Festejo dura</label>
         <select id="st-fest-ms" style="flex:0 0 auto">
@@ -216,8 +218,8 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
         </select>
         <span class="muted">y vuelve a Normal</span>
       </div>
+      <div class="row"><label class="toggle"><input type="checkbox" id="st-anim"> Festejo animado (alterna colores; probar si las luces llegan a seguirlo)</label></div>
     </div>
-    <details style="margin-top:10px"><summary>Todas las escenas (probar una por una)</summary><div class="scene-list" id="st-list"></div></details>
   </div>
 
   <div class="card">
@@ -647,95 +649,195 @@ function initControl() {
 
   $('#ctl-sound').addEventListener('click', () => localMusic && localMusic.enableSound(true));
 
-  /* --- SmartThings --- */
+  /* --- SmartThings: control directo de las luces --- */
   const tokenInput = $('#st-token');
   tokenInput.value = store.get('st_token', '');
-  let scenes = [];
-  let mapping = store.get('st_map', {});
-  let lastScene = null, festejoTimer = null;
+  const LIGHT_CAPS = ['colorControl', 'switchLevel', 'colorTemperature'];
+  const MOOD_LABEL = { tension: 'Tensión', festejo: 'Festejo', normal: 'Normal' };
+  const DEFAULT_MOODS = {
+    tension: { type: 'color', color: '#ff1a00', kelvin: 3000, level: 35 },
+    festejo: { type: 'color', color: '#ffb000', kelvin: 4000, level: 100 },
+    normal:  { type: 'white', color: '#ffd6a0', kelvin: 3000, level: 80 },
+  };
+  let moods = Object.assign({}, DEFAULT_MOODS, store.get('st_moods', {}));
+  let devices = [];
+  let selected = new Set(store.get('st_selected', []));
+  let lastMood = null, festejoTimer = null, animTimer = null;
 
   async function stFetch(path, opts = {}) {
     const tok = tokenInput.value.trim();
     if (!tok) throw new Error('Falta el token');
+    const headers = { Authorization: 'Bearer ' + tok };
+    if (opts.body) headers['Content-Type'] = 'application/json';
     let r;
-    try {
-      r = await fetch(ST_API + path, { ...opts, headers: { Authorization: 'Bearer ' + tok } });
-    } catch {
-      throw new Error('El navegador no pudo hablar con SmartThings (bloqueo CORS o sin internet)');
-    }
+    try { r = await fetch(ST_API + path, { ...opts, headers }); }
+    catch { throw new Error('el navegador no pudo hablar con SmartThings (bloqueo CORS o sin internet)'); }
     if (!r.ok) {
-      const why = r.status === 401 ? ' — token vencido o inválido' : r.status === 403 ? ' — al token le falta permiso para escenas' : r.status === 429 ? ' — demasiadas llamadas seguidas' : '';
+      const why = r.status === 401 ? ' — token vencido o inválido' : r.status === 403 ? ' — al token le falta el permiso de dispositivos' : r.status === 429 ? ' — demasiados comandos seguidos' : r.status === 422 ? ' — la luz no acepta ese comando' : '';
       throw new Error('SmartThings respondió ' + r.status + why);
     }
     try { return await r.json(); } catch { return null; }
   }
 
-  async function loadScenes() {
+  function capsOf(d) {
+    const out = {};
+    (d.components || []).forEach(c => (c.capabilities || []).forEach(cap => { if (!out[cap.id]) out[cap.id] = c.id; }));
+    return out;
+  }
+
+  async function loadDevices() {
     store.set('st_token', tokenInput.value.trim());
     try {
-      const d = await stFetch('/scenes?max=200');
-      scenes = (d && d.items) || [];
-      log(`SmartThings: ${scenes.length} escenas encontradas`, scenes.length ? 'o' : 'e');
-      renderScenes();
-    } catch (e) { log(e.message, 'e'); }
+      let all = [], url = '/devices';
+      for (let i = 0; url && i < 10; i++) {
+        const d = await stFetch(url);
+        all = all.concat((d && d.items) || []);
+        const next = d && d._links && d._links.next && d._links.next.href;
+        url = next ? next.replace(/^https:\/\/api\.smartthings\.com(\/v1)?/, '') : null;
+      }
+      devices = all.map(d => ({ id: d.deviceId, name: d.label || d.name || d.deviceId, caps: capsOf(d), type: d.type || '' }))
+        .filter(d => d.caps.switch && LIGHT_CAPS.some(c => d.caps[c]));
+      log(`SmartThings: ${all.length} dispositivos, ${devices.length} parecen luces`, devices.length ? 'o' : 'e');
+      if (!devices.length && all.length) log('Dispositivos vistos: ' + all.map(d => (d.label || d.name) + ' [' + Object.keys(capsOf(d)).join(', ') + ']').join(' · '));
+      if (selected.size === 0 || ![...selected].some(id => devices.some(d => d.id === id))) selected = new Set(devices.map(d => d.id));
+      store.set('st_selected', [...selected]);
+      renderDevices();
+      renderMoods();
+    } catch (e) { log('Luces: ' + e.message, 'e'); }
   }
-  $('#st-load').addEventListener('click', loadScenes);
+  $('#st-load').addEventListener('click', loadDevices);
 
-  function renderScenes() {
-    const list = $('#st-list');
-    list.innerHTML = '';
-    scenes.forEach(s => {
+  const CAP_SHORT = { colorControl: 'color', switchLevel: 'brillo', colorTemperature: 'blanco cálido/frío' };
+  function renderDevices() {
+    const box = $('#st-devs');
+    box.innerHTML = '';
+    devices.forEach(d => {
       const row = document.createElement('div');
       row.className = 'row';
-      const name = document.createElement('span');
-      name.textContent = s.sceneName || s.sceneId;
-      const b = document.createElement('button');
-      b.className = 'btn small'; b.textContent = 'Probar';
-      b.onclick = () => runScene(s.sceneId, s.sceneName);
-      row.append(name, b);
-      list.append(row);
+      const lab = document.createElement('label');
+      lab.className = 'toggle';
+      lab.style.flex = '1';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = selected.has(d.id);
+      cb.onchange = () => { cb.checked ? selected.add(d.id) : selected.delete(d.id); store.set('st_selected', [...selected]); };
+      const txt = document.createElement('span');
+      txt.innerHTML = `<b></b><br><span class="muted"></span>`;
+      txt.querySelector('b').textContent = d.name;
+      txt.querySelector('.muted').textContent = LIGHT_CAPS.filter(c => d.caps[c]).map(c => CAP_SHORT[c]).join(' · ') || 'solo encender/apagar';
+      lab.append(cb, txt);
+      const on = document.createElement('button'); on.className = 'btn small'; on.textContent = 'On';
+      on.onclick = () => sendDevice(d, [{ component: d.caps.switch, capability: 'switch', command: 'on' }], 'encender');
+      const off = document.createElement('button'); off.className = 'btn ghost small'; off.textContent = 'Off';
+      off.onclick = () => sendDevice(d, [{ component: d.caps.switch, capability: 'switch', command: 'off' }], 'apagar');
+      row.append(lab, on, off);
+      box.append(row);
     });
-    const guesses = { tension: ['tension'], festejo: ['festejo', 'fiesta', 'party'], normal: ['normal', 'base', 'ambiente'] };
-    document.querySelectorAll('#st-map select').forEach(sel => {
-      const role = sel.dataset.role;
-      sel.innerHTML = '<option value="">— ninguna —</option>' + scenes.map(s => `<option value="${s.sceneId}">${(s.sceneName || s.sceneId).replace(/</g, '&lt;')}</option>`).join('');
-      let val = mapping[role];
-      if (!scenes.some(s => s.sceneId === val)) {
-        const hit = scenes.find(s => guesses[role].some(g => norm(s.sceneName).includes(g)));
-        val = hit ? hit.sceneId : '';
-      }
-      sel.value = val || '';
-      mapping[role] = sel.value;
-      sel.onchange = () => { mapping[role] = sel.value; store.set('st_map', mapping); };
-    });
-    store.set('st_map', mapping);
-    $('#st-map').hidden = scenes.length === 0;
   }
 
-  async function runScene(id, label) {
-    if (!id) return;
+  function renderMoods() {
+    $('#st-moods').hidden = devices.length === 0;
+    document.querySelectorAll('.mood').forEach(el => {
+      const key = el.dataset.mood, m = moods[key];
+      el.innerHTML = `
+        <div class="row" style="margin-top:8px;background:rgba(0,0,0,.25);padding:8px;border-radius:10px">
+          <b style="width:70px">${MOOD_LABEL[key]}</b>
+          <select class="m-type" style="flex:0 0 auto;padding:6px 8px"><option value="color">Color</option><option value="white">Blanco</option></select>
+          <input type="color" class="m-color" style="width:44px;height:36px;border:0;background:none;padding:0">
+          <input type="range" class="m-kelvin" min="2700" max="6500" step="100" style="flex:1;min-width:80px">
+          <span class="muted m-k"></span>
+          <div class="row" style="width:100%;margin-top:4px">
+            <span class="muted" style="width:44px">Brillo</span>
+            <input type="range" class="m-level" min="1" max="100" style="flex:1">
+            <span class="muted m-l" style="width:34px"></span>
+            <button class="btn small m-test">Probar</button>
+          </div>
+        </div>`;
+      const q = s => el.querySelector(s);
+      q('.m-type').value = m.type; q('.m-color').value = m.color; q('.m-kelvin').value = m.kelvin; q('.m-level').value = m.level;
+      const sync = () => {
+        m.type = q('.m-type').value; m.color = q('.m-color').value; m.kelvin = +q('.m-kelvin').value; m.level = +q('.m-level').value;
+        q('.m-color').hidden = m.type !== 'color';
+        q('.m-kelvin').hidden = q('.m-k').hidden = m.type !== 'white';
+        q('.m-k').textContent = m.kelvin + 'K';
+        q('.m-l').textContent = m.level + '%';
+        store.set('st_moods', moods);
+      };
+      el.querySelectorAll('select,input').forEach(i => i.addEventListener('input', sync));
+      q('.m-test').onclick = () => { stopAnim(); applyMood(key, true); };
+      sync();
+    });
+  }
+
+  function hexToHS(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let h = 0;
+    if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+    return { hue: Math.round(h / 3.6), saturation: Math.round(max ? (d / max) * 100 : 0) };
+  }
+
+  function commandsFor(d, m, withLevel = true) {
+    const c = [{ component: d.caps.switch, capability: 'switch', command: 'on' }];
+    if (m.type === 'color' && d.caps.colorControl) {
+      c.push({ component: d.caps.colorControl, capability: 'colorControl', command: 'setColor', arguments: [hexToHS(m.color)] });
+    } else if (m.type === 'white' && d.caps.colorTemperature) {
+      c.push({ component: d.caps.colorTemperature, capability: 'colorTemperature', command: 'setColorTemperature', arguments: [m.kelvin] });
+    } else if (m.type === 'white' && d.caps.colorControl) {
+      c.push({ component: d.caps.colorControl, capability: 'colorControl', command: 'setColor', arguments: [{ hue: 8, saturation: m.kelvin < 4000 ? 35 : 5 }] });
+    }
+    if (withLevel && d.caps.switchLevel) c.push({ component: d.caps.switchLevel, capability: 'switchLevel', command: 'setLevel', arguments: [m.level] });
+    return c;
+  }
+
+  async function sendDevice(d, commands, label) {
     const t0 = performance.now();
     try {
-      await stFetch(`/scenes/${id}/execute`, { method: 'POST' });
-      lastScene = id;
-      log(`Luces «${label}»: OK en ${Math.round(performance.now() - t0)} ms`, 'o');
-    } catch (e) { log(`Luces «${label}»: ${e.message}`, 'e'); }
+      await stFetch(`/devices/${d.id}/commands`, { method: 'POST', body: JSON.stringify({ commands }) });
+      log(`💡 ${d.name}: ${label} OK (${Math.round(performance.now() - t0)} ms)`, 'o');
+      return true;
+    } catch (e) { log(`💡 ${d.name}: ${label} — ${e.message}`, 'e'); return false; }
   }
-  function sceneName(id) { const s = scenes.find(x => x.sceneId === id); return s ? s.sceneName : id; }
-  function lights(role) {
-    const id = mapping[role];
-    if (!id || !tokenInput.value.trim() || id === lastScene) return;
-    runScene(id, sceneName(id));
+
+  function targets() { return devices.filter(d => selected.has(d.id)); }
+
+  function applyMood(key, force = false, quiet = false) {
+    if (!tokenInput.value.trim() || !devices.length) return;
+    if (!force && key === lastMood) return;
+    lastMood = key;
+    const m = moods[key];
+    const t0 = performance.now();
+    Promise.all(targets().map(d => quiet
+      ? stFetch(`/devices/${d.id}/commands`, { method: 'POST', body: JSON.stringify({ commands: commandsFor(d, m, false) }) }).then(() => true, e => { log(`💡 ${d.name}: ${e.message}`, 'e'); return false; })
+      : sendDevice(d, commandsFor(d, m), MOOD_LABEL[key])))
+      .then(r => { if (!quiet) log(`Ambiente «${MOOD_LABEL[key]}»: ${r.filter(Boolean).length}/${r.length} luces en ${Math.round(performance.now() - t0)} ms`, r.every(Boolean) ? 'o' : 'e'); });
+  }
+
+  function stopAnim() { clearInterval(animTimer); animTimer = null; }
+  function startAnim() {
+    const palette = ['#ffb000', '#ff1a00', '#ffffff', '#ff00aa'];
+    let i = 0;
+    stopAnim();
+    animTimer = setInterval(() => {
+      i = (i + 1) % palette.length;
+      const m = { ...moods.festejo, type: 'color', color: palette[i] };
+      targets().filter(d => d.caps.colorControl).forEach(d =>
+        stFetch(`/devices/${d.id}/commands`, { method: 'POST', body: JSON.stringify({ commands: [{ component: d.caps.colorControl, capability: 'colorControl', command: 'setColor', arguments: [hexToHS(m.color)] }] }) })
+          .catch(e => { log(`💡 animación: ${e.message}`, 'e'); stopAnim(); }));
+    }, 1500);
   }
 
   function lightsForCue(cue) {
     clearTimeout(festejoTimer);
-    if (cue === 'pregunta' || cue === 'suspenso') lights('tension');
+    stopAnim();
+    if (cue === 'pregunta' || cue === 'suspenso') applyMood('tension');
     else if (cue === 'revelar') {
-      lights('festejo');
+      applyMood('festejo', true);
+      if ($('#st-anim').checked) startAnim();
       const ms = +$('#st-fest-ms').value;
-      if (ms > 0) festejoTimer = setTimeout(() => lights('normal'), ms);
-    } else if (cue === 'stop') lights('normal');
+      if (ms > 0) festejoTimer = setTimeout(() => { stopAnim(); applyMood('normal'); }, ms);
+    } else if (cue === 'stop') applyMood('normal');
   }
 
   /* --- Botones de momentos --- */
