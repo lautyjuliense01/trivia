@@ -122,7 +122,7 @@ window.TRIVIA = {
     destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },  // celebración corta
     apagado:   { tipo: 'apagado' },   // apaga todo; el look siguiente las vuelve a prender solo
     estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },   // titila lo más rápido posible, 100 ↔ 0
-    flashUnico: { tipo: 'flashUnico', ms: 90, lamparas: ['techo'], respaldo: 'festejo' },   // un solo destello blanco frío (solo techo) y vuelve a lo que había
+    flashUnico: { tipo: 'flashUnico', ms: 40, lamparas: ['techo'], respaldo: 'festejo' },   // un solo destello blanco frío (solo techo) y vuelve a lo que había
     calido:    { tipo: 'color', h: 32, s: 75, brillo: 26, transicion: 2, respaldo: 'normal' },   // después de la respuesta: tenue, sin cortar el clima
     fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
   },

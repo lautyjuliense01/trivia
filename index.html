@@ -304,11 +304,11 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 @keyframes contIn{0%{opacity:0;transform:translateY(-60px) scale(1.5);filter:brightness(3)}60%{filter:brightness(1.6)}100%{opacity:1;transform:none;filter:none}}
 .cont-sub{margin-top:46px;font-family:Lobster,cursive;color:var(--gold);font-size:clamp(34px,4.5vw,70px);opacity:0;animation:fadeIn 1s forwards;text-shadow:0 0 24px rgba(255,190,60,.8)}
 /* v6: cuenta final */
-.v-cd .script{font-size:clamp(56px,7vw,100px);margin:0}
-.cd-list{max-width:860px;margin:26px auto 0;display:flex;flex-direction:column;gap:12px}
-.cd-row{position:relative;display:grid;grid-template-columns:80px 70px 1fr 130px;align-items:center;gap:16px;padding:10px 18px;border-radius:16px;background:rgba(0,0,0,.45);border:2px solid rgba(247,201,72,.25);text-align:left}
+.v-cd .script{font-size:clamp(48px,6vw,88px);margin:0}
+.cd-list{max-width:860px;margin:18px auto 0;display:flex;flex-direction:column;gap:clamp(6px,1.2vh,12px)}
+.cd-row{position:relative;display:grid;grid-template-columns:70px 60px 1fr 120px;align-items:center;gap:14px;padding:clamp(4px,.9vh,10px) 18px;border-radius:16px;background:rgba(0,0,0,.45);border:2px solid rgba(247,201,72,.25);text-align:left}
 .cd-pos{font-family:Anton,sans-serif;font-size:40px;color:var(--muted)}
-.cd-av{width:62px;height:62px;border-radius:50%;overflow:hidden;border:3px solid var(--gold)}
+.cd-av{width:clamp(40px,7vh,62px);height:clamp(40px,7vh,62px);border-radius:50%;overflow:hidden;border:3px solid var(--gold)}
 .cd-av img{width:100%;height:100%;object-fit:cover}.cd-av .ini{font-size:26px}
 .cd-name{font-weight:800;font-size:clamp(22px,2.6vw,38px)}
 .cd-pts{font-family:Anton,sans-serif;font-size:34px;color:var(--gold);text-align:right}
@@ -316,11 +316,17 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 .cd-row:not(.shown):not(.top)::after{content:"?";position:absolute;left:0;right:0;text-align:center;font-family:Anton,sans-serif;font-size:34px;color:rgba(247,201,72,.35)}
 .cd-row.shown{animation:flipIn .7s cubic-bezier(.2,1.3,.4,1)}
 @keyframes flipIn{from{transform:rotateX(90deg) scale(1.1);filter:brightness(2.5)}to{transform:none;filter:none}}
+.cd-banner{height:0;margin:0;font-family:Lobster,cursive;font-size:clamp(30px,3.6vw,56px);color:var(--gold);text-shadow:0 0 26px rgba(255,190,60,.7);opacity:0;transform:scale(.8);transition:all .7s cubic-bezier(.2,1.4,.4,1)}
+.cd-banner.on{opacity:1;transform:none;height:auto;margin:8px 0 -4px}
+.cd-row.hid{border-color:var(--gold);box-shadow:0 0 30px rgba(255,190,60,.45)}
+.cd-row.hid .cd-pos,.cd-row.hid .cd-name{color:var(--gold)}
 .cd-row.top{border-color:var(--gold);box-shadow:0 0 30px rgba(255,190,60,.55);animation:pulseGlow 1.4s ease-in-out infinite}
 .cd-row.top .cd-pos,.cd-row.top .cd-name{color:var(--gold)}
 @keyframes pulseGlow{50%{box-shadow:0 0 60px rgba(255,190,60,.9)}}
 .win-crown.big{font-size:clamp(120px,16vw,220px);margin:0;animation:shake .14s infinite}
 .win-rest{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:30px;opacity:0;animation:fadeIn 1s 2.5s forwards}
+.win-sub{font-family:Anton,sans-serif;letter-spacing:.2em;text-transform:uppercase;font-size:clamp(16px,1.9vw,28px);color:var(--ink);margin-top:10px;opacity:0;animation:fadeIn 1s 1.2s forwards}
+.win-rest span.pod{color:var(--ink);font-size:clamp(16px,1.8vw,26px);border:1px solid rgba(247,201,72,.5)}
 .win-rest span{padding:8px 16px;border-radius:30px;background:rgba(0,0,0,.45);font-weight:800;font-size:clamp(14px,1.5vw,22px);color:var(--muted)}
 
 /* v7: la pantalla acompaña a la luz */
@@ -407,6 +413,18 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .roll-t{font-size:clamp(14px,1.5vw,22px);letter-spacing:.45em;text-transform:uppercase;color:#a99a86;margin-bottom:14px}
 .roll-i{font-family:Anton,sans-serif;font-size:clamp(28px,3.2vw,48px);letter-spacing:.12em;text-transform:uppercase;color:#f4ead8;margin:6px 0}
 .roll-end{font-size:clamp(70px,9vw,130px);color:var(--gold);margin:120px 0 60vh}
+
+/* v23: previa hipnótica */
+.hypno{position:absolute;left:50%;top:50%;width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(255,170,60,0) 0deg,rgba(255,170,60,.20) 40deg,rgba(150,20,20,0) 90deg,rgba(255,205,130,.16) 150deg,rgba(0,0,0,0) 200deg,rgba(190,50,30,.18) 260deg,rgba(0,0,0,0) 310deg,rgba(255,170,60,0) 360deg);
+  -webkit-mask-image:radial-gradient(circle,#000 10%,rgba(0,0,0,.5) 35%,transparent 60%);mask-image:radial-gradient(circle,#000 10%,rgba(0,0,0,.5) 35%,transparent 60%);animation:spin 48s linear infinite}
+.hypno.h2{animation-duration:75s;animation-direction:reverse;opacity:.7;transform-origin:50% 50%}
+.hypno-core{position:absolute;left:50%;top:50%;width:46vmin;height:46vmin;margin:-23vmin 0 0 -23vmin;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,214,150,.30),rgba(255,140,60,.10) 45%,transparent 70%);animation:breatheCore 7s ease-in-out infinite}
+@keyframes breatheCore{50%{transform:scale(1.3);opacity:.55}}
+.hring{position:absolute;left:50%;top:50%;width:30vmin;height:30vmin;margin:-15vmin 0 0 -15vmin;border-radius:50%;border:1px solid rgba(255,205,140,.35);animation:ripple 9s linear infinite;opacity:0}
+.hring.r2{animation-delay:3s}.hring.r3{animation-delay:6s}
+@keyframes ripple{0%{transform:scale(.3);opacity:0}15%{opacity:.6}100%{transform:scale(4);opacity:0}}
 
 /* Control v5 */
 #control{padding-bottom:120px}
@@ -632,7 +650,7 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 <script>
 (() => {
 'use strict';
-const VERSION = 'v22 · 01/11 02:00';
+const VERSION = 'v23 · 01/11 03:00';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -700,71 +718,80 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 function createLink(code, role, onMessage, onStatus) {
   const topic = `biotrivia/v1/${code}`;
   const seen = new Set();
-  let client = null, gen = 0, idx = 0, stopped = false;
+  let client = null, gen = 0, idx = 0, stopped = false, fails = 0, lastRx = 0, hiddenAt = 0;
+  let outbox = [];   // mensajes recientes: se reenvían al reconectar (el receptor descarta duplicados)
   let bc = null;
   try { bc = new BroadcastChannel('biotrivia-' + code); } catch {}
 
   function handle(msg) {
-    if (!msg || msg.from === role || seen.has(msg.id)) return;
+    if (!msg || msg.from === role) return;
+    lastRx = Date.now();
+    if (seen.has(msg.id)) return;
     seen.add(msg.id);
-    if (seen.size > 500) seen.clear();
+    if (seen.size > 800) seen.clear();
     onMessage(msg);
   }
   if (bc) bc.onmessage = e => handle(e.data);
 
+  function prune() {
+    const now = Date.now();
+    outbox = outbox.filter(o => now - o.t < (o.msg.type === 'state' ? 600000 : 2500));
+  }
+  function flush() {
+    prune();
+    outbox.forEach(o => { try { client.publish(topic, JSON.stringify(o.msg), { qos: 0 }); } catch {} });
+  }
   function connect() {
     if (stopped) return;
-    if (typeof window.mqtt === 'undefined') {
-      onStatus('down', 'Cargando librería de conexión…');
-      setTimeout(connect, 1000);
-      return;
-    }
+    if (typeof window.mqtt === 'undefined') { onStatus('down', 'Cargando librería de conexión…'); setTimeout(connect, 800); return; }
     const my = ++gen;
+    if (fails >= 2) { idx++; fails = 0; }   // si un servidor falla dos veces seguidas, probamos el otro
     const url = BROKERS[idx % BROKERS.length];
-    idx++;
     try { client && client.end(true); } catch {}
     onStatus('down', 'Conectando…');
-    const c = window.mqtt.connect(url, {
-      clientId: 'bt_' + role + '_' + uid(), clean: true, reconnectPeriod: 0, connectTimeout: 7000, keepalive: 20,
-    });
+    const c = window.mqtt.connect(url, { clientId: 'bt_' + role + '_' + uid(), clean: true, reconnectPeriod: 0, connectTimeout: 6000, keepalive: 10 });
     client = c;
     c.on('connect', () => {
       if (my !== gen) return;
-      c.subscribe(topic, { qos: 0 });
+      fails = 0;
+      c.subscribe(topic, { qos: 0 }, () => { if (my === gen) flush(); });
       onStatus('ok', 'Conectado (' + new URL(url).hostname + ')');
     });
-    c.on('message', (_t, payload) => {
-      if (my !== gen) return;
-      try { handle(JSON.parse(payload.toString())); } catch {}
-    });
+    c.on('message', (_t, payload) => { if (my !== gen) return; try { handle(JSON.parse(payload.toString())); } catch {} });
     c.on('error', () => {});
     c.on('close', () => {
       if (my !== gen || stopped) return;
+      fails++;
       onStatus('down', 'Reconectando…');
-      setTimeout(connect, 1500);
+      setTimeout(() => { if (my === gen) connect(); }, 700);
     });
   }
   connect();
-  // Al volver a la pestaña (o recuperar internet) se reconecta solo, sin esperar a que se caiga la conexión vieja
-  const revive = () => { if (stopped) return; if (document.visibilityState === 'visible') connect(); };
-  document.addEventListener('visibilitychange', revive);
-  addEventListener('online', revive);
-  addEventListener('pageshow', revive);
+  // Al volver a la pestaña: conexión nueva al instante (la vieja suele quedar "colgada" aunque parezca conectada)
+  document.addEventListener('visibilitychange', () => {
+    if (stopped) return;
+    if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+    if (!client || !client.connected || Date.now() - hiddenAt > 1500) connect();
+  });
+  addEventListener('online', () => { if (!stopped) connect(); });
+  addEventListener('pageshow', e => { if (!stopped && e.persisted) connect(); });
 
   return {
     send(obj) {
       const msg = { id: uid(), from: role, t: Date.now(), ...obj };
       seen.add(msg.id);
       try { bc && bc.postMessage(msg); } catch {}
+      if (msg.type === 'state') outbox = outbox.filter(o => o.msg.type !== 'state');
+      if (msg.type !== 'hello' && msg.type !== 'musica' && msg.type !== 'log') { outbox.push({ msg, t: Date.now() }); prune(); }
       try { if (client && client.connected) client.publish(topic, JSON.stringify(msg), { qos: 0 }); } catch {}
       return msg;
     },
     stop() { stopped = true; try { client && client.end(true); } catch {} try { bc && bc.close(); } catch {} },
     reconnect() { if (!stopped) connect(); },
     isUp() { return !!(client && client.connected); },
+    lastRx: () => lastRx,
   };
 }
-
 
 /* ================= Música (YouTube IFrame API) ================= */
 let ytApiPromise = null;
@@ -917,7 +944,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
     try { t = player.getCurrentTime() || 0; d = player.getDuration() || 0; } catch {}
     return { key: current, name: tracks[current].name, t, d, loop: tracks[current].loop !== false };
   }
-  function setLevel() { if (!ready || !current) return; try { if (!needsFadeIn) fadeTo(musicVol, 300); } catch {} }
+  function setLevel(now) { if (!ready || !current) return; try { if (needsFadeIn) return; if (now) { clearInterval(fadeTimer); player.setVolume(musicVol); } else fadeTo(musicVol, 300); } catch {} }
   return { play, stop, cue, enableSound, status, setLevel, isReady: () => ready, current: () => current };
 }
 
@@ -1115,7 +1142,7 @@ const LOOKS = Object.assign({
   destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },
   apagado:   { tipo: 'apagado' },
   estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },
-  flashUnico: { tipo: 'flashUnico', ms: 90, lamparas: ['techo'], respaldo: 'festejo' },
+  flashUnico: { tipo: 'flashUnico', ms: 40, lamparas: ['techo'], respaldo: 'festejo' },
   calido:    { tipo: 'color', h: 32, s: 75, brillo: 26, transicion: 2, respaldo: 'normal' },
   fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
 }, D.looks || {});
@@ -1224,7 +1251,25 @@ function rankGroups(results) {
   return scores.map(v => { const players = sc.map((x, i) => (x === v ? i : -1)).filter(i => i >= 0); const g = { score: v, players, pos }; pos += players.length; return g; });
 }
 /* Lo que se revela en la cuenta final: todos menos el grupo de arriba, del último hacia arriba */
-function countdownGroups(results) { return rankGroups(results).slice(1).reverse(); }
+function countdownGroups(results) {
+  // Se revela del último hacia arriba, dejando ocultos los dos mejores puestos (el ganador se anuncia aparte, nunca "por descarte")
+  const g = rankGroups(results);
+  return g.slice(g[0] && g[0].players.length > 1 ? 1 : 2).reverse();
+}
+/* Posiciones finales, teniendo en cuenta el desempate */
+function finalRanking(results) {
+  const s = standing(results);
+  const groups = rankGroups(results);
+  const out = [];
+  if (s.decided) {
+    out.push({ pos: 1, players: s.top, score: s.max });
+    const restTop = s.tied.filter(i => !s.top.includes(i));
+    if (restTop.length) out.push({ pos: 2, players: restTop, score: s.max });
+    let pos = 1 + s.tied.length;
+    groups.slice(1).forEach(g => { out.push({ pos, players: g.players, score: g.score }); pos += g.players.length; });
+  } else groups.forEach(g => out.push(g));
+  return out;
+}
 
 function momentOf(st) {
   if (st.overlay === 'marcador') return 'marcador';
@@ -1542,9 +1587,9 @@ function initScreen() {
       case 'cuenta': {
         beams.setup('top3');
         const cg = countdownGroups(st.results || {}), k = st.sub || 0;
-        if (k === 0) { beams.clearPools(); beams.level(.55); beams.play('calm'); break; }
+        if (k === 0) { beams.clearPools(); beams.level(.55); beams.play('calm'); if (!cg.length) later(1500, () => scanLock(() => sqa('.cd-row.hid'), 600)); break; }
         scanLock(() => sqa(`.cd-row[data-g="${cg[k - 1].pos}"]`), 450);
-        if (k >= cg.length) later(1900, () => scanLock(() => [sq('.cd-row.top')], 600, { spread: true }));
+        if (k >= cg.length) later(1900, () => scanLock(() => sqa('.cd-row.hid'), 600));
         break;
       }
       case 'ganador':
@@ -1591,6 +1636,7 @@ function initScreen() {
 
   const link = createLink(code, 'screen', msg => {
     if (msg.type === 'luz') { applyTint(msg.L || LOOKS[msg.look], msg.ms); return; }
+    if (msg.type === 'vol') { musicVol = msg.v; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); return; }
     if (msg.type === 'flashDuro') { const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); return; }
     if (msg.type === 'state' && msg.state) {
       if (msg.state.rev !== curRev) { curRev = msg.state.rev; const pc = $('#previa-code'); if (pc) pc.hidden = true; render(msg.state); }
@@ -1601,6 +1647,7 @@ function initScreen() {
     if (st === 'ok') link && link.send({ type: 'ping' });
   });
   setInterval(() => link.send({ type: 'hello' }), 3000);
+  setInterval(() => { const ago = Date.now() - link.lastRx(); if (link.lastRx() && ago > 12000 && document.visibilityState === 'visible') link.reconnect(); }, 4000);
   window.__logSink = (text, kind) => link.send({ type: 'log', text, kind });
 
   $('#unlock-btn').addEventListener('click', async () => {
@@ -1646,7 +1693,10 @@ function initScreen() {
       h = `<div class="v enter"><div class="marquee" style="display:inline-block"><div class="edition">${esc(D.edicion)}</div><h1 class="script" style="font-size:clamp(70px,11vw,150px);margin:0;line-height:.95">${esc(D.titulo)}</h1></div>
            <div class="code-box">Código para el control<b>${code}</b></div></div>`;
     } else if (sl.k === 'previa') {
-      h = `<div class="previa"><div class="dust"></div><div class="dust d2"></div>
+      const modo = st.previaModo || 'hipnotico';
+      const fondo = modo === 'apagado' ? '' : modo === 'polvo' ? '<div class="dust"></div><div class="dust d2"></div>'
+        : '<div class="hypno"></div><div class="hypno h2"></div><div class="hypno-core"></div><div class="hring"></div><div class="hring r2"></div><div class="hring r3"></div>';
+      h = `<div class="previa">${fondo}
            <div class="previa-code" id="previa-code" ${curRev ? 'hidden' : ''}>Código para el control <b>${code}</b></div></div>`;
     } else if (sl.k === 'presentamos') {
       h = `<div class="v v-pt"><div class="pt-pre">Y ahora…</div><div class="pt-main">Presentamos a<br>los contendientes</div><div class="pt-line"></div></div>`;
@@ -1708,10 +1758,13 @@ function initScreen() {
         <div class="cont-row">${P.map((p, i) => `<div class="cont-card" style="animation-delay:${0.25 + i * 0.4}s"><div class="pl-photo">${photoHTML(p)}</div><div class="script">${esc(p.nombre)}</div></div>`).join('')}</div>
         <div class="cont-sub" style="animation-delay:${0.6 + P.length * 0.4}s">¿Quién se llevará la corona?</div></div>`;
     } else if (sl.k === 'cuenta') {
-      const groups = rankGroups(st.results || {});
-      const rows = [`<div class="cd-row top"><span class="cd-pos">1°</span><span class="cd-av"><span class="ini q">?</span></span><span class="cd-name" id="cd-top-name">???</span><span class="cd-pts">👑</span></div>`];
-      groups.slice(1).forEach(g => g.players.forEach(pi => rows.push(`<div class="cd-row" data-g="${g.pos}"><span class="cd-pos">${g.pos}°</span><span class="cd-av">${photoHTML(P[pi])}</span><span class="cd-name">${esc(P[pi].nombre)}</span><span class="cd-pts">${g.score} ${g.score === 1 ? 'pt' : 'pts'}</span></div>`)));
-      h = `<div class="v v-cd enter"><h2 class="script">La cuenta final</h2><div class="round-sub" style="margin-top:4px">Del último al primero</div><div class="cd-list">${rows.join('')}</div></div>`;
+      const cg = countdownGroups(st.results || {});
+      const shownPlayers = new Set(cg.flatMap(g => g.players));
+      const hidden = P.length - shownPlayers.size;
+      const rows = [];
+      for (let k = 0; k < hidden; k++) rows.push(`<div class="cd-row hid"><span class="cd-pos">?</span><span class="cd-av"><span class="ini q">?</span></span><span class="cd-name">???</span><span class="cd-pts">👑</span></div>`);
+      [...cg].reverse().forEach(g => g.players.forEach(pi => rows.push(`<div class="cd-row" data-g="${g.pos}"><span class="cd-pos">${g.pos}°</span><span class="cd-av">${photoHTML(P[pi])}</span><span class="cd-name">${esc(P[pi].nombre)}</span><span class="cd-pts">${g.score} ${g.score === 1 ? 'pt' : 'pts'}</span></div>`)));
+      h = `<div class="v v-cd enter"><h2 class="script">La cuenta final</h2><div class="round-sub" style="margin-top:4px">Del último al primero</div><div class="cd-banner" id="cd-banner"></div><div class="cd-list">${rows.join('')}</div></div>`;
     } else if (sl.k === 'reglas') {
       h = `<div class="v v-rules enter"><div class="marquee"><h2 class="script">Reglas</h2></div><ul>${rulesList().map((r, i) => `<li style="animation-delay:${0.4 + i * 0.35}s">${esc(r)}</li>`).join('')}</ul></div>`;
     } else if (sl.k === 'ronda') {
@@ -1835,8 +1888,10 @@ function initScreen() {
     const s = standing(st.results || {});
     const names = s.top.map(i => `<div class="win-card">${s.decided ? '<div class="win-crown">👑</div>' : ''}<div class="pl-photo">${photoHTML(P[i])}</div><h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
     const extra = s.decided ? `${s.max} ${s.max === 1 ? 'punto' : 'puntos'}${s.byTie ? ' · ganó el desempate' : ''}` : `${s.max} ${s.max === 1 ? 'punto' : 'puntos'} cada uno · ¡Vamos al desempate!`;
-    const rest = s.decided ? rankGroups(st.results || {}).flatMap(g => g.players.filter(i => !s.top.includes(i)).map(i => `<span>${g.pos === 1 ? 2 : g.pos}° ${esc(P[i].nombre)} · ${g.score}</span>`)).join('') : '';
-    return `<div class="v"><div class="win-pre">${winnerWord(s.top)}</div><div class="win-names ${s.top.length > 1 ? 'multi' : ''}">${names}</div><div class="win-pts">${extra}</div>${rest ? `<div class="win-rest">${rest}</div>` : ''}</div>`;
+    const medal = { 2: '🥈', 3: '🥉' };
+    const rest = s.decided ? finalRanking(st.results || {}).filter(g => g.pos > 1).flatMap(g => g.players.map(i => `<span class="${g.pos <= 3 ? 'pod' : ''}">${medal[g.pos] || ''} ${g.pos}° ${esc(P[i].nombre)} · ${g.score} ${g.score === 1 ? 'pt' : 'pts'}</span>`)).join('') : '';
+    const sub = s.decided ? `<div class="win-sub">${P[s.top[0]].genero === 'f' ? 'Ganadora' : 'Ganador'} de ${esc(D.titulo)} · ${esc((D.edicion.match(/\d{4}/) || [''])[0])}</div>` : '';
+    return `<div class="v"><div class="win-pre">${winnerWord(s.top)}</div><div class="win-names ${s.top.length > 1 ? 'multi' : ''}">${names}</div>${sub}<div class="win-pts">${extra}</div>${rest ? `<div class="win-rest">${rest}</div>` : ''}</div>`;
   }
 
   function updateSlide(st, sl, changed) {
@@ -1861,22 +1916,24 @@ function initScreen() {
         row.classList.toggle('shown', on);
       });
       if (fresh && !changed) hit();
-      const all = (st.sub || 0) >= cg.length, tie = standing(st.results || {}).tied.length > 1;
-      const tn = $('#cd-top-name');
-      if (tn) tn.textContent = all ? (tie ? '¡Empate en la cima!' : '¿Quién será?') : '???';
+      const all = (st.sub || 0) >= cg.length, tied = standing(st.results || {}).tied.length;
+      const bn = $('#cd-banner');
+      if (bn) { bn.textContent = !all ? '' : (tied > 1 ? (tied === 2 ? '¡Empate en el primer puesto!' : `¡Empate ${tied === 3 ? 'triple' : 'de ' + tied} en el primer puesto!`) : 'Quedan los dos mejores…'); bn.classList.toggle('on', all); }
     } else if (sl.k === 'ganador') {
       const box = $('#win-box');
       if (!box) return;
       if (changed || st.step !== cur.step || JSON.stringify(st.results) !== JSON.stringify(cur.results)) {
         clearInterval(confettiLoop);
         if (st.step === 'redoble') {
-          box.innerHTML = `<div class="v"><div class="win-crown big">👑</div><div class="win-pre">Y la corona es para…</div></div>`;
+          box.innerHTML = `<div class="v"><div class="win-crown big">👑</div><div class="win-pre">Y la corona de ${esc(D.titulo)} es para…</div></div>`;
         } else {
           box.innerHTML = winnerHTML(st);
           fixPhotos(box);
           confetti(); confettiLoop = setInterval(confetti, 3500);
         }
       }
+    } else if (sl.k === 'previa' && !changed && st.previaModo !== cur.previaModo) {
+      buildSlide(st, sl);
     } else if (sl.k === 'marcador' && !changed && JSON.stringify(st.results) !== JSON.stringify(cur.results)) {
       buildSlide(st, sl);
     }
@@ -1898,7 +1955,13 @@ function initControl() {
   $('#set-delay').addEventListener('change', () => { S.delayMs = +$('#set-delay').value; commit(false); });
   if (S.vol == null) S.vol = VOLUME;
   $('#set-vol').value = S.vol; $('#set-vol-v').textContent = S.vol;
-  $('#set-vol').addEventListener('input', () => { S.vol = +$('#set-vol').value; $('#set-vol-v').textContent = S.vol; clearTimeout(commitT); commitT = setTimeout(() => commit(true), 120); });
+  let volT = 0;
+  $('#set-vol').addEventListener('input', () => {
+    S.vol = +$('#set-vol').value; $('#set-vol-v').textContent = S.vol;
+    const now = Date.now();
+    if (now - volT > 60 && link) { volT = now; link.send({ type: 'vol', v: S.vol }); }   // directo a la tele, sin esperar
+    clearTimeout(commitT); commitT = setTimeout(() => { if (link) link.send({ type: 'vol', v: S.vol }); commit(true); }, 250);
+  });
   $('#set-hideplayer').checked = !!S.hidePlayer;
   $('#set-hideplayer').addEventListener('change', () => { S.hidePlayer = $('#set-hideplayer').checked; commit(false); });
 
@@ -1935,7 +1998,7 @@ function initControl() {
     if (lastHello && ago < 8000) setLinkStatus('ok', 'Pantalla ✓');
     else if (lastHello) {
       setLinkStatus('bad', `Pantalla sin señal (${Math.round(ago / 1000)} s) · reconectando…`);
-      if (document.visibilityState === 'visible' && Math.round(ago / 1000) % 6 === 0) { link.reconnect(); }
+      if (document.visibilityState === 'visible' && Math.round(ago / 1000) % 5 === 0) { link.reconnect(); }
     }
   }, 1000);
 
@@ -2320,7 +2383,7 @@ function initControl() {
       setTimeout(() => { if (link) link.send({ type: 'flashDuro' }); }, scrDelay());
       const white = { tipo: 'blanco', brillo: 100, calidez: 100, nombre: 'flash' };   // blanco frío al máximo: lo más blanco y brillante que da
       await Promise.all(lamps.map(lamp => sendLookTo(lamp, white).catch(() => {})));
-      setTimeout(() => lamps.forEach(lamp => sendLookTo(lamp, { ...back, transicion: 0 }).catch(() => {})), L.ms || 90);
+      setTimeout(() => lamps.forEach(lamp => sendLookTo(lamp, { ...back, transicion: 0 }).catch(() => {})), L.ms == null ? 40 : L.ms);
       log('💡 flash único', 'o');
       return;
     }
@@ -2413,6 +2476,9 @@ function initControl() {
     box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { clearLights(); fireLook(b.dataset.look, true); }));
   }
   renderLooks();
+  // Mantiene despierto el intermediario y su permiso con Tuya: así la primera orden no sale más lenta
+  setInterval(() => { if (tuyaReady() && document.visibilityState === 'visible') tuyaFetch('/calentar').catch(() => {}); }, 45000);
+  setTimeout(() => { if (tuyaReady()) tuyaFetch('/calentar').catch(() => {}); }, 1500);
   (() => {
     const sel = $('#ty-lamps');
     const opts = LAMP_NAMES.map(n => [n, n]);
@@ -2577,6 +2643,7 @@ function initControl() {
     if (sl.k === 'cuenta') {
       const cg = countdownGroups(S.results), k = S.sub || 0;
       if (k < cg.length) return `Revelar ${cg[k].pos}° puesto ▶`;
+      return tieNow() ? '⚔️ Desempate ▶' : '👑 ¡Anunciar al ganador! ▶';
     }
     if (sl.k === 'ganador' && S.step === 'redoble') return '🥁 …';
     const n = SCRIPT[nextIndex(S.slide, 1)];
@@ -2592,7 +2659,8 @@ function initControl() {
     if (sl.k === 'logo') h = `<div class="now-title">Pantalla de espera</div><p class="muted">Muestra el código. Tocá <b>Empezar</b> para lanzar la intro.</p>`;
     else if (sl.k === 'premios') h = `<div class="now-title">Entrega de premios</div><p class="muted">Muestra el orden en que eligen (ganador primero) con música de fondo y luz cálida.</p>`;
     else if (sl.k === 'cierre') h = `<div class="now-title">Créditos finales</div><p class="muted">Créditos que suben como en el cine, con la música de cierre y luz ambiente.</p>`;
-    else if (sl.k === 'previa') h = `<div class="now-title">Previa</div><p class="muted">Pantalla negra con polvo de luz, música de previa y luz cálida tenue. No adelanta nada del show. El código se oculta solo al vincular.</p>`;
+    else if (sl.k === 'previa') h = `<div class="now-title">Previa</div><p class="muted">No adelanta nada del show. Elegí cómo se ve la tele:</p>
+      <div class="players">${[['hipnotico', '🌀 Hipnótica'], ['polvo', '✨ Polvo de luz'], ['apagado', '⬛ Tele apagada']].map(([v, t]) => `<button class="pbtn ${(S.previaModo || 'hipnotico') === v ? 'on' : ''}" data-pm="${v}">${t}</button>`).join('')}</div>`;
     else if (sl.k === 'presentamos') h = `<div class="now-title">"Presentamos a los contendientes"</div><p class="muted">Apagón, arranca la música de presentación y entra el título con los reflectores.</p>`;
     else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round((CEL + CREDITS.length * CRED) / 1000)} s.</p>`;
     else if (sl.k === 'intro') h = `<div class="now-title">Intro de película · ${esc(TRACKS.intro ? TRACKS.intro.name : 'sin música')}</div><p class="muted">Dura unos 10 s con la fanfarria. Las luces arrancan en tensión y pasan a festejo cuando aparece el título.</p>`;
@@ -2601,9 +2669,10 @@ function initControl() {
     else if (sl.k === 'contendientes') h = `<div class="now-title">Los ${P.length} contendientes juntos</div><p class="muted">Aparecen uno a uno con flash. Luces en festejo.</p>`;
     else if (sl.k === 'cuenta') {
       const cg = countdownGroups(S.results), k = S.sub || 0, st2 = standing(S.results);
-      h = `<div class="now-title">Cuenta final</div><p class="muted">Se revela del último hacia arriba. El primer puesto queda oculto para el final.</p>
+      const hiddenG = rankGroups(S.results).slice(0, rankGroups(S.results).length - cg.length);
+      h = `<div class="now-title">Cuenta final</div><p class="muted">Se revela del último hacia arriba. Los dos mejores quedan ocultos: el 1° se anuncia aparte${st2.tied.length > 1 ? ', después del desempate' : ''}.</p>
         <div class="mini-score">${cg.map((g, i) => `<span style="${i < k ? '' : 'opacity:.45'}">${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}${i < k ? ' ✓' : ''}</span><b>${g.score}</b>`).join('')}
-        <span>1° ${st2.tied.map(x => esc(P[x].nombre)).join(', ')} ${st2.tied.length > 1 ? '(empate → desempate)' : ''}</span><b>${st2.max}</b></div>`;
+        ${hiddenG.map(g => `<span>🔒 ${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}</span><b>${g.score}</b>`).join('')}</div>`;
     }
     else if (sl.k === 'reglas') h = `<ul class="muted" style="padding-left:18px;margin:6px 0">${rulesList().map(r => `<li>${esc(r)}</li>`).join('')}</ul>`;
     else if (sl.k === 'ronda') { const r = D.rondas[sl.r]; h = `<div class="now-title">Ronda ${sl.r + 1}: ${esc(r.titulo)}</div><p class="muted">${r.preguntas.length} preguntas</p>`; }
@@ -2624,6 +2693,7 @@ function initControl() {
       if (sl.k === 'ganador' && !s.decided) h += `<p class="muted">Hay empate. Volvé con ◀ al desempate y cargá las respuestas.</p>`;
     }
     body.innerHTML = h;
+    body.querySelectorAll('[data-pm]').forEach(b => b.addEventListener('click', () => { S.previaModo = b.dataset.pm; commit(); }));
 
     // Pasos
     $('#steps-card').hidden = !isQ(sl);
