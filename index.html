@@ -620,7 +620,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 <script>
 (() => {
 'use strict';
-const VERSION = 'v17 · 31/10 22:30';
+const VERSION = 'v18 · 31/10 22:45';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2176,6 +2176,32 @@ function initControl() {
   function liveCmd(c, mode = 'gradient') {
     return [{ code: 'switch_led', value: true }, { code: 'control_data', value: { change_mode: mode, h: Math.round(c.h), s: Math.round(c.s * 2.55), v: Math.max(c.vMin || 3, Math.round(c.b * 2.55)), bright: 0, temperature: 0 } }];
   }
+  /* Modo DP: la luz recibe sus funciones reales en formato texto (hex). Formato Tuya v2:
+     colour_data  = hhhh ssss vvvv          (h 0-360, s y v 0-1000)
+     control_data = m hhhh ssss vvvv bbbb tttt   (m: 0 directo, 1 gradual)
+     scene_data   = nn + por cada paso: tt gg mm hhhh ssss vvvv bbbb tttt  (tt cambio, gg fundido, mm 00 fijo 01 salto 02 gradual) */
+  const hx = (n, w) => Math.max(0, Math.round(n)).toString(16).padStart(w, '0').slice(-w);
+  const dpColour = (h, s1000, v1000) => hx(h, 4) + hx(s1000, 4) + hx(v1000, 4);
+  const dpScene = (num, units) => hx(num, 2) + units.map(u => hx(u.sw, 2) + hx(u.gr, 2) + hx(u.mode, 2) + hx(u.h || 0, 4) + hx(u.s || 0, 4) + hx(u.v || 0, 4) + hx(u.b || 0, 4) + hx(u.t || 0, 4)).join('');
+  function dpCommands(L, cfg) {
+    const on = { code: 'switch_led', value: true };
+    const vMin = cfg.vMin1000 == null ? 10 : cfg.vMin1000;
+    if (L.apagar || L.tipo === 'apagado') return [{ code: 'switch_led', value: false }];
+    if (L.tipo === 'efecto') {
+      const dur = Math.max(1, Math.min(100, Math.round((L.paso == null ? 0.6 : L.paso) * 10)));
+      const mode = L.modo === 'salto' ? 1 : 2;
+      return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: dpScene(cfg.escena || 1, (L.colores || []).map(([h, sat, b]) => ({ sw: dur, gr: dur, mode, h, s: p10(sat, 0), v: Math.max(vMin, p10(b, 0)) }))) }];
+    }
+    const tr = (L.transicion || 0) * 1000;
+    if (L.tipo === 'blanco') {
+      if (tr > 0 && cfg.escenas !== false) return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: dpScene(cfg.escena || 2, [{ sw: Math.min(100, Math.round(tr / 100)), gr: Math.min(100, Math.round(tr / 100)), mode: 2, b: p10(L.brillo), t: p10(L.calidez, 0) }]) }];
+      return [on, { code: 'work_mode', value: 'white' }, { code: 'bright_value', value: p10(L.brillo) }, { code: 'temp_value', value: p10(L.calidez, 0) }];
+    }
+    const h = L.h || 0, s1 = p10(L.s == null ? 100 : L.s, 0), v1 = Math.max(vMin, p10(L.brillo == null ? 100 : L.brillo, 0));
+    if (tr > 0 && cfg.escenas !== false) return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: dpScene(cfg.escena || 2, [{ sw: Math.min(100, Math.round(tr / 100)), gr: Math.min(100, Math.round(tr / 100)), mode: 2, h, s: s1, v: v1 }]) }];
+    if (tr > 0) return [on, { code: 'control_data', value: '1' + dpColour(h, s1, v1) + '00000000' }];
+    return [on, { code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: dpColour(h, s1, v1) }];
+  }
   const loops = {};
   function stopLoop(lamp) { if (loops[lamp]) { clearInterval(loops[lamp].i); clearTimeout(loops[lamp].t); delete loops[lamp]; } }
   async function startLoop(lamp, L, cfg) {
@@ -2218,6 +2244,7 @@ function initControl() {
         const Lx = L[lamp] ? { ...L, ...L[lamp] } : L;               // cada lámpara puede tener su variante (ej.: tira: { h: 280 })
         try {
           if (Lx.apagar) { await postLamp(lamp, [{ code: 'switch_led', value: false }]); return true; }
+          if (cfg.modo === 'dp') { await postLamp(lamp, dpCommands(Lx, cfg)); return true; }
           if (cfg.modo === 'vivo') {
             // Esta luz solo entiende la orden "en vivo" (control_data): todo se traduce a eso
             if (Lx.tipo === 'efecto') { await startLoop(lamp, Lx, { ...cfg, vivo: true }); return true; }
@@ -2312,17 +2339,32 @@ function initControl() {
     ['Violeta · transición en vivo', [{ code: 'control_data', value: { change_mode: 'gradient', h: 280, s: 255, v: 200, bright: 0, temperature: 0 } }]],
     ['Apagar', [{ code: 'switch_led', value: false }]],
   ];
+  const LAB_DP = [
+    ['DP · Rojo', [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: '000003e803e8' }]],
+    ['DP · Verde', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: '007803e803e8' }]],
+    ['DP · Azul tenue (v 150)', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: '00e103e80096' }]],
+    ['DP · Azul muy tenue (v 30)', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: '00e103e8001e' }]],
+    ['DP · Rojo formato viejo', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: 'ff00000000ffff' }]],
+    ['DP · Blanco cálido', [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'white' }, { code: 'bright_value', value: 600 }, { code: 'temp_value', value: 0 }]],
+    ['DP · Blanco al 10%', [{ code: 'work_mode', value: 'white' }, { code: 'bright_value', value: 100 }]],
+    ['DP · Violeta en vivo (gradual)', [{ code: 'control_data', value: '1' + '0118' + '03e8' + '0258' + '00000000' }]],
+    ['DP · Escena: rojo fijo', [{ code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: '01' + '323200' + '0000' + '03e8' + '03e8' + '00000000' }]],
+    ['DP · Escena: salto RGB', [{ code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: '01' + ['0000', '0078', '00f0'].map(h => '050501' + h + '03e8' + '03e8' + '00000000').join('') }]],
+    ['DP · Escena: rojo respirando', [{ code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: '01' + '0c0c02' + '0000' + '03e8' + '03e8' + '00000000' + '0c0c02' + '0000' + '03e8' + '0050' + '00000000' }]],
+    ['DP · Fundido a azul en 6 s (escena)', [{ code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: '02' + '3c3c02' + '00e1' + '03e8' + '0190' + '00000000' }]],
+  ];
   async function readState(lamp, label) {
     try {
       const j = await tuyaFetch('/estado' + (LAMPS[lamp] ? '?device=' + encodeURIComponent(LAMPS[lamp]) : ''));
       const st = Object.fromEntries((j.result || []).map(x => [x.code, x.value]));
-      const show = ['switch_led', 'work_mode', 'colour_data_v2', 'bright_value_v2', 'temp_value_v2', 'scene_data_v2'].filter(k => k in st).map(k => `${k}=${typeof st[k] === 'object' ? JSON.stringify(st[k]) : st[k]}`).join(' · ');
+      const show = ['switch_led', 'work_mode', 'colour_data_v2', 'bright_value_v2', 'temp_value_v2', 'scene_data_v2', 'colour_data', 'bright_value', 'temp_value', 'scene_data'].filter(k => k in st).map(k => `${k}=${typeof st[k] === 'object' ? JSON.stringify(st[k]) : st[k]}`).join(' · ');
       log(`🔎 ${lamp} después de «${label}»: ${show || JSON.stringify(j.result)}`);
     } catch (e) { log(`🔎 ${lamp}: no pude leer el estado — ${e.message}`, 'e'); }
   }
-  $('#ty-lab').innerHTML = LAB.map((t, i) => `<button class="pbtn" data-i="${i}">${esc(t[0])}</button>`).join('');
+  const LABS = [...LAB, ...LAB_DP];
+  $('#ty-lab').innerHTML = LABS.map((t, i) => `<button class="pbtn" data-i="${i}" ${i === LAB.length ? 'style="grid-column:1/-1;margin-top:8px"' : ''}>${esc(t[0])}</button>`).join('');
   $('#ty-lab').querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
-    const [label, cmd] = LAB[+b.dataset.i];
+    const [label, cmd] = LABS[+b.dataset.i];
     clearLights();
     for (const lamp of activeLamps()) {
       stopLoop(lamp);

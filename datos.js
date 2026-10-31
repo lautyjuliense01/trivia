@@ -68,9 +68,12 @@ window.TRIVIA = {
      En el control elegís si se usa una, la otra o todas juntas. */
   lamparas: {
     techo: 'eba75b70df50a7545c9thx',
-    // tira LED detrás del sillón. modo 'vivo' = solo entiende la orden de transición en vivo; la app traduce todo a eso.
-    // vMin: brillo mínimo (0-255) para que no se apague en los looks muy oscuros. pasoMin: segundos mínimos entre órdenes en los efectos.
-    tira:  { id: 'eb65b658340d7685eatgz1', modo: 'vivo', vMin: 8, pasoMin: 0.5 },
+    // tira LED detrás del sillón, en "DP Instruction" (funciones reales en formato texto).
+    //   modo 'dp'   → color, blanco, escenas y fundidos nativos (requiere la tira en modo DP en Tuya)
+    //   modo 'vivo' → solo la orden en vivo (usar si la volvés a "Standard Instruction")
+    //   escenas: false → sin escenas (si las escenas no le andan, los fundidos usan la orden en vivo)
+    //   vMin1000: brillo mínimo (0-1000) para que no se apague en los looks muy oscuros
+    tira:  { id: 'eb65b658340d7685eatgz1', modo: 'dp', vMin1000: 10 },
   },
 
   /* ---------- Luces (Tuya directo) ----------
