@@ -32,7 +32,7 @@ window.TRIVIA = {
     reglas: 'presentacion',
     ronda: 'trivia',
     pregunta: 'pregunta',     // cuando hacés la pregunta
-    pizarras: 'trivia',       // mientras escriben
+    pizarras: 'pregunta',     // mientras escriben sigue la misma (no se reinicia)
     tension: 'tension',       // cuando ya están por terminar
     revelado: 'datos',        // después de la respuesta: datos curiosos
     marcador: 'datos',
@@ -45,7 +45,7 @@ window.TRIVIA = {
        tipo 'color'  → h: tono 0-360 (0 rojo, 40 dorado, 120 verde, 220 azul, 280 violeta), s: saturación 0-100, brillo 1-100
        tipo 'blanco' → brillo 1-100, calidez 0-100 (0 = cálido, 100 = frío)
        tipo 'efecto' → modo 'respirar' (fundido entre colores) o 'salto' (cambio brusco),
-                       colores: [[h, s, brillo], ...], velocidad 1-100 (más alto = más rápido)
+                       colores: [[h, s, brillo], ...], paso: segundos por color (0.1 a 10; la tele usa el mismo ritmo)
        respaldo: escena de SmartThings que se usa si Tuya falla ('tension', 'festejo' o 'normal')
      La pantalla se tiñe del mismo color y se oscurece cuando la luz baja. */
   looks: {
@@ -53,11 +53,11 @@ window.TRIVIA = {
     oscuro:    { tipo: 'color', h: 225, s: 90, brillo: 2, respaldo: 'tension' },     // casi negro azulado: antes de un golpe
     escenario: { tipo: 'color', h: 230, s: 75, brillo: 12, respaldo: 'normal' },     // azul tenue de presentación
     azul:      { tipo: 'color', h: 220, s: 85, brillo: 30, respaldo: 'normal' },     // mientras se lee la pregunta
-    pizarras:  { tipo: 'blanco', brillo: 55, calidez: 15, respaldo: 'normal' },      // que se vea para escribir
-    tension:   { tipo: 'efecto', modo: 'respirar', colores: [[0, 100, 55], [0, 100, 6]], velocidad: 40, respaldo: 'tension' },
+    pizarras:  { tipo: 'color', h: 28, s: 85, brillo: 20, respaldo: 'normal' },      // ámbar tenue mientras escriben
+    tension:   { tipo: 'efecto', modo: 'respirar', colores: [[0, 100, 55], [0, 100, 6]], paso: 1.2, respaldo: 'tension' },
     dorado:    { tipo: 'color', h: 38, s: 95, brillo: 100, respaldo: 'festejo' },    // el golpe de la respuesta
     flash:     { tipo: 'blanco', brillo: 100, calidez: 60, respaldo: 'festejo' },    // destello corto
-    fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], velocidad: 75, respaldo: 'festejo' },
+    fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
   },
 
   /* Guion de luces: qué look va en cada momento.
@@ -81,6 +81,9 @@ window.TRIVIA = {
     ganadorRedoble: 'oscuro',
     ganador: 'fiesta',
   },
+
+  /* La pregunta aparece estos milisegundos después de que arranca su música (la de "¿Quién quiere ser millonario?") */
+  entradaPregunta: 4500,
 
   /* ---------- Participantes ----------
      foto: archivo subido al repositorio, por ejemplo 'fotos/paulina.jpg'. Si no hay foto, muestra las iniciales.
