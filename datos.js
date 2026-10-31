@@ -17,20 +17,22 @@ window.TRIVIA = {
     { estudio: 'Lautaro Entertainment', texto: 'presenta' },
     { chico: 'en asociación con', grande: 'Claude' },
     { chico: 'con datos provistos por', grande: 'GLPI y Metabase' },
-    { grande: 'Basada en hechos reales' },
+    { chico: 'basada en', grande: 'Datos reales' },
+    { chico: 'filmada en locaciones reales del', grande: 'Hospital Italiano' },
+    { chico: 'agradecimiento especial', grande: 'Al enchufe' },
     { grande: 'Segunda edición' },
   ],
-  apertura: { celulares: 5500, credito: 2800 },   // milisegundos del cartel de celulares y de cada crédito
+  apertura: { celulares: 5500, credito: 2800, golpes: 'extremos' },   // ms del cartel de celulares y de cada crédito · golpes: 'todos', 'extremos' o 'ninguno'
 
   /* ---------- Música (ID del video de YouTube / YouTube Music) ----------
      El ID es lo que va después de "watch?v=" en el link.
      "inicio" = segundo desde el que arranca (opcional). */
   musica: {
     previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
+    cine:         { id: 'jgyShFzdB_Q', nombre: 'Time (Inception)', inicio: 75 },   // apertura de cine, desde el 1:15
     intro:        { id: '5jrs1DEWzx0', nombre: '20th Century Fox Fanfare' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
     pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions' },
-    trivia:       { id: '7suM-GShRqw', nombre: 'Quiz Time' },
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
     anfitrion:    { id: '',            nombre: 'A definir: entrada del presentador' },
@@ -46,14 +48,14 @@ window.TRIVIA = {
   /* Qué música suena en cada momento (nombres de la lista de arriba, o null = silencio) */
   momentos: {
     previa: 'previa',
-    cine: null,
+    cine: 'cine',
     intro: 'intro',
     presentamos: 'presentacion',  // arranca con el título "Presentamos a los contendientes"
     presentacion: 'presentacion',
     contendientes: 'presentacion', // todos juntos al final de la presentación
     presentador: 'anfitrion',
     reglas: 'presentacion',
-    ronda: 'trivia',
+    ronda: null,              // a definir (Quiz Time queda afuera)
     pregunta: 'pregunta',     // cuando hacés la pregunta
     pizarras: 'pregunta',     // mientras escriben sigue la misma (no se reinicia)
     tension: 'pregunta',      // sigue la misma: la música de tensión queda para la cuenta final
@@ -103,6 +105,9 @@ window.TRIVIA = {
     pulso:     { tipo: 'color', h: 30, s: 85, brillo: 45, respaldo: 'normal' },       // destello cálido con cada crédito
     foco:      { tipo: 'blanco', brillo: 70, calidez: 25, respaldo: 'normal' },       // foco del presentador
     destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },  // celebración corta
+    estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },   // titila lo más rápido posible, 100 ↔ 0
+    flashUnico: { tipo: 'flashUnico', ms: 140, respaldo: 'festejo' },   // un solo destello blanco y vuelve a lo que había
+    calido:    { tipo: 'color', h: 32, s: 75, brillo: 26, transicion: 2, respaldo: 'normal' },   // después de la respuesta: tenue, sin cortar el clima
     fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
   },
 
@@ -115,7 +120,7 @@ window.TRIVIA = {
     // cine: lo arma la app sola (baja la luz y un pulso por crédito). Para personalizarlo, agregá cine: [[ms, look], ...]
     intro: [[0, 'noche'], [6100, 'dorado'], [7300, 'destello'], [8700, 'dorado'], [10500, 'sala']],   // golpe dorado con el título
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
-    contendientes: [[0, 'flash'], [600, 'fiesta']],
+    contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],   // primero baja el último a la fila a oscuras
     presentador: [[0, 'oscuro'], [1600, 'foco']],              // apagón y un único foco
     reglas: 'sala',
     ronda: 'sala',
@@ -125,7 +130,7 @@ window.TRIVIA = {
     tension: 'tension',
     redoble: 'oscuro',        // cae la luz durante el redoble...
     revelado: 'dorado',       // ...y explota justo con la respuesta (vuelve a brillar)
-    despues: 'sala',          // para los datos curiosos (a los segundos que marques en el control)
+    despues: 'calido',        // para los datos curiosos (a los segundos que marques en el control)
     marcador: 'sala',
     cuenta: 'oscuro',
     ganadorRedoble: 'oscuro',
@@ -138,6 +143,9 @@ window.TRIVIA = {
 
   /* La pregunta aparece estos milisegundos después de que arranca su música (la de "¿Quién quiere ser millonario?") */
   entradaPregunta: 4500,
+
+  /* Fotos: 'duotono' (todas con el mismo tratamiento dorado, para que fotos muy distintas queden como un set), 'byn' o 'color' */
+  fotos: { estilo: 'duotono' },
 
   /* ---------- Participantes ----------
      foto: archivo subido al repositorio, por ejemplo 'fotos/paulina.jpg'. Si no hay foto, muestra las iniciales.

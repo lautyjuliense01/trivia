@@ -134,8 +134,6 @@ input[type=text],input[type=password],select{font:inherit;font-size:16px;padding
 #log .e{color:#ff9b8f} #log .o{color:#9ff0b9}
 .toggle{display:flex;align-items:center;gap:8px;font-size:13px}
 details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
-#yt-local-wrap{margin-top:10px}
-#yt-local-wrap iframe{width:100%;height:160px;border-radius:10px}
 
 /* ================= v5: juego completo ================= */
 .v{position:relative;z-index:2;width:min(1280px,94vw);margin:0 auto;text-align:center}
@@ -329,6 +327,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 .tint.breath{animation:breath var(--bdur,2.4s) ease-in-out infinite}
 @keyframes breath{0%,100%{opacity:1}50%{opacity:.15}}
 .tint.jump{animation:hueJump var(--bdur,2s) steps(5) infinite}
+.tint.party{animation:hueJump 2.4s linear infinite}
 @keyframes hueJump{to{filter:hue-rotate(360deg)}}
 #tint-dark{position:fixed;inset:0;pointer-events:none;z-index:1;background:#000;opacity:0;transition:opacity .9s ease}
 
@@ -385,6 +384,10 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
   filter:drop-shadow(0 0 26px rgba(255,190,60,.5));opacity:0;animation:titleIn 1.4s 1.6s cubic-bezier(.2,1.3,.4,1) forwards,shine 3s 2.4s ease-out both}
 .pt-line{width:0;height:3px;margin-top:26px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:grow 1.4s 2.6s ease-out forwards}
 @keyframes grow{to{width:min(900px,70vw)}}
+
+/* v20: fotos unificadas */
+img.foto-duotono{filter:grayscale(1) sepia(.55) saturate(1.6) hue-rotate(-12deg) contrast(1.12) brightness(.95)}
+img.foto-byn{filter:grayscale(1) contrast(1.15)}
 
 /* Control v5 */
 #control{padding-bottom:120px}
@@ -512,21 +515,20 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
   <details class="card">
     <summary>Ajustes de sonido y redoble</summary>
     <div class="row" style="margin-top:10px">
+      <label class="muted" for="set-vol">Volumen de la música</label>
+      <input type="range" id="set-vol" min="0" max="100" step="1" style="flex:1">
+      <b id="set-vol-v" style="width:40px;text-align:right"></b>
+    </div>
+    <div class="row" style="margin-top:10px">
       <label class="muted" for="set-delay">Redoble antes de revelar</label>
       <select id="set-delay" style="flex:0 0 auto">
         <option value="0">sin redoble</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option>
       </select>
     </div>
     <div class="row">
-      <label class="toggle"><input type="checkbox" id="set-nobeams"> Apagar los reflectores de la tele (prueba: si así la música deja de trabarse, el equipo está al límite)</label>
-    </div>
-    <div class="row">
       <label class="toggle"><input type="checkbox" id="set-hideplayer"> Ocultar el reproductor de YouTube en la tele (solo para el show; para probar, dejalo visible)</label>
     </div>
-    <div class="row">
-      <label class="toggle"><input type="checkbox" id="ctl-localmusic"> Reproducir la música en este celu (prueba sin tele)</label>
-    </div>
-    <div id="yt-local-wrap" hidden><button class="btn small" id="ctl-sound" style="margin-bottom:8px">🔊 Activar sonido en este celu</button><div id="yt-local"></div></div>
+
   </details>
 
   <details class="card">
@@ -551,22 +553,6 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
         <label class="muted" for="ty-lamps">Lámparas que se usan</label>
         <select id="ty-lamps" style="flex:0 0 auto"></select>
       </div>
-      <div class="row" style="margin-top:8px">
-        <label class="toggle"><input type="checkbox" id="ty-suave"> Fundidos suaves en una sola orden</label>
-      </div>
-      <div class="row">
-        <button class="btn small" id="ty-fade-dn">Probar: fundido a oscuro (8 s)</button>
-        <button class="btn small" id="ty-fade-up">Probar: fundido a sala (8 s)</button>
-      </div>
-      <p class="muted" style="margin:4px 0 0">Si la lámpara baja y sube de forma gradual, dejalo activado. Si salta de golpe o hace algo raro, desactivalo y la app hace el fundido por pasos.</p>
-      <details style="margin-top:8px"><summary>Laboratorio de órdenes (para encontrar qué entiende cada luz)</summary>
-        <p class="muted" style="margin:6px 0">Elegí la luz arriba (por ejemplo, <b>tira</b>), tocá cada prueba y anotá qué hace realmente. Un segundo después, el registro muestra qué estado informa la luz. Al final tocá <b>Copiar registro</b> y pegámelo.</p>
-        <div class="players" id="ty-lab"></div>
-      </details>
-      <details style="margin-top:8px"><summary>Diagnóstico de escenas</summary>
-        <p class="muted" style="margin:6px 0">Manda a las lámparas elegidas una escena a medida en <b>rojo fijo</b> con cada número. Si con alguno queda en rojo quieto, ese número sirve: ponelo en datos.js como <code>escena: N</code> en esa lámpara y sacale <code>escenas: false</code>.</p>
-        <div class="row" id="ty-scn"></div>
-      </details>
       <div class="muted" style="margin-top:8px">Looks (tocá para probar en la lámpara y la tele):</div>
       <div class="players" id="ty-looks" style="margin-top:6px"></div>
       <details style="margin-top:14px"><summary>Respaldo SmartThings (si Tuya falla)</summary><div style="margin-top:10px">
@@ -620,7 +606,7 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 <script>
 (() => {
 'use strict';
-const VERSION = 'v19 · 31/10 23:00';
+const VERSION = 'v20 · 01/11 00:30';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -780,6 +766,7 @@ const YT_ERRORS = {
 };
 
 
+let musicVol = VOLUME;
 function createMusic(containerId, tracks, onLabel, onMutedBlock) {
   let player = null, ready = false, current = null, fadeTimer = null, needsFadeIn = false, muteCheck = null;
   const S = () => (window.YT && YT.PlayerState) || { PLAYING: 1, ENDED: 0 };
@@ -791,7 +778,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
       events: {
         onReady: () => {
           ready = true;
-          try { player.unMute(); player.setVolume(VOLUME); } catch {}
+          try { player.unMute(); player.setVolume(musicVol); } catch {}
           log('Reproductor de YouTube listo', 'o');
         },
         onError: e => {
@@ -811,7 +798,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
               // El volumen se ajusta recién cuando el video ya suena: antes YouTube lo ignora.
               needsFadeIn = false;
               try { player.unMute(); } catch {}
-              fadeTo(VOLUME, 900, 0);
+              fadeTo(musicVol, 900, 0);
               clearTimeout(muteCheck);
               muteCheck = setTimeout(checkAudible, 1200);
             }
@@ -839,7 +826,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
       clearInterval(fadeTimer);
       if (!ready) return resolve();
       let from = typeof fromOverride === 'number' ? fromOverride : player.getVolume();
-      if (typeof from !== 'number' || isNaN(from)) from = target ? 0 : VOLUME;
+      if (typeof from !== 'number' || isNaN(from)) from = target ? 0 : musicVol;
       const t0 = performance.now();
       fadeTimer = setInterval(() => {
         const k = Math.min(1, (performance.now() - t0) / ms);
@@ -862,7 +849,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
     if (player.getPlayerState() === S().PLAYING && !opts.instant) await fadeTo(0, 600);
     current = key;
     needsFadeIn = !opts.instant;
-    if (opts.instant) { clearInterval(fadeTimer); try { player.unMute(); player.setVolume(VOLUME); } catch {} }
+    if (opts.instant) { clearInterval(fadeTimer); try { player.unMute(); player.setVolume(musicVol); } catch {} }
     if (cued === key) { cued = null; try { player.playVideo(); } catch {} }
     else { cued = null; player.loadVideoById({ videoId: tr.id, startSeconds: tr.start || 0 }); }
     onLabel && onLabel('Cargando: ' + tr.name);
@@ -884,7 +871,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
     try {
       clearInterval(fadeTimer);
       player.unMute();
-      player.setVolume(VOLUME);
+      player.setVolume(musicVol);
       if (!current && playIfIdle) {
         current = Object.keys(tracks)[0];
         needsFadeIn = false;
@@ -904,7 +891,8 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
     try { t = player.getCurrentTime() || 0; d = player.getDuration() || 0; } catch {}
     return { key: current, name: tracks[current].name, t, d, loop: tracks[current].loop !== false };
   }
-  return { play, stop, cue, enableSound, status, isReady: () => ready, current: () => current };
+  function setLevel() { if (!ready || !current) return; try { if (!needsFadeIn) fadeTo(musicVol, 300); } catch {} }
+  return { play, stop, cue, enableSound, status, setLevel, isReady: () => ready, current: () => current };
 }
 
 
@@ -1026,6 +1014,7 @@ function createBeams(host) {
     fox: (t, i, b, n) => mirror(i, n) * (8 + 15 * Math.sin(t * .55 + i * .75)),
     search: (t, i) => ({ a: (i % 2 ? -1 : 1) * (14 + 7 * Math.sin(t * .3 + i * 2.1)), o: .55 + .25 * Math.sin(t * .6 + i) }),
     calm: (t, i, b, n) => ({ a: mirror(i, n) * 12 + 4 * Math.sin(t * .25 + i * Math.PI), o: .7 }),
+    scan: (t, i, b, n) => ({ a: (i % 2 ? -1 : 1) * 6 + 36 * Math.sin(t * (2.4 + i * 0.41) + i * 1.9), o: .95 }),
     chase: (t, i, b, n) => ({ a: angleTo(b, innerWidth * (0.2 + 0.6 * i / Math.max(1, n - 1)), innerHeight * .5), o: (Math.floor(t * 7) % n) === i ? 1 : .08 }),
   };
   function play(name) { motion(patterns[name]); }
@@ -1055,7 +1044,7 @@ const fmtNum = n => (typeof n === 'number' ? n.toLocaleString('es-AR') : esc(n))
 const TIPO_LABEL = { opciones: 'Opción múltiple', quien: '¿Quién dijo?', aprox: 'Aproximación' };
 const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
-D.momentos = Object.assign({ previa: 'previa', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
+D.momentos = Object.assign({ previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
 D.luces = Object.assign({ contendientes: 'festejo', cuenta: 'tension' }, D.luces || {});
 /* Lámparas Tuya: nombre → ID (tienen que estar también en TUYA_DEVICE del intermediario) */
 const LAMP_CFG = {};
@@ -1073,7 +1062,9 @@ const CREDITS = D.creditos || [
   { estudio: 'Lautaro Entertainment', texto: 'presenta' },
   { chico: 'en asociación con', grande: 'Claude' },
   { chico: 'con datos provistos por', grande: 'GLPI y Metabase' },
-  { grande: 'Basada en hechos reales' },
+  { chico: 'basada en', grande: 'Datos reales' },
+  { chico: 'filmada en locaciones reales del', grande: 'Hospital Italiano' },
+  { chico: 'agradecimiento especial', grande: 'Al enchufe' },
   { grande: 'Segunda edición' },
 ];
 const CEL = (D.apertura && D.apertura.celulares) || 5500;
@@ -1093,6 +1084,9 @@ const LOOKS = Object.assign({
   pulso:     { tipo: 'color', h: 30, s: 85, brillo: 45, respaldo: 'normal' },
   foco:      { tipo: 'blanco', brillo: 70, calidez: 25, respaldo: 'normal' },
   destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },
+  estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },
+  flashUnico: { tipo: 'flashUnico', ms: 140, respaldo: 'festejo' },
+  calido:    { tipo: 'color', h: 32, s: 75, brillo: 26, transicion: 2, respaldo: 'normal' },
   fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
 }, D.looks || {});
 /* Guion: qué look va en cada momento. Un nombre, o una secuencia [[ms, look], ...] donde ms = cuándo se tiene que VER */
@@ -1102,13 +1096,13 @@ const GUION = Object.assign({
   presentamos: [[0, 'oscuro'], [1700, 'escenario']],
   intro: [[0, 'noche'], [6100, 'dorado'], [7300, 'destello'], [8700, 'dorado'], [10500, 'sala']],
   presentacion: [[0, 'flash'], [650, 'escenario']],
-  contendientes: [[0, 'flash'], [600, 'fiesta']],
+  contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],
   presentador: [[0, 'oscuro'], [1600, 'foco']],
   reglas: 'sala', ronda: 'sala',
   pregunta: { fade: 'azul', de: 36, a: 12, ms: 10000 },
   pizarras: null,
   tension: 'tension',
-  redoble: 'oscuro', revelado: 'dorado', despues: 'sala',
+  redoble: 'oscuro', revelado: 'dorado', despues: 'calido',
   marcador: 'sala', cuenta: 'oscuro',
   ganadorRedoble: 'oscuro', ganador: 'fiesta',
 }, D.guion || {});
@@ -1213,9 +1207,10 @@ function musicKeyOf(st) {
   return k && TRACKS[k] ? k : null;
 }
 
+const FOTO_ESTILO = (D.fotos && D.fotos.estilo) || 'duotono';
 function photoHTML(p) {
   const ini = esc((p.nombre || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase());
-  return p.foto ? `<img src="${esc(p.foto)}" alt="" data-ini="${ini}">` : `<span class="ini">${ini}</span>`;
+  return p.foto ? `<img src="${esc(p.foto)}" alt="" data-ini="${ini}" class="foto-${FOTO_ESTILO}">` : `<span class="ini">${ini}</span>`;
 }
 function fixPhotos(root) {
   root.querySelectorAll('img[data-ini]').forEach(img => {
@@ -1375,7 +1370,7 @@ function createDirector(music, fx) {
     const m = momentOf(st), key = musicKeyOf(st);
     if (m === lastMoment && key === lastKey) return;
     if (m !== lastMoment) clearTimeout(afterT);
-    if (m === 'cine' && lastMoment !== 'cine') setTimeout(() => music.cue('intro'), 300); // la fanfarria queda cargada
+    if (m === 'cine' && lastMoment !== 'cine' && !TRACKS.cine) setTimeout(() => music.cue('intro'), 300); // la fanfarria queda cargada
     if (fx && ['pizarras', 'tension'].includes(m) && TRACKS.redoble) fx.cue('redoble');
     if (m === 'redoble') {
       music.stop(250);
@@ -1414,12 +1409,18 @@ function initScreen() {
   setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: fxPlayer ? fxPlayer.status() : null }); }, 1000);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
 
-  let cur = { slide: -1 }, curRev = null, confettiLoop = null, introTimer = null, cineHits = [];
+  let cur = { slide: -1 }, curRev = null, confettiLoop = null, introTimer = null, cineHits = [], contPhase = null;
+  const CONT_PRE = 1600;
   const stage = $('#stage');
   const beams = createBeams($('#pantalla'));
   let choreoT = [], lastChoreoKey = null;
   const later = (ms, fn) => choreoT.push(setTimeout(fn, ms));
   const sq = sel => stage.querySelector(sel), sqa = sel => [...stage.querySelectorAll(sel)];
+  // Los reflectores barren rápido por todos lados y se clavan en el objetivo
+  function scanLock(getEls, scanMs = 700, opts = {}) {
+    beams.play('scan');
+    later(scanMs, () => { const els = getEls().filter(Boolean); beams.aimEls(els, { ms: 380, ...opts }); if (opts.pool !== false) beams.pools(els, opts.spread); });
+  }
   function aimQuestion(ms = 1000) {
     const t = sq('.q-text'), body = sq('.opts') || sq('.chat');
     beams.aimEls([t, body].filter(Boolean), { ms, spread: !body });
@@ -1429,16 +1430,13 @@ function initScreen() {
     if (st.step === 'pregunta') { beams.clearPools(); beams.level(1); if (qArmed) beams.play('search'); else aimQuestion(); }
     else if (st.step === 'pizarras') { beams.level(.4); aimQuestion(1800); }
     else if (st.step === 'tension') { beams.level(.5); beams.play('calm'); }
-    else if (st.step === 'redoble') { beams.level(1); beams.clearPools(); beams.play('chase'); }
+    else if (st.step === 'redoble') { beams.level(1); beams.clearPools(); beams.play('scan'); }
     else if (st.step === 'revelado') {
       beams.level(1);
-      later(40, () => { const ok = sqa('.opt.ok'); const els = ok.length ? ok : [sq('.ticket'), sq('.chat')].filter(Boolean); beams.aimEls(els, { cut: true }); beams.pools(els); });
+      later(30, () => { const ok = sqa('.opt.ok'); const els = ok.length ? ok : [sq('.ticket'), sq('.chat')].filter(Boolean); beams.aimEls(els, { ms: 320 }); beams.pools(els); });
     }
   }
   function choreo(st, sl, changed) {
-    $('#beams').style.display = st.noBeams ? 'none' : '';
-    $('#pools').style.display = st.noBeams ? 'none' : '';
-    if (st.noBeams) { beams.stop(); lastChoreoKey = null; return; }
     const key = [st.slide, st.step || '', st.overlay || '', st.sub || 0].join('|');
     if (key === lastChoreoKey) return;
     lastChoreoKey = key;
@@ -1457,8 +1455,8 @@ function initScreen() {
       case 'cine': case 'previa':
         beams.setup('top2'); beams.level(0); beams.clearPools(); break;
       case 'presentamos':
-        beams.setup('top4'); beams.clearPools(); beams.level(.7); beams.play('calm');
-        later(1700, () => { const m = sq('.pt-main'); beams.level(1); beams.aimEls([m], { cut: true, spread: true }); beams.pools([m], true); });
+        beams.setup('top4'); beams.clearPools(); beams.level(1);
+        scanLock(() => [sq('.pt-main')], 1700, { spread: true });
         break;
       case 'intro':
         beams.setup('fox'); beams.over(true); beams.clearPools(); beams.level(0);
@@ -1467,45 +1465,46 @@ function initScreen() {
         later(9500, () => beams.over(false));
         break;
       case 'presentacion':
-        beams.setup('top3'); beams.clearPools(); if (changed) beams.outside();
-        later(120, () => { const ph = sq('.pl-photo'); beams.aimEls([ph], { cut: true }); beams.pools([ph]); });
+        beams.setup('top3'); beams.clearPools(); beams.level(1);
+        scanLock(() => [sq('.pl-photo')], 650);
         break;
       case 'presentador':
         beams.setup('solo'); beams.clearPools(); beams.level(0);
         later(1500, () => { const ph = sq('.pl-photo'); beams.aimEls([ph], { ms: 0 }); beams.level(1); beams.pools([ph]); });
         break;
       case 'contendientes': {
+        if (!st._fase2 && (SCRIPT[cur.slide] || {}).k === 'presentacion' && changed) { beams.setup('top5'); beams.clearPools(); beams.level(0); break; }
         beams.setup('top5'); beams.clearPools(); beams.outside();
         const cards = sqa('.cont-card .pl-photo');
-        cards.forEach((c, i) => later(250 + i * 400, () => { beams.aimEls([c], { cut: true, sway: false }); beams.pools(cards.slice(0, i + 1)); }));
-        later(250 + cards.length * 400 + 300, () => beams.aimEls(cards, { cut: true }));
+        beams.play('scan');
+        cards.forEach((c, i) => later(250 + i * 400, () => { beams.aimEls([c], { ms: 260, sway: false }); beams.pools(cards.slice(0, i + 1)); }));
+        later(250 + cards.length * 400 + 300, () => beams.aimEls(cards, { ms: 500 }));
         break;
       }
       case 'reglas':
         beams.setup('top2'); beams.clearPools(); later(100, () => beams.aimEls([sq('.marquee')], { ms: 1400, spread: true })); break;
       case 'ronda':
         beams.setup('top3'); beams.clearPools();
-        later(150, () => { const m = sq('.marquee'); beams.aimEls([m], { cut: true, spread: true }); beams.pools([m], true); });
+        scanLock(() => [sq('.marquee')], 900, { spread: true });
         break;
       case 'pregunta': case 'desempate':
         questionBeams(st); break;
       case 'marcador':
         beams.setup('top2'); beams.clearPools();
-        later(700, () => { const lead = sqa('.bar-row.lead'); beams.aimEls((lead.length ? lead : sqa('.bar-row')).slice(0, 2), { cut: true }); });
+        scanLock(() => { const lead = sqa('.bar-row.lead'); return (lead.length ? lead : sqa('.bar-row')).slice(0, 2); }, 1100, { pool: false });
         break;
       case 'cuenta': {
         beams.setup('top3');
         const cg = countdownGroups(st.results || {}), k = st.sub || 0;
         if (k === 0) { beams.clearPools(); beams.level(.55); beams.play('calm'); break; }
-        const rows = sqa(`.cd-row[data-g="${cg[k - 1].pos}"]`);
-        later(60, () => { beams.aimEls(rows, { cut: true }); beams.pools(rows); });
-        if (k >= cg.length) later(1700, () => { const top = sq('.cd-row.top'); beams.aimEls([top], { cut: true, spread: true }); beams.pools([top]); });
+        scanLock(() => sqa(`.cd-row[data-g="${cg[k - 1].pos}"]`), 450);
+        if (k >= cg.length) later(1900, () => scanLock(() => [sq('.cd-row.top')], 600, { spread: true }));
         break;
       }
       case 'ganador':
         beams.setup('top5'); beams.clearPools();
-        if (st.step === 'redoble') beams.play('chase');
-        else later(200, () => { const ph = sqa('.win-card .pl-photo'); beams.aimEls(ph, { cut: true }); beams.pools(ph); });
+        if (st.step === 'redoble') beams.play('scan');
+        else later(150, () => { const ph = sqa('.win-card .pl-photo'); beams.aimEls(ph, { ms: 320 }); beams.pools(ph); });
         break;
     }
   }
@@ -1522,16 +1521,23 @@ function initScreen() {
     if (L.tipo === 'blanco') { h = 38 - (L.calidez || 0) * 0.2; sat = 60 - (L.calidez || 0) * 0.5; b = L.brillo; alpha = 0.10 + 0.12 * b / 100; }
     else { const c = L.tipo === 'efecto' ? (L.colores || [[0, 0, 50]])[0] : [L.h, L.s, L.brillo]; h = c[0]; sat = c[1]; b = c[2]; alpha = 0.18 + 0.32 * b / 100; }
     on.style.background = `radial-gradient(ellipse at 50% -10%, hsla(${h},${sat}%,55%,${alpha.toFixed(2)}) 0%, hsla(${h},${sat}%,45%,${(alpha * 0.45).toFixed(2)}) 45%, transparent 80%)`;
-    on.classList.remove('breath', 'jump');
-    clearInterval(jumpT);
+    on.classList.remove('breath', 'jump', 'party');
+    clearInterval(jumpT); on.style.opacity = '';
     const paso = L.paso != null ? L.paso : (100 - (L.velocidad == null ? 50 : L.velocidad)) / 10;
     if (L.tipo === 'efecto' && L.modo !== 'salto') { on.style.setProperty('--bdur', Math.max(0.4, paso * 2).toFixed(2) + 's'); on.classList.add('breath'); }
     if (L.tipo === 'efecto' && L.modo === 'salto') {
-      const cols = L.colores || []; let k = 0;
-      const paint = () => { const c = cols[k % cols.length]; k++; on.style.background = `radial-gradient(ellipse at 50% -10%, hsla(${c[0]},${c[1]}%,55%,.5) 0%, hsla(${c[0]},${c[1]}%,45%,.22) 45%, transparent 80%)`; };
-      jumpT = setInterval(paint, Math.max(100, paso * 1000));
+      const cols = L.colores || [];
+      const isStrobe = cols.some(c => c[2] === 0);
+      if (isStrobe) {
+        on.style.background = 'rgba(255,255,255,.55)';
+        let k = 0; jumpT = setInterval(() => { on.style.opacity = (k++ % 2) ? '0' : '1'; }, 70);
+      } else {
+        // fiesta: la tele no intenta copiar color por color (con la demora de la nube nunca coincidiría): hace su propio barrido multicolor
+        on.style.background = 'conic-gradient(from 0deg at 50% -20%, hsla(40,95%,55%,.45), hsla(330,95%,55%,.4), hsla(270,90%,60%,.4), hsla(195,90%,55%,.4), hsla(120,80%,50%,.35), hsla(40,95%,55%,.45))';
+        on.classList.add('party');
+      }
     }
-    on.classList.add('on'); off.classList.remove('on', 'breath', 'jump');
+    on.classList.add('on'); off.classList.remove('on', 'breath', 'jump', 'party'); off.style.opacity = '';
     const dark = L.tipo === 'blanco' ? (1 - b / 100) * 0.35 : Math.min(0.72, (1 - b / 100) * 0.75);
     $('#tint-dark').style.opacity = dark.toFixed(2);
   }
@@ -1578,13 +1584,14 @@ function initScreen() {
     document.body.classList.toggle('tension', ['intro', 'pregunta', 'pizarras', 'tension', 'redoble', 'cuenta', 'contendientes'].includes(m));
     document.body.classList.toggle('dimmed', ['presentacion', 'cuenta', 'redoble'].includes(m) || (SCRIPT[st.slide] || {}).k === 'presentacion');
     $('#yt-wrap').classList.toggle('hidden-player', !!st.hidePlayer);
+    if (st.vol != null && st.vol !== musicVol) { musicVol = st.vol; music.setLevel(); if (fxPlayer) fxPlayer.setLevel(); }
     choreo(st, sl, changed);
     direct(st);
     cur = JSON.parse(JSON.stringify(st));
   }
 
   function buildSlide(st, sl) {
-    clearInterval(confettiLoop); clearTimeout(introTimer);
+    clearInterval(confettiLoop); clearTimeout(introTimer); clearTimeout(contPhase);
     cineHits.forEach(clearTimeout); cineHits = [];
     let h = '';
     if (sl.k === 'logo') {
@@ -1605,8 +1612,11 @@ function initScreen() {
         <div class="cine-card" style="animation-delay:200ms;animation-duration:${CEL - 400}ms"><div class="cel-ico">📵</div><div class="cel-t">Por favor, apaguen sus celulares</div><div class="cel-s">La función está por comenzar</div></div>
         ${CREDITS.map((c, i) => `<div class="cine-card" style="animation-delay:${CEL + i * CRED}ms;animation-duration:${CRED}ms">${credHTML(c)}</div>`).join('')}
       </div>`;
+      const golpes = (D.apertura && D.apertura.golpes) || (TRACKS.cine ? 'extremos' : 'todos');
       CREDITS.forEach((c, i) => {
-        const at = CEL + i * CRED + 250, size = (i === 0 || i === CREDITS.length - 1) ? 1 : 0.55;
+        const extremo = i === 0 || i === CREDITS.length - 1;
+        if (golpes === 'ninguno' || (golpes === 'extremos' && !extremo)) return;
+        const at = CEL + i * CRED + 250, size = extremo ? 1 : 0.55;
         cineHits.push(setTimeout(() => riser(1000), at - 1000));
         cineHits.push(setTimeout(() => braam(size), at));
       });
@@ -1638,6 +1648,11 @@ function initScreen() {
           <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo host">${photoHTML(p)}</div><div class="host-mic">🎤</div></div>
           <div><div class="host-tag">Su anfitrión</div><h2 class="script pl-name">${esc(p.nombre)}</h2><div class="pl-chips">${chips}</div>${p.frase ? `<p class="pl-frase">“${esc(p.frase)}”</p>` : ''}</div></div>
         </div>`;
+    } else if (sl.k === 'contendientes' && (SCRIPT[cur.slide] || {}).k === 'presentacion' && !st._fase2) {
+      // primero: el último participante baja a su lugar en la fila, con las luces apagándose
+      const slots = P.map((q, i) => `<div class="slot on" data-i="${i}"><div class="slot-ph">${photoHTML(q)}</div><div class="slot-name">${esc(q.nombre)}</div></div>`).join('');
+      h = `<div class="v v-pres"><div class="pres-head" style="opacity:.0">&nbsp;</div><div class="pres-main"></div><div class="lineup" id="lineup-final">${slots}</div></div>`;
+      contPhase = setTimeout(() => { if (SCRIPT[cur.slide] && SCRIPT[cur.slide].k === 'contendientes') { buildSlide({ ...cur, _fase2: true }, SCRIPT[cur.slide]); lastChoreoKey = null; choreo({ ...cur, _fase2: true }, SCRIPT[cur.slide], true); } }, CONT_PRE);
     } else if (sl.k === 'contendientes') {
       h = `<div class="v v-cont"><div class="cont-title">Los contendientes</div>
         <div class="cont-row">${P.map((p, i) => `<div class="cont-card" style="animation-delay:${0.25 + i * 0.4}s"><div class="pl-photo">${photoHTML(p)}</div><div class="script">${esc(p.nombre)}</div></div>`).join('')}</div>
@@ -1669,8 +1684,9 @@ function initScreen() {
     requestAnimationFrame(bulbify);
     // La foto del participante anterior "vuela" a su lugar en la fila
     const prevSl = SCRIPT[cur.slide];
-    if (sl.k === 'presentacion' && prevSl && prevSl.k === 'presentacion' && prevSl.p === sl.p - 1) {
-      const slot = stage.querySelector(`.slot[data-i="${sl.p - 1}"]`);
+    const flyLast = sl.k === 'contendientes' && !st._fase2 && prevSl && prevSl.k === 'presentacion';
+    if ((sl.k === 'presentacion' && prevSl && prevSl.k === 'presentacion' && prevSl.p === sl.p - 1) || flyLast) {
+      const slot = stage.querySelector(`.slot[data-i="${flyLast ? P.length - 1 : sl.p - 1}"]`);
       if (slot && slot.animate) {
         const r = slot.getBoundingClientRect();
         const dx = innerWidth * 0.36 - (r.left + r.width / 2), dy = innerHeight * 0.45 - (r.top + r.height / 2);
@@ -1807,8 +1823,9 @@ function initControl() {
   if (S.slide >= SCRIPT.length) S.slide = 0;
   $('#set-delay').value = String(S.delayMs);
   $('#set-delay').addEventListener('change', () => { S.delayMs = +$('#set-delay').value; commit(false); });
-  $('#set-nobeams').checked = !!S.noBeams;
-  $('#set-nobeams').addEventListener('change', () => { S.noBeams = $('#set-nobeams').checked; commit(false); });
+  if (S.vol == null) S.vol = VOLUME;
+  $('#set-vol').value = S.vol; $('#set-vol-v').textContent = S.vol;
+  $('#set-vol').addEventListener('input', () => { S.vol = +$('#set-vol').value; $('#set-vol-v').textContent = S.vol; clearTimeout(commitT); commitT = setTimeout(() => commit(true), 120); });
   $('#set-hideplayer').checked = !!S.hidePlayer;
   $('#set-hideplayer').addEventListener('change', () => { S.hidePlayer = $('#set-hideplayer').checked; commit(false); });
 
@@ -1865,17 +1882,6 @@ function initControl() {
   setInterval(sendState, 4000);
 
   /* --- Música local opcional --- */
-  let localMusic = null, localDirect = null;
-  const localToggle = $('#ctl-localmusic');
-  localToggle.addEventListener('change', () => {
-    $('#yt-local-wrap').hidden = !localToggle.checked;
-    if (localToggle.checked && !localMusic) {
-      localMusic = createMusic('yt-local', TRACKS, t => log(t), muted => { $('#ctl-sound').textContent = muted ? '🔊 Tocá acá: el audio quedó bloqueado' : '🔊 Activar sonido en este celu'; });
-      localDirect = createDirector(localMusic);
-    }
-    if (!localToggle.checked && localMusic) localMusic.stop();
-  });
-  $('#ctl-sound').addEventListener('click', () => { audioCtx(); localMusic && localMusic.enableSound(false); });
 
   /* --- SmartThings: control directo de las luces --- */
   const tokenInput = $('#st-token');
@@ -2158,12 +2164,12 @@ function initControl() {
     if (L.tipo === 'efecto') {
       const dur = speedFor(L.paso != null ? L.paso : (100 - (L.velocidad == null ? 50 : L.velocidad)) / 10);
       const mode = L.modo === 'salto' ? 'jump' : 'gradient';
-      return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: sceneNum || 1, scene_units: (L.colores || []).map(([h, sat, b]) => ({ unit_change_mode: mode, unit_switch_duration: dur, unit_gradient_duration: dur, h: Math.round(h), s: p10(sat, 0), v: p10(b), bright: 0, temperature: 0 })) } }];
+      return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: sceneNum || 1, scene_units: (L.colores || []).map(([h, sat, b]) => ({ unit_change_mode: mode, unit_switch_duration: dur, unit_gradient_duration: dur, h: Math.round(h), s: p10(sat, 0), v: b === 0 ? 0 : p10(b), bright: 0, temperature: 0 })) } }];
     }
     return [on, { code: 'work_mode', value: 'colour' }, { code: 'colour_data_v2', value: { h: Math.round(L.h || 0), s: p10(L.s == null ? 100 : L.s, 0), v: p10(L.brillo == null ? 100 : L.brillo) } }];
   }
 
-  const suaveOK = () => store.get('ty_suave', true);
+  const suaveOK = () => true;
   const postLamp = (lamp, commands) => tuyaFetch('/cmd', { method: 'POST', body: JSON.stringify({ commands, device: LAMPS[lamp] || undefined }) });
   // Transición suave "en vivo" (la misma que usa la app al mover el selector de color)
   function ctrlCmd(h, sat, b, withMode) {
@@ -2193,7 +2199,7 @@ function initControl() {
     if (L.tipo === 'efecto') {
       const dur = speedFor(L.paso == null ? 0.6 : L.paso);
       const mode = L.modo === 'salto' ? 1 : 2;
-      return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: dpScene(cfg.escena || 1, (L.colores || []).map(([h, sat, b]) => ({ sw: dur, gr: dur, mode, h, s: p10(sat, 0), v: Math.max(vMin, p10(b, 0)) }))) }];
+      return [on, { code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: dpScene(cfg.escena || 1, (L.colores || []).map(([h, sat, b]) => ({ sw: dur, gr: dur, mode, h, s: p10(sat, 0), v: b === 0 ? 0 : Math.max(vMin, p10(b, 0)) }))) }];
     }
     const tr = (L.transicion || 0) * 1000;
     if (L.tipo === 'blanco') {
@@ -2229,10 +2235,22 @@ function initControl() {
     return list.length ? list : [LAMP_NAMES[0]];
   };
   let lastLook = null;
+  let prevLookObj = null;
   async function fireLook(look, force = false) {
     const L = typeof look === 'object' ? look : LOOKS[look];
     const name = typeof look === 'object' ? (look.nombre || 'transición') : look;
     if (!L) { log('Look desconocido en el guion: ' + name, 'e'); return; }
+    if (L.tipo === 'flashUnico') {
+      // un único destello: blanco al 100% sin fundido y vuelta inmediata a lo que había
+      const back = prevLookObj || LOOKS.oscuro;
+      if (link) link.send({ type: 'luz', look: 'flashUnico', L: { tipo: 'blanco', brillo: 100, calidez: 50, flash: true }, ms: 0 });
+      const white = { tipo: 'color', h: 0, s: 0, brillo: 100, nombre: 'flash' };
+      await Promise.all(activeLamps().map(lamp => sendLookTo(lamp, white).catch(() => {})));
+      setTimeout(() => activeLamps().forEach(lamp => sendLookTo(lamp, { ...back, transicion: 0 }).catch(() => {})), L.ms || 140);
+      log('💡 flash único', 'o');
+      return;
+    }
+    prevLookObj = L;
     if (!force && name === lastLook) return;
     lastLook = name;
     // La tele cambia cuando llega la luz (≈ demora de la lámpara, menos lo que tarda el mensaje)
@@ -2242,10 +2260,20 @@ function initControl() {
     if (tuyaReady()) {
       const t0 = performance.now();
       const res = await Promise.all(activeLamps().map(async lamp => {
+        try { await sendLookTo(lamp, L); return true; }
+        catch (e) { log(`💡 ${lamp} · ${name}: Tuya falló — ${e.message}`, 'e'); return false; }
+      }));
+      ok = res.some(Boolean);
+      if (ok) log(`💡 ${name} → ${activeLamps().join(' + ')} (${Math.round(performance.now() - t0)} ms)`, 'o');
+      else if (L.respaldo) log('Uso el respaldo de SmartThings', 'e');
+    }
+    if (!ok) { const mood = L.respaldo || (['tension', 'festejo', 'normal'].includes(name) ? name : null); if (mood) applyMood(mood, true); }
+  }
+  async function sendLookTo(lamp, L) {
         stopLoop(lamp);
         const cfg = LAMP_CFG[lamp] || {};
         const Lx = L[lamp] ? { ...L, ...L[lamp] } : L;               // cada lámpara puede tener su variante (ej.: tira: { h: 280 })
-        try {
+        {
           if (Lx.apagar) { await postLamp(lamp, [{ code: 'switch_led', value: false }]); return true; }
           if (cfg.modo === 'dp') { await postLamp(lamp, dpCommands(Lx, cfg)); return true; }
           if (cfg.modo === 'vivo') {
@@ -2265,13 +2293,7 @@ function initControl() {
           }
           await postLamp(lamp, lookCommands(Lx, cfg.escena));
           return true;
-        } catch (e) { log(`💡 ${lamp} · ${name}: Tuya falló — ${e.message}`, 'e'); return false; }
-      }));
-      ok = res.some(Boolean);
-      if (ok) log(`💡 ${name} → ${activeLamps().join(' + ')} (${Math.round(performance.now() - t0)} ms)`, 'o');
-      else if (L.respaldo) log('Uso el respaldo de SmartThings', 'e');
-    }
-    if (!ok) { const mood = L.respaldo || (['tension', 'festejo', 'normal'].includes(name) ? name : null); if (mood) applyMood(mood, true); }
+        }
   }
 
   let lightTimers = [];
@@ -2326,75 +2348,6 @@ function initControl() {
     sel.addEventListener('change', () => { store.set('ty_lamps', sel.value); lastLook = null; log('Lámparas: ' + sel.value.replace(/\+/g, ' + '), 'o'); });
     $('#ty-lamps-row').hidden = LAMP_NAMES.length < 2;
   })();
-  const LAB = [
-    ['Leer estado', null],
-    ['Rojo · una orden', [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'colour' }, { code: 'colour_data_v2', value: { h: 0, s: 1000, v: 1000 } }]],
-    ['Verde · solo color', [{ code: 'colour_data_v2', value: { h: 120, s: 1000, v: 1000 } }]],
-    ['Azul · modo y color separados', 'split'],
-    ['Azul tenue (v 150)', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data_v2', value: { h: 225, s: 1000, v: 150 } }]],
-    ['Azul muy tenue (v 30)', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data_v2', value: { h: 225, s: 1000, v: 30 } }]],
-    ['Dorado (h 38)', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data_v2', value: { h: 38, s: 950, v: 1000 } }]],
-    ['Ámbar tenue (h 28, v 200)', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data_v2', value: { h: 28, s: 850, v: 200 } }]],
-    ['Blanco cálido', [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'white' }, { code: 'bright_value_v2', value: 600 }, { code: 'temp_value_v2', value: 0 }]],
-    ['Blanco frío', [{ code: 'work_mode', value: 'white' }, { code: 'bright_value_v2', value: 600 }, { code: 'temp_value_v2', value: 1000 }]],
-    ['Brillo 10% (blanco)', [{ code: 'work_mode', value: 'white' }, { code: 'bright_value_v2', value: 100 }]],
-    ['Rojo · transición en vivo', [{ code: 'work_mode', value: 'colour' }, { code: 'control_data', value: { change_mode: 'gradient', h: 0, s: 255, v: 255, bright: 0, temperature: 0 } }]],
-    ['Violeta · transición en vivo', [{ code: 'control_data', value: { change_mode: 'gradient', h: 280, s: 255, v: 200, bright: 0, temperature: 0 } }]],
-    ['Apagar', [{ code: 'switch_led', value: false }]],
-  ];
-  const LAB_DP = [
-    ['DP · Rojo', [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: '000003e803e8' }]],
-    ['DP · Verde', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: '007803e803e8' }]],
-    ['DP · Azul tenue (v 150)', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: '00e103e80096' }]],
-    ['DP · Azul muy tenue (v 30)', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: '00e103e8001e' }]],
-    ['DP · Rojo formato viejo', [{ code: 'work_mode', value: 'colour' }, { code: 'colour_data', value: 'ff00000000ffff' }]],
-    ['DP · Blanco cálido', [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'white' }, { code: 'bright_value', value: 600 }, { code: 'temp_value', value: 0 }]],
-    ['DP · Blanco al 10%', [{ code: 'work_mode', value: 'white' }, { code: 'bright_value', value: 100 }]],
-    ['DP · Violeta en vivo (gradual)', [{ code: 'control_data', value: '1' + '0118' + '03e8' + '0258' + '00000000' }]],
-    ['DP · Escena: rojo fijo', [{ code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: '01' + '323200' + '0000' + '03e8' + '03e8' + '00000000' }]],
-    ['DP · Escena: salto RGB', [{ code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: '01' + ['0000', '0078', '00f0'].map(h => '050501' + h + '03e8' + '03e8' + '00000000').join('') }]],
-    ['DP · Escena: rojo respirando', [{ code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: '01' + '0c0c02' + '0000' + '03e8' + '03e8' + '00000000' + '0c0c02' + '0000' + '03e8' + '0050' + '00000000' }]],
-    ['DP · Fundido a azul en 6 s (escena)', [{ code: 'work_mode', value: 'scene' }, { code: 'scene_data', value: '02' + '3c3c02' + '00e1' + '03e8' + '0190' + '00000000' }]],
-  ];
-  async function readState(lamp, label) {
-    try {
-      const j = await tuyaFetch('/estado' + (LAMPS[lamp] ? '?device=' + encodeURIComponent(LAMPS[lamp]) : ''));
-      const st = Object.fromEntries((j.result || []).map(x => [x.code, x.value]));
-      const show = ['switch_led', 'work_mode', 'colour_data_v2', 'bright_value_v2', 'temp_value_v2', 'scene_data_v2', 'colour_data', 'bright_value', 'temp_value', 'scene_data'].filter(k => k in st).map(k => `${k}=${typeof st[k] === 'object' ? JSON.stringify(st[k]) : st[k]}`).join(' · ');
-      log(`🔎 ${lamp} después de «${label}»: ${show || JSON.stringify(j.result)}`);
-    } catch (e) { log(`🔎 ${lamp}: no pude leer el estado — ${e.message}`, 'e'); }
-  }
-  const LABS = [...LAB, ...LAB_DP];
-  $('#ty-lab').innerHTML = LABS.map((t, i) => `<button class="pbtn" data-i="${i}" ${i === LAB.length ? 'style="grid-column:1/-1;margin-top:8px"' : ''}>${esc(t[0])}</button>`).join('');
-  $('#ty-lab').querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
-    const [label, cmd] = LABS[+b.dataset.i];
-    clearLights();
-    for (const lamp of activeLamps()) {
-      stopLoop(lamp);
-      try {
-        if (cmd === 'split') { await postLamp(lamp, [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'colour' }]); await new Promise(r => setTimeout(r, 400)); await postLamp(lamp, [{ code: 'colour_data_v2', value: { h: 225, s: 1000, v: 1000 } }]); }
-        else if (cmd) await postLamp(lamp, cmd);
-        log(`🧪 ${lamp}: «${label}» enviado`, 'o');
-      } catch (e) { log(`🧪 ${lamp}: «${label}» falló — ${e.message}`, 'e'); }
-      setTimeout(() => readState(lamp, label), cmd ? 1200 : 0);
-    }
-  }));
-  $('#ty-scn').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8].map(n => `<button class="btn small" data-n="${n}">${n}</button>`).join('');
-  $('#ty-scn').querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
-    const n = +b.dataset.n;
-    clearLights();
-    for (const lamp of activeLamps()) {
-      stopLoop(lamp);
-      try {
-        await postLamp(lamp, [{ code: 'switch_led', value: true }, { code: 'work_mode', value: 'scene' }, { code: 'scene_data_v2', value: { scene_num: n, scene_units: [{ unit_change_mode: 'static', unit_switch_duration: 50, unit_gradient_duration: 50, h: 0, s: 1000, v: 800, bright: 0, temperature: 0 }] } }]);
-        log(`Escena ${n} (rojo fijo) → ${lamp}. ¿Quedó en rojo quieto?`, 'o');
-      } catch (e) { log(`Escena ${n} → ${lamp}: ${e.message}`, 'e'); }
-    }
-  }));
-  $('#ty-suave').checked = suaveOK();
-  $('#ty-suave').addEventListener('change', () => store.set('ty_suave', $('#ty-suave').checked));
-  $('#ty-fade-dn').addEventListener('click', () => { clearLights(); fireLook({ ...LOOKS.oscuro, transicion: 8, nombre: 'prueba fundido a oscuro' }, true); });
-  $('#ty-fade-up').addEventListener('click', () => { clearLights(); fireLook({ ...LOOKS.sala, transicion: 8, nombre: 'prueba fundido a sala' }, true); });
   $('#ty-test').addEventListener('click', async () => {
     store.set('ty_url', tyUrl.value.trim()); store.set('ty_key', tyKey.value.trim());
     if (!tuyaReady()) { log('Cargá la dirección del intermediario y la clave', 'e'); return; }
@@ -2440,10 +2393,9 @@ function initControl() {
     // La apertura de cine avanza sola a la fanfarria cuando terminan los créditos
     if (SCRIPT[S.slide].k === 'cine') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); autoT = setTimeout(() => { if (SCRIPT[S.slide].k === 'cine') goSlide(S.slide + 1); }, CEL + CREDITS.length * CRED + 300); } }
     else { autoKey = null; clearTimeout(autoT); }
-    if (localDirect) localDirect(S);
     const k = SCRIPT[S.slide].k;
     if (soft) { clearTimeout(commitT); commitT = setTimeout(sendState, 250); }
-    else if (k === 'presentacion' || k === 'contendientes') setTimeout(sendState, Math.max(0, scrDelay() - 50)); // entrada junto con el flash de la lámpara
+    else if (k === 'presentacion') setTimeout(sendState, Math.max(0, scrDelay() - 50)); // entrada junto con el flash de la lámpara
     else sendState();
     renderControl();
   }
@@ -2531,7 +2483,7 @@ function initControl() {
     const b = $('#reset-btn');
     if (!resetArmed) { b.textContent = '¿Seguro? Tocá de nuevo para borrar todo'; resetArmed = setTimeout(() => { resetArmed = null; b.textContent = 'Reiniciar partida'; }, 4000); return; }
     clearTimeout(resetArmed); resetArmed = null; b.textContent = 'Reiniciar partida';
-    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, noBeams: S.noBeams };
+    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol };
     log('Partida reiniciada', 'o');
     commit();
   });
