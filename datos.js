@@ -17,7 +17,7 @@ window.TRIVIA = {
     // Intro de estudio "El monumento" (dura 11 s; para cambiarlo: ms: 12000).
     // monograma: letras del emblema (si no, las iniciales) · anillo: texto alrededor del emblema
     { estudio: 'Lautaro Entertainment', texto: 'presenta', monograma: 'LE', anillo: 'Lautaro Entertainment · MMXXVI' },
-    { chico: 'una producción de', grande: 'Bioingeniería' },
+    { chico: 'una producción para', grande: 'Bioingeniería' },
     { chico: 'en asociación con', grande: 'Claude' },
     { chico: 'con la colaboración involuntaria de', grande: 'GLPI y Metabase' },
     { chico: 'basada en', grande: 'Datos reales' },
@@ -26,7 +26,11 @@ window.TRIVIA = {
     { chico: 'MMXXVI', grande: 'Segunda edición' },
   ],
   apertura: {
-    credito: 2800,          // ms de cada crédito
+    credito: 2800,          // ms de cada crédito (si no se usa duracionCreditos)
+    duracionCreditos: 64000,  // ms: los créditos duran lo mismo que la música (1:04) y se reparten solos
+    estudioMs: 12000,       // la intro de estudio
+    finalMs: 16000,         // el último ("Segunda edición"), más largo
+    climax: null,           // segundo de la música en que cae el golpe del final (null = 2 s después de que entra)
     golpes: 'extremos',     // golpe grave en los créditos: 'todos', 'extremos' (solo el último) o 'ninguno'
     graveEstudio: true,     // golpe grave cuando el emblema de la intro de estudio se asienta
     graves: true,           // cada aviso entra con un golpe grave de cine (false = avisos en silencio)
@@ -42,7 +46,7 @@ window.TRIVIA = {
       { icono: 'salida',   texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final' },
       // Prueba de sonido para la barra: unos 5 s de sonido que crece y gira, golpe grave, destello del techo y aparece el texto.
       // subida: ms hasta el golpe · luz: false para que el techo no destelle
-      { texto: 'Bioingeniería Surround', sub: 'Esta sala cuenta con sonido envolvente 7.1', sonido: 'envolvente', subida: 4800 },
+      { texto: 'Bioingeniería Surround', sonido: 'envolvente', subida: 4800 },
     ],
   },
 
@@ -70,16 +74,16 @@ window.TRIVIA = {
      "inicio" = segundo desde el que arranca (opcional). */
   musica: {
     previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
-    cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (nueva)', inicio: 0 },   // entra con el primer crédito. Antes: Time (Inception) jgyShFzdB_Q desde el 75
+    cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
     pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions' },
     final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
-    anfitrionVoz: { id: 'q9C_euAFpW8', nombre: 'Voz: Damas y caballeros', inicio: 0 },   // suena antes de tu tema; el tema entra cuando termina
+    anfitrionVoz: { id: 'q9C_euAFpW8', nombre: 'Voz: Ladies and gentlemen', inicio: 0, duracion: 21 },   // completa (21 s); el tema entra cuando termina
                   // opcionales: fin: segundo en que se corta la voz · solape: segundos que se pisan voz y tema (0.3)
-    anfitrion:    { id: 'p3l7fgvrEKM', nombre: 'Freed from Desire (Gala)', inicio: 0 },   // tu entrada (antes: I Gotta Feeling Jt0qUO4pqWQ)
+    anfitrion:    { id: 'p3l7fgvrEKM', nombre: 'Freed from Desire (Gala)', inicio: 10 },   // tu entrada (antes: I Gotta Feeling Jt0qUO4pqWQ)
     redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
     respuesta:    { id: '',            nombre: 'A definir: golpe de respuesta' },      // al revelar; después pasa a "datos"
 
@@ -237,14 +241,18 @@ window.TRIVIA = {
   /* Presentador: entra después de la intro y antes de presentar a los contendientes */
   presentador: {
     nombre: 'Lautaro', foto: '', rol: 'Responsable de Bioingeniería', antiguedad: 'En Bioingeniería desde 2021', frase: '',
-    // Lo que aparece a oscuras mientras entrás, estilo tráiler. ms: cuánto dura cada uno; el último queda hasta el golpe.
+    // Lo que aparece a oscuras mientras entrás, estilo tráiler. Cada texto entra en un segundo de:
+    //   voz: la voz de presentación (0 a 21) · tema: el video del tema (el segundo que ves en YouTube; arranca en el 10)
+    // dura: segundos que queda si el siguiente tarda (6 por defecto). El último queda hasta el golpe.
+    // En el celu, arriba, ves el segundo de la voz y del tema mientras suenan: así lo ajustás fino.
     textos: [
-      { texto: 'Damas y caballeros', ms: 5500 },
-      { texto: 'Esta noche', ms: 3400 },
-      { texto: 'Solo uno conoce todas las respuestas', ms: 5200 },
-      'Con ustedes',
+      { texto: '¿Están listos?', voz: 2 },
+      { texto: 'Damas y caballeros', voz: 7 },
+      { texto: 'Bienvenidos', voz: 13 },
+      { texto: 'Esta noche', tema: 12 },
+      { texto: 'Solo uno conoce todas las respuestas', tema: 18 },
+      { texto: 'Con ustedes', tema: 55 },
     ],
-    inicioTextos: 1200,   // ms hasta el primer texto (para acomodarlo a la voz de "Damas y caballeros")
     golpeAuto: 0,   // ms: si es mayor que 0, el golpe de entrada sale solo a ese tiempo (si no lo tocás antes)
     // Ritmo del tema para que la tele destelle en el bombo. Lo más fácil: calibrarlo en el ensayo desde el celu (🥁 Calibrar).
     // fase: segundo del video en que cae un golpe (lo da la calibración). Sin fase, el compás arranca cuando tocás el golpe.

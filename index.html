@@ -436,19 +436,23 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .v-host{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
 /* v28: textos de la espera con tipografía de tráiler */
 .host-wait{position:relative;height:34vh;width:100vw;margin-left:calc(50% - 50vw);overflow:hidden}
-.hw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;animation-name:hwInOut;animation-timing-function:linear;animation-fill-mode:both}
+.hw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0}
+.hw.on{animation:hwPop 1.1s cubic-bezier(.16,1,.3,1) both}
+.hw.off{animation:hwOut .8s ease forwards}
+@keyframes hwPop{from{opacity:0;transform:scale(1.14)}to{opacity:1;transform:scale(1)}}
+@keyframes hwOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.98)}}
 .hw span{position:relative;white-space:nowrap;font-family:'Cinzel',serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:var(--fs);line-height:1;padding-left:.14em;
   background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.95) 50%,transparent 58%) no-repeat,linear-gradient(180deg,#ffffff 0%,#fff0c8 34%,#e8bd62 60%,#fff2c6 100%);
   background-size:300% 100%,100% 100%;background-position:120% 0,0 0;-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 22px rgba(255,205,120,.55)) drop-shadow(0 0 60px rgba(255,170,60,.25));animation:hwShine 1.8s cubic-bezier(.3,.1,.3,1) calc(var(--d) + .35s) both}
+  filter:drop-shadow(0 0 22px rgba(255,205,120,.55)) drop-shadow(0 0 60px rgba(255,170,60,.25))}
+.hw.on span{animation:hwShine 1.8s cubic-bezier(.3,.1,.3,1) .35s both}
 @keyframes hwShine{from{background-position:120% 0,0 0}to{background-position:-20% 0,0 0}}
 .hw.two span{white-space:normal;text-wrap:balance;max-width:86vw;text-align:center;line-height:1.18}
-.hw.last{animation-name:hwIn}
-@keyframes hwInOut{0%{opacity:0;transform:scale(1.14)}16%{opacity:1}22%{transform:scale(1.02)}84%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.98)}}
-@keyframes hwIn{0%{opacity:0;transform:scale(1.14)}16%{opacity:1}30%,100%{opacity:1;transform:scale(1)}}
+
 .hw-flare{position:absolute;left:50%;top:50%;width:110vw;height:3px;margin:-1.5px 0 0 -55vw;border-radius:50%;
   background:linear-gradient(90deg,transparent,rgba(255,214,150,.0) 10%,rgba(255,230,190,.9) 50%,rgba(255,214,150,0) 90%,transparent);
-  box-shadow:0 0 18px 4px rgba(255,200,120,.35);opacity:0;transform:scaleX(.1);animation:hwFlare 1.6s cubic-bezier(.2,.7,.3,1) both}
+  box-shadow:0 0 18px 4px rgba(255,200,120,.35);opacity:0;transform:scaleX(.1)}
+.hw.on .hw-flare{animation:hwFlare 1.6s cubic-bezier(.2,.7,.3,1) both}
 @keyframes hwFlare{0%{opacity:0;transform:scaleX(.1)}20%{opacity:1}100%{opacity:0;transform:scaleX(1)}}
 .host-reveal{display:none}
 .v-host.golpe .host-wait{display:none}
@@ -562,6 +566,23 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .av-div{width:min(220px,40vw);height:1px;position:relative;background:linear-gradient(90deg,transparent,rgba(233,196,106,.75),transparent)}
 .av-div::after{content:"◆";position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);font-size:9px;color:#f0cf7e;background:#0f0402;padding:0 8px}
 .av-s{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:clamp(20px,2.3vw,36px);color:#ecdcbc;text-align:center}
+/* v32: final de los créditos ("Segunda edición") con golpe y polvo dorado */
+.cred-card .cred-t{white-space:nowrap}
+.cred-final .cred-t{font-weight:900!important;animation-name:credTrackF,shine!important}
+.cred-final.hit .cred-t{animation-name:credTrackF,finalHit,shine!important}
+@keyframes credTrackF{from{letter-spacing:.3em}to{letter-spacing:.12em}}
+.cred-final .cred-s{font-family:'Cinzel',serif!important;font-style:normal!important;letter-spacing:.6em;font-size:clamp(16px,1.8vw,28px)!important;color:#e8d3a6!important}
+.cf-rays{position:absolute;left:50%;top:50%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;pointer-events:none;opacity:0;
+  background:repeating-conic-gradient(from 0deg,rgba(255,214,140,.16) 0deg 1.6deg,transparent 1.6deg 9deg);
+  -webkit-mask-image:radial-gradient(circle,#000 4%,rgba(0,0,0,.4) 16%,transparent 32%);mask-image:radial-gradient(circle,#000 4%,rgba(0,0,0,.4) 16%,transparent 32%);animation:spin 70s linear infinite}
+.cred-final.hit .cf-rays{animation:spin 70s linear infinite,raysHit 2.2s ease-out forwards}
+@keyframes raysHit{0%{opacity:0}12%{opacity:1}100%{opacity:.7}}
+.cred-final.hit .cred-t{animation:credTrackF var(--cd) cubic-bezier(.2,.6,.3,1) var(--cs) both,finalHit 1.4s cubic-bezier(.16,1,.3,1) both,shine 2.6s .2s ease-out both!important}
+@keyframes finalHit{0%{transform:scale(1.18);filter:drop-shadow(0 0 60px rgba(255,220,150,.9))}100%{transform:none;filter:drop-shadow(0 0 24px rgba(255,190,90,.3))}}
+.cf-dust{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.5s}
+.cred-final.hit .cf-dust{opacity:1}
+.cf-dust i{position:absolute;bottom:-4%;width:3px;height:3px;border-radius:50%;background:#ffe3a0;box-shadow:0 0 8px 2px rgba(255,200,110,.7);animation:dustUp linear infinite}
+@keyframes dustUp{from{transform:translateY(0);opacity:0}15%{opacity:1}to{transform:translateY(-105vh);opacity:0}}
 /* v31: reglas en tarjetas */
 .v-rules2{width:min(1240px,94vw)}
 .rl-eyebrow{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.5em;padding-left:.5em;text-transform:uppercase;color:#e8d3a6;font-size:clamp(16px,1.9vw,30px);margin-bottom:clamp(16px,3vh,34px)}
@@ -905,7 +926,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v31 · 01/11 14:23';
+const VERSION = 'v32 · 01/11 14:55';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1417,10 +1438,15 @@ function say(text) {
 const CRED = (D.apertura && D.apertura.credito) || 2800;
 /* La intro de estudio ("El monumento") dura más que un crédito común */
 const IDENT_MS = 11000;
-const credDur = c => (c && c.ms) || (c && c.estudio ? IDENT_MS : CRED);
+// Si se indica la duración total de los créditos (la de la música), se reparte: intro de estudio, créditos y el final más largo
+const AP = D.apertura || {}, CRED_N = CREDITS.length;
+const CRED_IDENT = (CREDITS[0] && CREDITS[0].estudio) ? (CREDITS[0].ms || AP.estudioMs || 12000) : 0;
+const CRED_FINAL = AP.finalMs || 16000;
+const CRED_MID = AP.duracionCreditos ? Math.max(2500, Math.round((AP.duracionCreditos - CRED_IDENT - CRED_FINAL) / Math.max(1, CRED_N - (CRED_IDENT ? 1 : 0) - 1))) : null;
+const credDur = (c, i) => (c && c.ms) || (c && c.estudio ? (CRED_IDENT || IDENT_MS) : (AP.duracionCreditos && i === CRED_N - 1) ? CRED_FINAL : (CRED_MID || CRED));
 const CRED_AT = [];
 let CRED_END = CEL;
-CREDITS.forEach(c => { CRED_AT.push(CRED_END); CRED_END += credDur(c); });
+CREDITS.forEach((c, i) => { CRED_AT.push(CRED_END); CRED_END += credDur(c, i); });
 /* Telón de terciopelo dibujado una sola vez: pliegues irregulares, brillo de terciopelo, cenefa con flecos dorados */
 function renderCurtain(W, H, opt = {}) {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -1619,13 +1645,22 @@ const LOOKS = Object.assign({
   barrido:     { tipo: 'efecto', modo: 'respirar', colores: [[320, 95, 40], [190, 95, 40]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { modo: 'salto', colores: [[38, 95, 80], [268, 95, 80]], paso: 0.47 } },
 }, D.looks || {});
 /* Entrada del presentador: cuándo entra cada texto de la espera (ms desde que arranca la pantalla) */
+/* Textos de la espera. Cada uno puede ir atado a:
+   voz: segundo de la voz de presentación · tema: segundo del video del tema (el mismo que ves en YouTube) · o ms desde que arranca.
+   est = cuándo se estima que aparece (para las luces y por si YouTube no responde). */
+const VOZ_MS = () => ((D.musica && D.musica.anfitrionVoz && D.musica.anfitrionVoz.id) ? ((D.musica.anfitrionVoz.duracion || 21) * 1000) : 0);
 function hostTexts() {
-  const p = D.presentador || {};
+  const p = D.presentador || {}, temaIni = (D.musica && D.musica.anfitrion && D.musica.anfitrion.inicio) || 0;
   let at = p.inicioTextos != null ? p.inicioTextos : 1200;
   return (p.textos || ['Damas y caballeros', 'Con ustedes']).map((x, i) => {
     const o = typeof x === 'string' ? { texto: x } : (x || {});
-    const r = { texto: o.texto || '', at, dur: o.ms || (i === 0 ? 5500 : 4300) };
-    at += r.dur; return r;
+    let r;
+    if (o.voz != null) r = { texto: o.texto || '', clock: 'voz', t: o.voz, est: Math.round(o.voz * 1000) + 200 };
+    else if (o.tema != null) r = { texto: o.texto || '', clock: 'tema', t: o.tema, est: VOZ_MS() + Math.round((o.tema - temaIni) * 1000) + 400 };
+    else { r = { texto: o.texto || '', clock: 'ms', t: at, est: at }; at += o.ms || (i === 0 ? 5500 : 4300); }
+    r.dur = o.dura ? o.dura * 1000 : 6000;   // cuánto queda en pantalla si el siguiente tarda
+    r.at = r.est;
+    return r;
   });
 }
 const HOST_BPM = (D.presentador && D.presentador.ritmo && D.presentador.ritmo.bpm) || 128;
@@ -1644,8 +1679,9 @@ function hostGolpeGuion() {
   return st;
 }
 function hostGuion() {
-  const tx = hostTexts(), last = tx[tx.length - 1].at;
-  return tx.length >= 3 ? [[0, 'oscuro'], [tx[1].at, 'latido'], [last, 'latidoRapido']] : [[0, 'oscuro'], [last, 'latidoRapido']];
+  const tx = hostTexts(), last = tx[tx.length - 1].est;
+  const temaAt = VOZ_MS() || (tx.length >= 3 ? tx[1].est : 0);   // la luz empieza a latir cuando entra el tema
+  return temaAt && temaAt < last ? [[0, 'oscuro'], [temaAt, 'latido'], [last, 'latidoRapido']] : [[0, 'oscuro'], [last, 'latidoRapido']];
 }
 /* Guion: qué look va en cada momento. Un nombre, o una secuencia [[ms, look], ...] donde ms = cuándo se tiene que VER */
 const GUION = Object.assign({
@@ -2116,7 +2152,7 @@ function createDirector(music, fx) {
         const ya = (fin != null && s.t >= fin - solape)   // llegó al final (o al segundo "fin")
           || (!s && el > 1200)                               // terminó y se descargó
           || (s && !(s.d > 0) && el > 4000)                  // no cargó: que no quede la sala en silencio
-          || el > (v.max || 15000);
+          || el > (v.max || ((v.duracion || 21) * 1000 + 5000));   // red de seguridad: nunca queda colgado
         if (!ya) return;
         clearInterval(vozT); vozT = null;
         fx.stop(v.fin ? 400 : 250);
@@ -2228,9 +2264,62 @@ function initScreen() {
     if (bl.getAnimations) bl.getAnimations().forEach(a => a.cancel());
     bl.style.opacity = 0;
   }
+  /* Textos de la espera sincronizados con la voz y con el tema; con el ritmo calibrado, la tele late suave al bombo */
+  let hostTxtT = null, preBeatRaf = null;
+  function hostTextsStop() { clearInterval(hostTxtT); hostTxtT = null; cancelAnimationFrame(preBeatRaf); preBeatRaf = null; }
+  function hostTextsStart(vh) {
+    hostTextsStop();
+    const tx = hostTexts(), els = [...vh.querySelectorAll('.hw')], t0 = performance.now();
+    let active = -1, shownAt = 0, temaOn = false, fadedOut = false;
+    const passed = (e, now, fxS, mS) => {
+      const temaSuena = mS && mS.key === 'anfitrion' && mS.t > 0;
+      if (e.clock === 'voz') {
+        if (fxS && fxS.key === 'anfitrionVoz' && fxS.d > 0) return fxS.t >= e.t;
+        if (temaSuena) return true;
+        return now >= e.est + 1500;   // la voz no respondió: sigue por tiempo
+      }
+      if (e.clock === 'tema') return temaSuena ? mS.t >= e.t : now >= e.est + 3000;
+      return now >= e.est;
+    };
+    hostTxtT = setInterval(() => {
+      if (!vh.isConnected || vh.classList.contains('golpe-pre')) return hostTextsStop();
+      const now = performance.now() - t0, fxS = fxPlayer ? fxPlayer.status() : null, mS = music.status();
+      let idx = -1;
+      tx.forEach((e, i) => { if (passed(e, now, fxS, mS)) idx = i; });
+      if (!temaOn && mS && mS.key === 'anfitrion' && mS.t > 0) { temaOn = true; beams.level(.65); preBeat(vh); }
+      if (idx !== active && idx >= 0) {
+        if (active >= 0 && !fadedOut) { els[active].classList.remove('on'); els[active].classList.add('off'); }
+        els[idx].classList.remove('off'); void els[idx].offsetWidth; els[idx].classList.add('on');
+        active = idx; shownAt = now; fadedOut = false;
+        if (idx === tx.length - 1) { beams.setup('top5'); beams.level(.85); beams.play('scan'); }
+      } else if (active >= 0 && active < tx.length - 1 && !fadedOut && now - shownAt > tx[active].dur) {
+        els[active].classList.remove('on'); els[active].classList.add('off'); fadedOut = true;   // si el siguiente tarda, se va solo
+      }
+    }, 80);
+  }
+  // antes del golpe: con el ritmo calibrado, un latido violeta suave en cada tiempo (sin calibrar no se hace: iría a destiempo)
+  function preBeat(vh) {
+    const r0 = ritmoCfg();
+    if (r0.fase == null) return;
+    const bl = $('#beat-layer');
+    let last = null;
+    const loop = () => {
+      if (!vh.isConnected || vh.classList.contains('golpe-pre') || hostTxtT == null) { preBeatRaf = null; return; }
+      preBeatRaf = requestAnimationFrame(loop);
+      const r = ritmoCfg(), t = songClock();
+      if (t == null) return;
+      const per = 60 / r.bpm, k = Math.floor((t + (r.ajuste || 0) / 1000 - r.fase) / per);
+      if (k === last) return;
+      last = k;
+      const fuerte = vh.querySelector('.hw.last.on') != null, down = k % 4 === 0;
+      bl.style.background = `radial-gradient(ellipse 110% 60% at 50% 112%, hsla(${down ? 285 : 265},90%,55%,.9), transparent 72%)`;
+      if (bl.animate) { bl.getAnimations().forEach(a => a.cancel()); bl.animate([{ opacity: (fuerte ? .55 : .3) * (down ? 1.3 : 1) }, { opacity: 0 }], { duration: per * 900, easing: 'ease-out', fill: 'forwards' }); }
+    };
+    loop();
+  }
   function hostFlash(kind) { const f = document.createElement('div'); f.className = 'flash ' + kind; document.body.appendChild(f); setTimeout(() => f.remove(), 600); }
   function hostGolpe(vh) {
-    hostStop();
+    hostStop(); hostTextsStop();
     const h = host = { vh, wall0: performance.now(), fase: null, lastHalf: null, lastPos: null, lastP: 0 };
     const p0 = hostPos(h), fr = p0 - Math.floor(p0);
     h.b0 = fr < 0.15 ? Math.floor(p0) : Math.ceil(p0);   // arranca en el próximo golpe del bombo
@@ -2409,10 +2498,7 @@ function initScreen() {
           beams.setup('top5'); beams.clearPools(); beams.level(1); beams.play('scan');
         } else {
           // a oscuras, los reflectores buscan entre el público y se aceleran con los textos
-          const tx = hostTexts();
-          beams.setup('top3'); beams.clearPools(); beams.level(.45); beams.play('search');
-          if (tx.length >= 3) later(tx[1].at, () => beams.level(.65));
-          later(tx[tx.length - 1].at, () => { beams.setup('top5'); beams.level(.85); beams.play('scan'); });
+          beams.setup('top3'); beams.clearPools(); beams.level(.45); beams.play('search');   // después los acelera el motor de textos
         }
         break;
       case 'contendientes': {
@@ -2547,9 +2633,9 @@ function initScreen() {
   }
 
   function buildSlide(st, sl) {
-    hostStop();
+    hostStop(); hostTextsStop();
     clearInterval(confettiLoop); clearTimeout(introTimer); clearTimeout(contPhase);
-    cineHits.forEach(clearTimeout); cineHits = [];
+    cineHits.forEach(h => { clearTimeout(h); clearInterval(h); }); cineHits = [];
     let h = '';
     if (sl.k === 'logo') {
       h = `<div class="v enter"><div class="marquee" style="display:inline-block"><div class="edition">${esc(D.edicion)}</div><h1 class="script" style="font-size:clamp(70px,11vw,150px);margin:0;line-height:.95">${esc(D.titulo)}</h1></div>
@@ -2563,10 +2649,12 @@ function initScreen() {
     } else if (sl.k === 'presentamos') {
       h = `<div class="v v-pt"><div class="pt-pre">Y ahora…</div><div class="pt-main">Presentamos a<br>los contendientes</div><div class="pt-line"></div></div>`;
     } else if (sl.k === 'cine') {
-      const credHTML = c => {
+      const credHTML = (c, fin) => {
         if (typeof c === 'string') c = { grande: c };
         if (c.estudio) return `<div class="studio"><div class="studio-mark"><div class="studio-rays"></div><span>${esc(c.estudio.split(/\s+/).map(w => w[0]).join('').slice(0, 2))}</span></div><div class="studio-name">${esc(c.estudio)}</div>${c.texto ? `<div class="studio-sub">${esc(c.texto)}</div>` : ''}</div>`;
-        return `${c.chico ? `<div class="cred-s">${esc(c.chico)}</div>` : ''}${c.grande ? `<div class="cred-t">${esc(c.grande)}</div>` : ''}`;
+        // tamaño calculado para que entre en un renglón aun con el espaciado inicial (así no salta de dos renglones a uno)
+        const n = (c.grande || '').length, fs = Math.min(fin ? 7 : 5.4, 92 / (Math.max(6, n) * (fin ? 1.12 : 1.2))).toFixed(2);
+        return `${c.chico ? `<div class="cred-s">${esc(c.chico)}</div>` : ''}${c.grande ? `<div class="cred-t" style="font-size:${fs}vw">${esc(c.grande)}</div>` : ''}`;
       };
       const envIdx = AVISOS.findIndex(a => avSonido(a) === 'envolvente'), envAt = envIdx < 0 ? CEL - 600 : 200 + AVISOS.slice(0, envIdx).reduce((t, a) => t + avDur(a), 0);
       h = `<div class="cine"><div class="cine-dim"></div><div class="cine-black" style="animation-delay:${envAt}ms"></div>
@@ -2586,13 +2674,20 @@ function initScreen() {
           if (a.audio) cineHits.push(setTimeout(() => playFile(a.audio), at + 350));
           t += d; return html; }).join(''); })()}
         ${CREDITS.map((c, i) => c && c.estudio
-          ? `<div class="cine-card ident-card" style="animation-delay:${CRED_AT[i]}ms;animation-duration:${credDur(c)}ms">${identHTML(c, CRED_AT[i], credDur(c))}</div>`
-          : `<div class="cine-card cred-card" style="animation-delay:${CRED_AT[i]}ms;animation-duration:${credDur(c)}ms;--cs:${CRED_AT[i]}ms;--cd:${credDur(c)}ms">${credHTML(c)}</div>`).join('')}
+          ? `<div class="cine-card ident-card" style="animation-delay:${CRED_AT[i]}ms;animation-duration:${credDur(c, i)}ms">${identHTML(c, CRED_AT[i], credDur(c, i))}</div>`
+          : `<div class="cine-card cred-card ${i === CREDITS.length - 1 && AP.duracionCreditos ? 'cred-final' : ''}" data-i="${i}" style="animation-delay:${CRED_AT[i]}ms;animation-duration:${credDur(c, i)}ms;--cs:${CRED_AT[i]}ms;--cd:${credDur(c, i)}ms">${i === CREDITS.length - 1 && AP.duracionCreditos ? `<div class="cf-rays"></div><div class="cf-dust">${Array.from({ length: 36 }, () => `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * 6).toFixed(2)}s;animation-duration:${(5 + Math.random() * 5).toFixed(2)}s"></i>`).join('')}</div>` : ''}${credHTML(c, i === CREDITS.length - 1 && !!AP.duracionCreditos)}</div>`).join('')}
       </div>`;
+      // el golpe del final cae con el momento fuerte de la música (apertura.climax, en segundos del video); si no se indicó, 2 s después de que entra
+      if (AP.duracionCreditos) {
+        const li = CREDITS.length - 1, ini = CRED_AT[li], est = AP.climax != null ? CEL - 200 + AP.climax * 1000 : ini + 2000;
+        const pegar = () => { const el = stage.querySelector(`.cred-final[data-i="${li}"]`); if (!el || el.classList.contains('hit')) return; el.classList.add('hit'); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); };
+        if (AP.climax != null) cineHits.push(setInterval(() => { const ms = music.status(); if (ms && ms.key === 'cine' && ms.t >= AP.climax) pegar(); }, 60));
+        cineHits.push(setTimeout(pegar, Math.max(ini + 300, est + (AP.climax != null ? 1200 : 0))));
+      }
       const golpes = (D.apertura && D.apertura.golpes) || (TRACKS.cine ? 'extremos' : 'todos');
       CREDITS.forEach((c, i) => {
         if (c && c.estudio) {   // la intro de estudio: golpe grave cuando el emblema se asienta
-          if (!(D.apertura && D.apertura.graveEstudio === false)) cineHits.push(setTimeout(() => boomGrave(0.9), CRED_AT[i] + Math.round(6000 * credDur(c) / IDENT_MS)));
+          if (!(D.apertura && D.apertura.graveEstudio === false)) cineHits.push(setTimeout(() => boomGrave(0.9), CRED_AT[i] + Math.round(6000 * credDur(c, i) / IDENT_MS)));
           return;
         }
         const last = i === CREDITS.length - 1;
@@ -2627,7 +2722,7 @@ function initScreen() {
       const t = hostTexts();
       h = `<div class="v v-host" id="vhost">
           <div class="host-wait">${t.map((x, i) => { const len = Math.max(8, x.texto.length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2), last = i === t.length - 1;
-            return `<div class="hw ${last ? 'last' : ''} ${two ? 'two' : ''}" style="--fs:${fs}vw;--d:${x.at}ms;animation-delay:${x.at}ms;animation-duration:${x.dur}ms"><div class="hw-flare" style="animation-delay:${x.at}ms"></div><span>${esc(x.texto)}</span></div>`; }).join('')}</div>
+            return `<div class="hw ${last ? 'last' : ''} ${two ? 'two' : ''}" style="--fs:${fs}vw"><div class="hw-flare"></div><span>${esc(x.texto)}</span></div>`; }).join('')}</div>
           <div class="host-reveal">
             <div class="host-tag">Su anfitrión</div>
             <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo host">${photoHTML(p)}</div></div>
@@ -2835,7 +2930,7 @@ function initScreen() {
     } else if (sl.k === 'presentador') {
       const vh = $('#vhost');
       if (vh && st.step === 'golpe' && !vh.classList.contains('golpe-pre')) hostGolpe(vh);
-      else if (vh && st.step !== 'golpe') { hostStop(); vh.classList.remove('golpe', 'golpe-pre'); }
+      else if (vh && st.step !== 'golpe') { hostStop(); vh.classList.remove('golpe', 'golpe-pre'); if (changed || !hostTxtT) hostTextsStart(vh); }
     } else if (sl.k === 'reglas') {
       const k = st.sub || 0;
       let fresh = false;
@@ -2930,11 +3025,11 @@ function initControl() {
     else {
       const left = a.d - a.t;
       $('#mus-name').textContent = '♪ ' + a.name + (a.loop ? ' · se repite' : '');
-      $('#mus-left').textContent = '−' + mmss(left);
+      $('#mus-left').textContent = mmss(a.t) + ' · −' + mmss(left);
       $('#mus-left').style.color = left < 15 ? 'var(--bad)' : 'var(--gold)';
       $('#mus-bar').style.width = (100 * a.t / a.d).toFixed(1) + '%';
     }
-    $('#mus-fx').textContent = b && b.d ? `🥁 ${b.name} · −${mmss(b.d - b.t)}` : '';
+    $('#mus-fx').textContent = b && b.d ? `${b.name} · ${mmss(b.t)} de ${mmss(b.d)}` : '';
   }
   setInterval(sendState, 4000);
 
@@ -3438,11 +3533,17 @@ function initControl() {
     CREDITS.forEach((c, i) => {
       const t = CRED_AT[i];
       if (c && c.estudio) {
-        const k = credDur(c) / IDENT_MS;
+        const k = credDur(c, i) / IDENT_MS;
         st.push([t + Math.round(600 * k), { tipo: 'color', h: 36, s: 90, brillo: 22, transicion: 3.4 * k, nombre: 'amanecer dorado', respaldo: 'normal' }]);
         st.push([t + Math.round(6000 * k), 'flashSolo']);
         st.push([t + Math.round(6150 * k), { tipo: 'color', h: 38, s: 92, brillo: 40, transicion: 0.6, nombre: 'emblema', respaldo: 'festejo' }]);
-        st.push([t + credDur(c) - 1300, { ...LOOKS.oscuro, transicion: 1.2, nombre: 'oscuro (fundido)' }]);
+        st.push([t + credDur(c, i) - 1300, { ...LOOKS.oscuro, transicion: 1.2, nombre: 'oscuro (fundido)' }]);
+        return;
+      }
+      if (AP.duracionCreditos && i === CREDITS.length - 1) {
+        const hit = AP.climax != null ? CEL - 200 + AP.climax * 1000 : t + 2000;
+        st.push([t + 300, { ...LOOKS.pulso, transicion: 1.5, nombre: 'final' }]); st.push([hit, 'flashSolo']); st.push([hit + 150, { tipo: 'color', h: 38, s: 92, brillo: 45, transicion: 0.5, nombre: 'segunda edición', respaldo: 'festejo' }]);
+        st.push([t + credDur(c, i) - 1500, { ...LOOKS.oscuro, transicion: 1.3, nombre: 'oscuro (fundido)' }]);
         return;
       }
       st.push([t + 300, 'pulso']); st.push([t + 1150, 'oscuro']);
