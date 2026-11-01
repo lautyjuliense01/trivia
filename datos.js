@@ -60,14 +60,15 @@ window.TRIVIA = {
      y un botón para deshacer: si lo tocás, se frena toda la secuencia y seguís a mano.
      en: segundo de la pista · resta: segundos antes del final · fin: cuando termina la pista */
   previa: {
-    resumen: 'Luz de sala y Hold the Line al 20 → al 1:30, pantalla hipnótica → a 1 min del final, luz ambiente y volumen subiendo hasta 70 → al terminar, arranca la apertura.',
-    inicio: { luz: 'sala', pista: 'pista0', volumen: 20, pantalla: 'apagado' },
+    resumen: 'Luz de sala (tira apagada) y Hold the Line al 20 → al 1:30, pantalla hipnótica → a 1 min del final, baja la luz, prende la tira y el volumen sube hasta 70 → al terminar, arranca la apertura.',
+    inicio: { luz: 'salaInicio', pista: 'pista0', volumen: 20, pantalla: 'apagado' },   // salaInicio = luz de sala con la tira apagada; la tira prende cuando baja la luz (ambiente)
     pasos: [
       { en: 90, pantalla: 'hipnotico', aviso: 'Pantalla hipnótica' },
       { resta: 60, luz: 'ambiente', volumen: 70, rampa: true, aviso: 'Luz ambiente y volumen subiendo hasta 70' },
       { fin: true, siguiente: true, aviso: 'Arranca la apertura de cine' },
     ],
     avisoSeg: 8,             // segundos de aviso antes de cada paso
+    pruebaDesde: 170,        // para probar: tildando "🧪 Prueba" en el celu, Hold the Line arranca en 2:50 (ya hipnótica, a punto de bajar la luz)
     hastaGolpe: true,        // al terminar la previa sigue sola: apertura, fanfarria, tu entrada y el golpe (false = se frena en la apertura)
   },
 
@@ -164,6 +165,7 @@ window.TRIVIA = {
   looks: {
     // transicion: segundos que tarda la lámpara en llegar a este look (fundido suave). Sin transicion = cambio inmediato.
     sala:      { tipo: 'blanco', brillo: 60, calidez: 20, transicion: 2, respaldo: 'normal' },
+    salaInicio: { tipo: 'blanco', brillo: 60, calidez: 20, transicion: 2, respaldo: 'normal', tira: { apagar: true } },   // llegada: techo de sala, tira apagada
     ambiente:  { tipo: 'color', h: 30, s: 80, brillo: 16, transicion: 4, respaldo: 'normal' },          // previa: cálido y tenue
     oscuro:    { tipo: 'color', h: 225, s: 90, brillo: 2, respaldo: 'tension' },     // casi negro azulado: antes de un golpe
     escenario: { tipo: 'color', h: 230, s: 75, brillo: 12, transicion: 0.8, respaldo: 'normal' },     // azul tenue de presentación
@@ -198,7 +200,7 @@ window.TRIVIA = {
      Un nombre de look, o una secuencia [[ms, look], ...] donde ms es cuándo se tiene que VER la luz desde que tocás el botón.
      La app la dispara antes según la "demora de la lámpara" que configures en el control. */
   guion: {
-    previa: 'sala',          // al reiniciar la partida queda la luz de sala, lista para la previa
+    previa: 'salaInicio',    // al reiniciar la partida queda la luz de sala (tira apagada), lista para la previa
     presentamos: [[0, 'oscuro'], [1700, 'escenario']],
     // cine: lo arma la app sola (baja la luz y un pulso por crédito). Para personalizarlo, agregá cine: [[ms, look], ...]
     intro: [[0, 'noche'], [15300, 'dorado'], [16500, 'destello'], [17900, 'dorado'], [19700, 'calido']],   // golpe dorado con el título (seg. 15)

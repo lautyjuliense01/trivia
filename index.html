@@ -428,6 +428,9 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 @keyframes ripple{0%{transform:scale(.3);opacity:0}15%{opacity:.6}100%{transform:scale(4);opacity:0}}
 
 /* v24: secuencia con confirmación */
+.prueba-chk{display:flex;gap:8px;align-items:center;margin-top:10px;padding:8px 10px;border-radius:12px;border:1px dashed rgba(232,211,166,.35);font-size:14px;color:#cdb98f}
+.prueba-chk.on{border-color:#f0a43a;color:#ffd08a;background:rgba(240,164,58,.1)}
+.prueba-chk input{flex:0 0 auto;width:20px;height:20px;accent-color:#f0a43a}
 #seq-toast{position:sticky;top:6px;z-index:30;margin-bottom:12px;padding:12px 14px;border-radius:16px;background:rgba(40,8,8,.96);border:2px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.6)}
 #seq-msg{font-weight:800;font-size:16px}
 #seq-bar{transition:width .1s linear}
@@ -1084,7 +1087,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v39 · 01/11 18:40';
+const VERSION = 'v40 · 01/11 19:22';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1340,8 +1343,8 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
     current = key;
     needsFadeIn = !opts.instant;
     if (opts.instant) { clearInterval(fadeTimer); try { player.unMute(); player.setVolume(lv()); } catch {} }
-    if (cued === key) { cued = null; try { player.playVideo(); } catch {} }
-    else { cued = null; player.loadVideoById({ videoId: tr.id, startSeconds: tr.start || 0 }); }
+    if (cued === key && opts.from == null) { cued = null; try { player.playVideo(); } catch {} }
+    else { cued = null; player.loadVideoById({ videoId: tr.id, startSeconds: opts.from != null ? opts.from : (tr.start || 0) }); }
     onLabel && onLabel('Cargando: ' + tr.name);
   }
 
@@ -1800,6 +1803,7 @@ function identHTML(c, t0, dur) {
 /* Looks de luz: estados de la lámpara. Se pueden redefinir en datos.js (looks / guion) */
 const LOOKS = Object.assign({
   sala:      { tipo: 'blanco', brillo: 60, calidez: 20, transicion: 2, respaldo: 'normal' },
+  salaInicio: { tipo: 'blanco', brillo: 60, calidez: 20, transicion: 2, respaldo: 'normal', tira: { apagar: true } },
   ambiente:  { tipo: 'color', h: 30, s: 80, brillo: 16, transicion: 4, respaldo: 'normal' },
   oscuro:    { tipo: 'color', h: 225, s: 90, brillo: 2, respaldo: 'tension' },
   escenario: { tipo: 'color', h: 230, s: 75, brillo: 12, transicion: 0.8, respaldo: 'normal' },
@@ -1869,8 +1873,8 @@ function hostGuion() {
 }
 /* Guion: qué look va en cada momento. Un nombre, o una secuencia [[ms, look], ...] donde ms = cuándo se tiene que VER */
 const GUION = Object.assign({
-  logo: 'sala',
-  previa: 'sala',
+  logo: 'salaInicio',
+  previa: 'salaInicio',
   presentamos: [[0, 'oscuro'], [1700, 'escenario']],
   intro: [[0, 'noche'], [T_TITULO + 300, 'dorado'], [T_TITULO + 1500, 'destello'], [T_TITULO + 2900, 'dorado'], [T_TITULO + 4700, 'calido']],
   presentacion: [[0, 'flash'], [650, 'escenario']],
@@ -2454,7 +2458,7 @@ function createDirector(music, fx) {
       } else if (after && TRACKS[after]) music.play(after);
     } else {
       if (fx && lastMoment === 'redoble') fx.stop(150);
-      key ? music.play(key) : music.stop();
+      key ? music.play(key, st.desde && st.desde.k === key ? { from: st.desde.t } : {}) : music.stop();
     }
     lastKey = key; lastMoment = m;
   };
@@ -3955,7 +3959,7 @@ function initControl() {
   function goSlide(i, auto = false) {
     i = Math.max(0, Math.min(SCRIPT.length - 1, i));
     if (!auto && typeof seq !== 'undefined' && seq && SCRIPT[i].k !== 'previa') abortSeq('✋ Pasaste a manual');
-    S.slide = i; S.overlay = null; S.sub = 0; S.manual = null; S.calib = false;
+    S.slide = i; S.overlay = null; S.sub = 0; S.manual = null; S.desde = null; S.calib = false;
     if (typeof seq !== 'undefined' && seq) seq.slideAt = Date.now();
     S.autoGolpe = (typeof seq !== 'undefined' && seq && seq.phase === 'apertura' && SCRIPT[i].k === 'presentador' && GOLPE_TEMA != null) ? GOLPE_TEMA : null;
     S.step = isQ(SCRIPT[i]) ? 'pregunta' : (SCRIPT[i].k === 'presentador' ? 'espera' : null);
@@ -4037,7 +4041,7 @@ function initControl() {
     if (SCRIPT[S.slide].k === 'enjuego' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
     const i = nextIndex(S.slide, -1);
     if (i < 0) return;
-    S.slide = i; S.overlay = null; S.manual = null;
+    S.slide = i; S.overlay = null; S.manual = null; S.desde = null;
     S.step = isQ(SCRIPT[i]) || SCRIPT[i].k === 'ganador' ? 'revelado' : null;
     S.sub = SCRIPT[i].k === 'cuenta' ? countdownGroups(S.results).length : SCRIPT[i].k === 'reglas' ? rulesCards().length : SCRIPT[i].k === 'enjuego' ? ENJ().length + (D.ticketDorado ? 1 : 0) : 0;
     clearTimeout(revealT);
@@ -4113,7 +4117,8 @@ function initControl() {
     else if (sl.k === 'previa') h = `<div class="now-title">Previa</div><p class="muted">No adelanta nada del show. Elegí cómo se ve la tele:</p>
       <div class="players">${[['apagado', '⬛ Tele apagada'], ['hipnotico', '🌀 Hipnótica'], ['polvo', '✨ Polvo de luz']].map(([v, t]) => `<button class="pbtn ${(S.previaModo || 'apagado') === v ? 'on' : ''}" data-pm="${v}">${t}</button>`).join('')}</div>
       ${D.previa ? (seq ? `<p class="muted" style="margin-top:10px">▶ Previa en marcha · próximo: <b>${esc(seqDescribe((D.previa.pasos || [])[seq.i] || { aviso: 'nada más' }))}</b></p><button class="btn ghost small" id="seq-abort">✋ Frenar la secuencia</button>`
-        : `<button class="btn" id="seq-start" style="width:100%;margin-top:10px;font-size:17px">▶ Comenzar previa automática</button><p class="muted" style="margin-top:6px">${esc((D.previa.resumen) || '')}</p>`) : ''}`;
+        : `<button class="btn" id="seq-start" style="width:100%;margin-top:10px;font-size:17px">${pruebaPrevia() ? `▶ Comenzar previa · 🧪 desde ${mmss(PRUEBA_DESDE)}` : '▶ Comenzar previa automática'}</button><p class="muted" style="margin-top:6px">${esc((D.previa.resumen) || '')}</p>
+          ${PRUEBA_DESDE ? `<label class="prueba-chk${pruebaPrevia() ? ' on' : ''}"><input type="checkbox" id="prueba-previa" ${pruebaPrevia() ? 'checked' : ''}><span>🧪 Prueba: la canción arranca en ${mmss(PRUEBA_DESDE)}${pruebaPrevia() ? ' · <b>destildalo la noche del show</b>' : ''}</span></label>` : ''}`) : ''}`;
 
     else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round(CRED_END / 1000)} s.</p>`;
     else if (sl.k === 'intro') h = `<div class="now-title">Intro de película · ${esc(TRACKS.intro ? TRACKS.intro.name : 'sin música')}</div><p class="muted">Dura unos 10 s con la fanfarria. Las luces arrancan en tensión y pasan a festejo cuando aparece el título.</p>`;
@@ -4169,6 +4174,7 @@ function initControl() {
     const an = body.querySelector('#auto-on'); if (an) an.addEventListener('click', startApertura);
     body.querySelectorAll('[data-pm]').forEach(b => b.addEventListener('click', () => { S.previaModo = b.dataset.pm; commit(); }));
     const ss = body.querySelector('#seq-start'); if (ss) ss.addEventListener('click', startPrevia);
+    const pp = body.querySelector('#prueba-previa'); if (pp) pp.addEventListener('change', () => { try { localStorage.setItem(STORE_PFX + 'pruebaPrevia', pp.checked ? '1' : '0'); } catch {} log(pp.checked ? `🧪 Prueba: la previa arranca en ${mmss(PRUEBA_DESDE)}` : '🧪 Prueba desactivada: la previa arranca desde el principio', 'o'); renderControl(); });
     const sa = body.querySelector('#seq-abort'); if (sa) sa.addEventListener('click', () => abortSeq());
     const ct = body.querySelector('#cal-tog'); if (ct) ct.addEventListener('click', () => { S.calib = !S.calib; commit(); });
     body.querySelectorAll('[data-aj]').forEach(b => b.addEventListener('click', () => {
@@ -4259,6 +4265,9 @@ function initControl() {
   // ---------- Secuencia de la previa (con aviso y opción de deshacer antes de cada paso)
   const PREVIA = D.previa || null;
   let seq = null, seqTick = null, lastMus = null;
+  // Prueba: arranca la música de la previa más adelante (ej.: 2:50) para no esperar toda la canción. Se tilda en el celu.
+  const PRUEBA_DESDE = PREVIA && PREVIA.pruebaDesde ? PREVIA.pruebaDesde : 0;
+  const pruebaPrevia = () => { try { return !!PRUEBA_DESDE && localStorage.getItem(STORE_PFX + 'pruebaPrevia') === '1'; } catch { return false; } };
   function seqStepTime(step, a) {
     if (step.en != null) return step.en;
     if (step.resta != null) return a.d - step.resta;
@@ -4272,10 +4281,16 @@ function initControl() {
     if (ini.volumen != null) { S.vol = ini.volumen; $('#set-vol').value = S.vol; $('#set-vol-v').textContent = S.vol; if (link) link.send({ type: 'vol', v: S.vol }); }
     if (ini.pantalla) S.previaModo = ini.pantalla;
     if (ini.pista) S.manual = ini.pista;
+    const desde = pruebaPrevia() && ini.pista ? PRUEBA_DESDE : 0;
+    S.desde = desde ? { k: ini.pista, t: desde } : null;
     commit();
     if (ini.luz) { clearLights(); fireLook(ini.luz, true); }
     seq = { i: 0, pending: false, pista: ini.pista };
-    log('▶ Previa en marcha', 'o');
+    log(desde ? `▶ Previa en marcha · 🧪 prueba desde ${mmss(desde)}` : '▶ Previa en marcha', 'o');
+    if (desde) {   // los pasos que en la previa real ya habrían pasado se aplican de una, sin aviso
+      const pas = PREVIA.pasos || [];
+      while (seq && seq.i < pas.length && pas[seq.i].en != null && pas[seq.i].en <= desde) { const st0 = pas[seq.i]; seq.i++; execStep(st0); }
+    }
     renderControl();
   }
   function abortSeq(msg = '✋ Secuencia frenada: seguís a mano') {
