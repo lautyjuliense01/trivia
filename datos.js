@@ -76,7 +76,7 @@ window.TRIVIA = {
      "inicio" = segundo desde el que arranca (opcional). */
   musica: {
     previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
-    cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false },   // completa (1:04), entra con la intro de estudio
+    cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false, credito: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
     pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions' },
@@ -91,7 +91,8 @@ window.TRIVIA = {
 
     ganador:      { id: '',            nombre: 'A definir' },   // vacío: usa la de "datos"
     premios:      { id: '',            nombre: 'A definir: entrega de premios' },
-    cierre:       { id: '',            nombre: 'A definir: cierre' },
+    gracias:      { id: '-QuVe-hjMs0', nombre: 'Cierre: palabras de agradecimiento', volumen: 0.55, credito: false },   // suena más bajo (55 %) para hablar encima
+    cierre:       { id: '0T-if-Vj2Xs', nombre: 'Créditos finales', credito: false },   // el rodillo de créditos dura lo que la canción
   },
 
   /* ---------- Pistas a mano ----------
@@ -113,6 +114,7 @@ window.TRIVIA = {
     presentacion: 'presentacion',
     contendientes: 'presentacion', // todos juntos al final de la presentación
     presentador: 'anfitrion',
+    enjuego: 'presentacion',  // lo que está en juego
     reglas: 'presentacion',
     ronda: null,              // a definir (Quiz Time queda afuera)
     pregunta: 'pregunta',     // cuando hacés la pregunta
@@ -123,6 +125,7 @@ window.TRIVIA = {
     cuenta: 'tension',        // cuenta final, del último al segundo
     ganador: 'ganador',       // suena después del redoble
     premios: 'premios',
+    gracias: 'gracias',       // tus palabras de cierre
     cierre: 'cierre',
   },
 
@@ -200,6 +203,7 @@ window.TRIVIA = {
     // presentadorGolpe: lo arma la app: 2 compases de estrobo y después frases de 4 compases que van cambiando
     //   (las frases se eligen en presentador.frases), con un compás de estrobo cada 8
     reglas: 'calido',        // cálido y tenue; cada regla que se da vuelta tira un pulso de luz
+    enjuego: 'calido',       // premios en juego: pulso con cada premio; destello y dorado con el ticket
     ronda: 'sala',
     // { fade: look, de, a, ms }: la luz se va apagando suave (una sola orden, la lámpara hace el fundido; máx. 10 s)
     pregunta: { fade: 'azul', de: 36, a: 12, ms: 10000 },
@@ -269,6 +273,21 @@ window.TRIVIA = {
     ritmo: { bpm: 129, fase: null },
     // Después del golpe: juegos de luces de 4 compases cada uno, en este orden (se repiten ~1 minuto)
     frases: ['fiestaHost', 'contraluz', 'fiestaDorada', 'barrido'],
+  },
+
+  /* ---------- Lo que está en juego ----------
+     Antes de las reglas: se dan vuelta los premios de a uno y al final aparece el ticket dorado.
+     foto: opcional ('premios/archivo.jpg' subido al repositorio) · detalle: opcional, una línea */
+  premiosEnJuego: [
+    { nombre: 'Premio 1', detalle: '' },
+    { nombre: 'Premio 2', detalle: '' },
+    { nombre: 'Premio 3', detalle: '' },
+    { nombre: 'Premio 4', detalle: '' },
+    { nombre: 'Premio 5', detalle: '' },
+  ],
+  ticketDorado: {
+    numero: 'Nº 002',
+    beneficios: ['Créditos dorados', 'Un día de vacaciones adicional'],   // sacá el día si no se aprueba
   },
 
   /* ---------- Reglas ----------
