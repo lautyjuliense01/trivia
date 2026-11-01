@@ -91,6 +91,9 @@ window.TRIVIA = {
 
     ganador:      { id: '',            nombre: 'A definir' },   // vacío: usa la de "datos"
     premios:      { id: '',            nombre: 'A definir: entrega de premios' },
+    enjuego:      { id: '',            nombre: 'A definir: presentación de premios' },   // mientras se dan vuelta los premios
+    ticket:       { id: '',            nombre: 'A definir: aparece el ticket dorado' },  // cuando aparece el ticket
+    muletilla:    { id: '',            nombre: 'A definir: muletilla del ticket', inicio: 0 },   // fragmento corto para el botón 🎫 (vacío = campanas)
     gracias:      { id: '-QuVe-hjMs0', nombre: 'Cierre: palabras de agradecimiento', volumen: 0.55, credito: false },   // suena más bajo (55 %) para hablar encima
     cierre:       { id: '0T-if-Vj2Xs', nombre: 'Créditos finales', credito: false },   // el rodillo de créditos dura lo que la canción
   },
@@ -114,7 +117,8 @@ window.TRIVIA = {
     presentacion: 'presentacion',
     contendientes: 'presentacion', // todos juntos al final de la presentación
     presentador: 'anfitrion',
-    enjuego: 'presentacion',  // lo que está en juego
+    enjuego: 'enjuego',       // presentación de premios (si está vacío, sigue la que venía)
+    enjuegoTicket: 'ticket',  // cuando aparece el ticket dorado
     reglas: 'presentacion',
     ronda: null,              // a definir (Quiz Time queda afuera)
     pregunta: 'pregunta',     // cuando hacés la pregunta
@@ -285,6 +289,12 @@ window.TRIVIA = {
     { nombre: 'Premio 4', detalle: '' },
     { nombre: 'Premio 5', detalle: '' },
   ],
+  /* Botón 🎫 del celu: lo tocás antes de decir "el ticket dorado" y aparece en la tele con su sonido, en cualquier momento.
+     ms: cuánto dura · luz: false para que el techo no destelle */
+  muletilla: { ms: 3600, luz: true },
+  /* Cierre: foto del equipo (subila al repositorio) */
+  gracias: { foto: '', titulo: 'Gracias', texto: 'por otro año de equipo' },
+
   ticketDorado: {
     numero: 'Nº 002',
     beneficios: ['Créditos dorados', 'Un día de vacaciones adicional'],   // sacá el día si no se aprueba

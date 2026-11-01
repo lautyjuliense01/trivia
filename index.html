@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trivia Night</title>
+<title>El Ticket Dorado</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Anton&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s);"></script>
@@ -566,6 +566,17 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .av-div{width:min(220px,40vw);height:1px;position:relative;background:linear-gradient(90deg,transparent,rgba(233,196,106,.75),transparent)}
 .av-div::after{content:"◆";position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);font-size:9px;color:#f0cf7e;background:#0f0402;padding:0 8px}
 .av-s{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:clamp(20px,2.3vw,36px);color:#ecdcbc;text-align:center}
+/* v37: muletilla del ticket dorado (sobre cualquier pantalla) */
+.tk-show{position:fixed;inset:0;z-index:55;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.tk-dim{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.35),rgba(0,0,0,.8));opacity:0;animation:fadeIn .35s forwards}
+.tk-fly{position:relative;animation:tkIn 1.1s cubic-bezier(.16,1,.3,1) both}
+.tk-fly .gticket{width:min(70vw,1000px)}
+.tk-fly .gt-tilt{animation:gtFloat 3s ease-in-out .9s infinite}
+.tk-fly .gt-glint{animation:gtGlint 2.2s ease-in-out .5s infinite}
+@keyframes tkIn{0%{opacity:0;transform:translateY(60vh) rotate(-14deg) scale(.6)}60%{opacity:1}100%{opacity:1;transform:none}}
+.tk-show.out .tk-fly{animation:tkOut .7s cubic-bezier(.6,0,.8,.4) forwards}
+.tk-show.out .tk-dim,.tk-show.out .cf-dust{animation:fadeOut .6s forwards}
+@keyframes tkOut{to{opacity:0;transform:translateY(-40vh) rotate(8deg) scale(.7)}}
 /* v36: palabras de cierre */
 .v-gracias{display:flex;flex-direction:column;align-items:center}
 .show-logo.mini{transform:scale(.42);margin:-12vh 0 -13vh;opacity:0;animation:fadeIn 1.2s .2s forwards}
@@ -574,7 +585,10 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .gr-s{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:clamp(26px,3vw,48px);color:#f1e2c2;margin-top:.2em;opacity:0;animation:fadeIn 1.2s 1.1s forwards}
 .gr-team{display:flex;gap:clamp(18px,3vw,48px);margin-top:clamp(20px,4vh,44px)}
 .gr-p{display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;animation:fadeIn 1s forwards}
-.gr-p .pl-photo{width:clamp(64px,7vw,110px)}
+.gr-foto{margin-top:clamp(16px,3vh,32px);width:min(58vw,820px);aspect-ratio:16/9;padding:10px;background:linear-gradient(180deg,rgba(22,6,4,.9),rgba(8,2,1,.95));border:1px solid rgba(233,196,106,.75);
+  box-shadow:0 0 0 7px rgba(0,0,0,.35),0 0 0 8px rgba(233,196,106,.3),0 30px 80px rgba(0,0,0,.7);opacity:0;animation:hwPop 1.6s 1.5s cubic-bezier(.16,1,.3,1) forwards}
+.gr-foto img{width:100%;height:100%;object-fit:cover;display:block;filter:sepia(.15) saturate(1.05)}
+.gr-team{align-items:center}.gr-sep{font-style:normal;color:#f0cf7e;font-size:12px;opacity:.7}
 .gr-n{font-family:'Cinzel',serif;font-weight:600;letter-spacing:.06em;color:#e8d3a6;font-size:clamp(14px,1.5vw,24px)}
 .cf-dust.on{opacity:1}
 /* v35: lo que está en juego (premios y ticket dorado) */
@@ -764,7 +778,8 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .guess .gd{font-size:12px;color:var(--muted);text-align:right}
 .guess.win .gd{color:var(--ok);font-weight:800}
 .navbar{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(20,0,0,.92);border-top:1px solid rgba(247,201,72,.35);backdrop-filter:blur(6px)}
-.navbar .inner{max-width:560px;margin:0 auto;display:grid;grid-template-columns:60px 76px 1fr;gap:8px}
+.navbar .inner{max-width:560px;margin:0 auto;display:grid;grid-template-columns:56px 60px 60px 1fr;gap:8px}
+#nav-ticket{background:linear-gradient(180deg,#fff0c0,#e9c46a 55%,#b8862e);color:#3a1600;font-size:22px;box-shadow:0 3px 0 #7a5208}
 .navbar button{border:0;border-radius:14px;padding:16px 8px;font-weight:800;font-size:16px}
 #nav-prev,#nav-score{background:rgba(255,255,255,.1);color:var(--ink)}
 #nav-score.on{background:var(--gold);color:#3a1600}
@@ -846,7 +861,7 @@ body{background:
 <!-- ================= CONTROL ================= -->
 <section id="control" class="view" hidden>
   <div class="top-row">
-    <h1 class="script" style="font-size:30px">Trivia Night</h1>
+    <h1 class="script ctl-title" style="font-size:30px">El Ticket Dorado</h1>
     <button class="chip" id="ctl-chip" style="border:0;cursor:pointer"><span class="dot" id="ctl-dot"></span><span id="ctl-status">Sin vincular</span> <span style="opacity:.8">🔄</span></button>
   </div>
   <p class="lead"><b class="ver" style="color:var(--gold)"></b></p>
@@ -999,6 +1014,7 @@ body{background:
   <div class="navbar"><div class="inner">
     <button id="nav-prev" aria-label="Anterior">◀</button>
     <button id="nav-score">🏆</button>
+    <button id="nav-ticket" aria-label="El ticket dorado">🎫</button>
     <button id="nav-next">Siguiente ▶</button>
   </div></div>
 </section>
@@ -1006,7 +1022,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v36 · 01/11 16:55';
+const VERSION = 'v37 · 01/11 17:11';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1303,10 +1319,11 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock) {
     try { t = player.getCurrentTime() || 0; d = player.getDuration() || 0; } catch {}
     return { key: current, name: tracks[current].name, t, d, loop: tracks[current].loop !== false };
   }
+  function duck(k, ms) { if (!ready || !current) return; fadeTo(Math.round(lv() * k), 180).then(() => setTimeout(() => { if (current) fadeTo(lv(), 700); }, Math.max(200, ms - 180))); }
   function ramp(to, ms) { if (!ready) return; rampOn = true; musicVol = to; fadeTo(lv(), Math.max(300, ms)).then(() => { rampOn = false; }); }
   function cancelRamp() { if (!rampOn) return; clearInterval(fadeTimer); rampOn = false; try { musicVol = player.getVolume(); } catch {} }
   function setLevel(now) { if (!ready || !current) return; try { if (needsFadeIn) return; if (now) { clearInterval(fadeTimer); player.setVolume(lv()); } else fadeTo(lv(), 300); } catch {} }
-  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, isReady: () => ready, current: () => current };
+  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, isReady: () => ready, current: () => current };
 }
 
 
@@ -1458,7 +1475,7 @@ const fmtNum = n => (typeof n === 'number' ? n.toLocaleString('es-AR') : esc(n))
 const TIPO_LABEL = { opciones: 'Opción múltiple', quien: '¿Quién dijo?', aprox: 'Aproximación' };
 const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
-D.momentos = Object.assign({ gracias: 'gracias', enjuego: 'presentacion', presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
+D.momentos = Object.assign({ gracias: 'gracias', enjuego: 'enjuego', enjuegoTicket: 'ticket', presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
 D.luces = Object.assign({ contendientes: 'festejo', cuenta: 'tension' }, D.luces || {});
 /* Lámparas Tuya: nombre → ID (tienen que estar también en TUYA_DEVICE del intermediario) */
 const LAMP_CFG = {};
@@ -1901,6 +1918,7 @@ function momentOf(st) {
   if (isQ(sl)) return st.step || 'pregunta';
   if (sl.k === 'ganador' && st.step === 'redoble') return 'redoble';
   if (sl.k === 'presentador' && st.step === 'golpe') return 'presentadorGolpe';
+  if (sl.k === 'enjuego' && D.ticketDorado && (st.sub || 0) > (D.premiosEnJuego || []).length) return 'enjuegoTicket';
   return sl.k === 'desempate' ? 'pregunta' : sl.k;
 }
 function musicKeyOf(st) {
@@ -1958,18 +1976,18 @@ function showLogoHTML(arriba, cls = '') {
 }
 /* El ticket dorado: lámina dorada con muescas, troquel y "válido por" */
 const ENJ = () => (D.premiosEnJuego || []);
-function goldTicketHTML(nombre) {
+function goldTicketHTML(nombre, u = 'a') {
   const T = D.ticketDorado || {}, ben = T.beneficios || [];
   return `<div class="gticket"><div class="gt-tilt">
     <svg class="gt-body" viewBox="0 0 1000 480" preserveAspectRatio="none" aria-hidden="true"><defs>
-      <linearGradient id="gt-foil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a5a12"/><stop offset=".18" stop-color="#f7dd8f"/><stop offset=".32" stop-color="#c8912c"/><stop offset=".5" stop-color="#fff1bf"/><stop offset=".66" stop-color="#b9821f"/><stop offset=".82" stop-color="#f3d27a"/><stop offset="1" stop-color="#7a4d0e"/></linearGradient>
-      <clipPath id="gt-clip"><path d="M30 0H970a30 30 0 0 0 30 30V200a40 40 0 0 0 0 80V450a30 30 0 0 0-30 30H30a30 30 0 0 0-30-30V280a40 40 0 0 0 0-80V30A30 30 0 0 0 30 0z"/></clipPath>
-      <linearGradient id="gt-shine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
-      <g clip-path="url(#gt-clip)"><rect width="1000" height="480" fill="url(#gt-foil)"/>
+      <linearGradient id="gt-foil-${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a5a12"/><stop offset=".18" stop-color="#f7dd8f"/><stop offset=".32" stop-color="#c8912c"/><stop offset=".5" stop-color="#fff1bf"/><stop offset=".66" stop-color="#b9821f"/><stop offset=".82" stop-color="#f3d27a"/><stop offset="1" stop-color="#7a4d0e"/></linearGradient>
+      <clipPath id="gt-clip-${u}"><path d="M30 0H970a30 30 0 0 0 30 30V200a40 40 0 0 0 0 80V450a30 30 0 0 0-30 30H30a30 30 0 0 0-30-30V280a40 40 0 0 0 0-80V30A30 30 0 0 0 30 0z"/></clipPath>
+      <linearGradient id="gt-shine-${u}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+      <g clip-path="url(#gt-clip-${u})"><rect width="1000" height="480" fill="url(#gt-foil-${u})"/>
         <rect x="18" y="18" width="964" height="444" rx="18" fill="none" stroke="#5a3707" stroke-opacity=".55" stroke-width="2"/>
         <rect x="30" y="30" width="940" height="420" rx="12" fill="none" stroke="#fff3c8" stroke-opacity=".5" stroke-width="1"/>
         <line x1="760" y1="36" x2="760" y2="444" stroke="#5a3707" stroke-opacity=".6" stroke-width="3" stroke-dasharray="4 10"/>
-        <rect class="gt-glint" x="-260" y="-40" width="200" height="560" fill="url(#gt-shine)"/></g></svg>
+        <rect class="gt-glint" x="-260" y="-40" width="200" height="560" fill="url(#gt-shine-${u})"/></g></svg>
     <div class="gt-main">
       <div class="gt-art">El</div><div class="gt-title">Ticket Dorado</div>
       ${nombre ? `<div class="gt-name">${esc(nombre)}</div>` : ''}
@@ -2037,7 +2055,8 @@ function initEnsayo() {
 /* ================= Router ================= */
 const modo = new URLSearchParams(location.search).get('modo');
 document.querySelectorAll('.ver').forEach(e => e.textContent = VERSION);
-document.title = D.titulo || 'Trivia Night';
+document.title = D.titulo || 'El Ticket Dorado';
+document.querySelectorAll('.ctl-title').forEach(e => e.textContent = D.titulo);
 if (modo === 'pantalla') initScreen();
 else if (modo === 'control') initControl();
 else if (modo === 'ensayo') initEnsayo();
@@ -2247,6 +2266,28 @@ function swellEnvolvente(riseMs = 4800) {
   sw.connect(swg); swg.connect(bus.master); sw.start(t0); sw.stop(tH + 0.1);
   boomGrave(1.25, d);
 }
+/* Brillo de campanas: arpegio mayor que sube, con cola larga y un grave suave */
+function chimeDorado() {
+  const ctx = audioCtx();
+  if (!ctx) return;
+  const bus = sfxOut(ctx), t0 = ctx.currentTime + 0.03;
+  [659.25, 830.61, 987.77, 1318.5, 1661.2].forEach((f, i) => {
+    const t = t0 + i * 0.075;
+    [[1, 0.22], [2.76, 0.07], [5.4, 0.025]].forEach(([m, a]) => {
+      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f * m;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(a, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + (m === 1 ? 1.8 : 0.7));
+      const pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      o.connect(g);
+      if (pn) { pn.pan.value = -0.6 + i * 0.3; g.connect(pn); pn.connect(bus.master); pn.connect(bus.rev); } else { g.connect(bus.master); g.connect(bus.rev); }
+      o.start(t); o.stop(t + 2);
+    });
+  });
+  const n = ctx.createBufferSource(); n.buffer = noise(ctx);
+  const bp = ctx.createBiquadFilter(); bp.type = 'highpass'; bp.frequency.value = 7000;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(0.0001, t0); ng.gain.exponentialRampToValueAtTime(0.06, t0 + 0.25); ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.4);
+  n.connect(bp); bp.connect(ng); ng.connect(bus.rev); ng.connect(bus.master); n.start(t0); n.stop(t0 + 1.5);
+  boomGrave(0.5);
+}
 function playFile(src) { try { const au = new Audio(src); au.play().catch(() => {}); } catch {} }
 
 /* Director de música: aplica el estado a un reproductor */
@@ -2335,7 +2376,7 @@ function initScreen() {
     $('#yt-toast').hidden = !bad; if (bad) $('#yt-toast').textContent = t;
   }, muted => { $('#scr-sound').hidden = !muted; });
 
-  const fxPlayer = Object.values(TRACKS).length && (TRACKS.redoble || TRACKS.anfitrionVoz) ? createMusic('yt-fx', TRACKS, () => {}, () => {}) : null;
+  const fxPlayer = Object.values(TRACKS).length && (TRACKS.redoble || TRACKS.anfitrionVoz || TRACKS.muletilla) ? createMusic('yt-fx', TRACKS, () => {}, () => {}) : null;
   const direct = createDirector(music, fxPlayer);
   setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: fxPlayer ? fxPlayer.status() : null }); }, 1000);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
@@ -2440,6 +2481,23 @@ function initScreen() {
       if (bl.animate) { bl.getAnimations().forEach(a => a.cancel()); bl.animate([{ opacity: (fuerte ? .55 : .3) * (down ? 1.3 : 1) }, { opacity: 0 }], { duration: per * 900, easing: 'ease-out', fill: 'forwards' }); }
     };
     loop();
+  }
+  /* Muletilla del ticket dorado: entra volando sobre lo que haya, suena y se va */
+  let tkBusy = false;
+  function ticketShow() {
+    if (tkBusy) return;
+    tkBusy = true;
+    const M = D.muletilla || {}, dur = M.ms || 3600;
+    const o = document.createElement('div'); o.className = 'tk-show';
+    o.style.setProperty('--tkd', dur + 'ms');
+    o.innerHTML = `<div class="tk-dim"></div><div class="tk-fly">${goldTicketHTML('', 'm')}</div><div class="cf-dust on">${Array.from({ length: 34 }, () => `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * 1.5).toFixed(2)}s;animation-duration:${(2.5 + Math.random() * 2.5).toFixed(2)}s"></i>`).join('')}</div>`;
+    document.body.appendChild(o);
+    const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700);
+    // sonido: un fragmento de canción (en el segundo reproductor) o, si no hay, un brillo de campanas
+    if (fxPlayer && TRACKS.muletilla) { music.duck(0.3, dur); fxPlayer.play('muletilla', { instant: true }); setTimeout(() => fxPlayer.stop(400), Math.max(800, dur - 400)); }
+    else { music.duck(0.45, 1900); chimeDorado(); }
+    setTimeout(() => o.classList.add('out'), dur - 700);
+    setTimeout(() => { o.remove(); tkBusy = false; }, dur);
   }
   function hostFlash(kind) { const f = document.createElement('div'); f.className = 'flash ' + kind; document.body.appendChild(f); setTimeout(() => f.remove(), 600); }
   function hostGolpe(vh) {
@@ -2717,6 +2775,7 @@ function initScreen() {
     if (msg.type === 'vol') { music.cancelRamp(); musicVol = msg.v; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); return; }
     if (msg.type === 'volRamp') { if (msg.cancel) music.cancelRamp(); else music.ramp(msg.to, msg.ms); return; }
     if (msg.type === 'reconectar') { link.reconnectDown(); return; }
+    if (msg.type === 'ticketShow') { ticketShow(); return; }
     if (msg.type === 'flashDuro') { const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); return; }
     if (msg.type === 'state' && msg.state) {
       if (msg.state.rev !== curRev) { curRev = msg.state.rev; const pc = $('#previa-code'); if (pc) pc.hidden = true; render(msg.state); }
@@ -2929,7 +2988,7 @@ function initScreen() {
       h = `<div class="v v-gracias enter">${showLogoHTML('', 'static mini')}
         <div class="gr-t">${esc(G.titulo || 'Gracias')}</div>
         <div class="gr-s">${esc(G.texto || 'por otro año de equipo')}</div>
-        <div class="gr-team">${P.map((p, i) => `<div class="gr-p" style="animation-delay:${1.6 + i * 0.35}s"><div class="pl-photo">${photoHTML(p)}</div><div class="gr-n">${esc(p.nombre)}</div></div>`).join('')}</div>
+        ${G.foto ? `<div class="gr-foto"><img src="${esc(G.foto)}" alt=""></div>` : `<div class="gr-team">${P.map((p, i) => `<div class="gr-p" style="animation-delay:${1.6 + i * 0.35}s"><div class="gr-n">${esc(p.nombre)}</div></div>`).join('<i class="gr-sep">◆</i>')}</div>`}
         <div class="cf-dust on">${Array.from({ length: 30 }, () => `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * 8).toFixed(2)}s;animation-duration:${(7 + Math.random() * 6).toFixed(2)}s"></i>`).join('')}</div></div>`;
     } else if (sl.k === 'cierre') {
       const musica = [...new Set(Object.entries(TRACKS).filter(([k, t]) => t.credito && !/^voz/i.test(t.name) && !/definir/i.test(t.name) && !k.startsWith('pista')).map(([, t]) => t.name))];
@@ -3855,6 +3914,12 @@ function initControl() {
     commit();
   }
   $('#nav-next').addEventListener('click', next);
+  // Muletilla: lo tocás justo antes de decir "el ticket dorado" → aparece en la tele con su sonido y todo sigue como estaba
+  $('#nav-ticket').addEventListener('click', () => {
+    if (link) link.send({ type: 'ticketShow' });
+    if (D.muletilla && D.muletilla.luz !== false) setTimeout(() => fireLook('flashSolo', true), 250);
+    log('🎫 ¡El ticket dorado!', 'o');
+  });
   $('#nav-prev').addEventListener('click', prev);
   const spoilerZone = () => ['cuenta', 'desempate', 'ganador'].includes(SCRIPT[S.slide].k);
   $('#nav-score').addEventListener('click', () => {
