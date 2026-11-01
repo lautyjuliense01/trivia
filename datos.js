@@ -91,10 +91,10 @@ window.TRIVIA = {
 
     ganador:      { id: '',            nombre: 'A definir' },   // vacío: usa la de "datos"
     premios:      { id: '',            nombre: 'A definir: entrega de premios' },
-    enjuego:      { id: '',            nombre: 'A definir: presentación de premios' },   // mientras se dan vuelta los premios
+    enjuego:      { id: 'BuYf0taXoNw', nombre: 'Presentación de premios' },   // mientras se dan vuelta los premios
     ticket:       { id: '',            nombre: 'A definir: aparece el ticket dorado' },  // cuando aparece el ticket
     muletilla:    { id: '',            nombre: 'A definir: muletilla del ticket', inicio: 0 },   // fragmento corto para el botón 🎫 (vacío = campanas)
-    gracias:      { id: '-QuVe-hjMs0', nombre: 'Cierre: palabras de agradecimiento', volumen: 0.55, credito: false },   // suena más bajo (55 %) para hablar encima
+    gracias:      { id: '-QuVe-hjMs0', nombre: 'Cierre: palabras de agradecimiento', inicio: 20, volumen: 0.55, credito: false },   // suena más bajo (55 %) para hablar encima
     cierre:       { id: '0T-if-Vj2Xs', nombre: 'Créditos finales', credito: false },   // el rodillo de créditos dura lo que la canción
   },
 
@@ -147,7 +147,7 @@ window.TRIVIA = {
     //   escenas: false → sin escenas (si las escenas no le andan, los fundidos usan la orden en vivo)
     //   vMin1000: brillo mínimo (0-1000) para que no se apague en los looks muy oscuros
     //   Es solo RGB: los blancos se arman con color (si algún día tuviera canal blanco: blanco: true)
-    tira:  { id: 'eb65b658340d7685eatgz1', modo: 'dp', vMin1000: 10 },
+    tira:  { id: 'eb65b658340d7685eatgz1', modo: 'dp', vMin1000: 10, escala: 0.7 },   // detrás de la tele: escala baja su brillo en todos los looks (1 = igual que el techo)
   },
 
   /* ---------- Luces (Tuya directo) ----------
@@ -176,21 +176,22 @@ window.TRIVIA = {
     pulso:     { tipo: 'color', h: 30, s: 85, brillo: 45, respaldo: 'normal' },       // destello cálido con cada crédito
     foco:      { tipo: 'blanco', brillo: 75, calidez: 25, respaldo: 'normal', tira: { tipo: 'color', h: 38, s: 90, brillo: 55 } },   // foco blanco (ya no se usa en tu entrada)
     // Tu entrada. tele: 'ritmo' = la tele no copia la lámpara: hace su propio juego, clavado al bombo del tema.
-    latido:      { tipo: 'efecto', modo: 'respirar', colores: [[270, 85, 14], [270, 85, 1]], paso: 0.94, respaldo: 'tension', tira: { colores: [[275, 90, 35], [275, 90, 3]] } },        // violeta que late lento
-    latidoRapido: { tipo: 'efecto', modo: 'respirar', colores: [[285, 90, 22], [285, 90, 1]], paso: 0.47, respaldo: 'tension', tira: { colores: [[290, 95, 55], [290, 95, 4]] } },   // late al doble: "con ustedes…"
+    latido:      { tipo: 'efecto', modo: 'respirar', colores: [[355, 85, 14], [355, 85, 1]], paso: 0.94, respaldo: 'tension', tira: { colores: [[352, 90, 30], [352, 90, 3]] } },        // carmesí que late lento
+    latidoRapido: { tipo: 'efecto', modo: 'respirar', colores: [[8, 90, 22], [8, 90, 1]], paso: 0.47, respaldo: 'tension', tira: { colores: [[10, 95, 45], [10, 95, 4]] } },   // late al doble: "con ustedes…"
     estroboHost: { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo', tele: 'ritmo' },
-    fiestaHost:  { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 38], [325, 95, 38], [268, 90, 38], [195, 90, 38]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo',
-                   tira: { colores: [[268, 90, 70], [195, 90, 70], [38, 95, 70], [325, 95, 70]] } },   // fiesta sin encandilar: techo al 38 %, la tira en contraste
-    contraluz:   { tipo: 'color', h: 270, s: 90, brillo: 4, respaldo: 'festejo', tele: 'ritmo',
-                   tira: { tipo: 'efecto', modo: 'salto', colores: [[320, 95, 100], [195, 95, 100], [38, 95, 100], [268, 95, 100]], paso: 0.47 } },   // techo casi apagado, la tira a pleno detrás del sillón
-    fiestaDorada: { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 40], [15, 95, 40], [355, 95, 40], [45, 90, 40]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { colores: [[195, 90, 75], [268, 90, 75]] } },   // cálidos arriba, fríos atrás
-    barrido:     { tipo: 'efecto', modo: 'respirar', colores: [[320, 95, 40], [190, 95, 40]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { modo: 'salto', colores: [[38, 95, 80], [268, 95, 80]], paso: 0.47 } },   // magenta ↔ celeste
+    // Paleta cálida (dorado, ámbar, carmesí): la tira ahora está detrás de la tele y tiene que acompañar lo que se ve.
+    fiestaHost:  { tipo: 'efecto', modo: 'salto', colores: [[42, 95, 40], [22, 95, 36], [48, 85, 42], [355, 85, 32]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo',
+                   tira: { modo: 'respirar', colores: [[40, 90, 55], [20, 95, 35]], paso: 0.94 } },   // fiesta sin encandilar
+    contraluz:   { tipo: 'color', h: 20, s: 90, brillo: 4, respaldo: 'festejo', tele: 'ritmo',
+                   tira: { tipo: 'efecto', modo: 'salto', colores: [[42, 95, 85], [18, 95, 70], [48, 85, 90], [355, 90, 60]], paso: 0.47 } },   // techo casi apagado, la tira detrás de la tele
+    fiestaDorada: { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 40], [15, 95, 40], [355, 95, 40], [45, 90, 40]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { modo: 'respirar', colores: [[44, 85, 55], [30, 95, 40]], paso: 0.94 } },
+    barrido:     { tipo: 'efecto', modo: 'respirar', colores: [[42, 95, 40], [8, 90, 34]], paso: 0.94, respaldo: 'festejo', tele: 'ritmo', tira: { modo: 'respirar', colores: [[40, 90, 55], [12, 90, 40]], paso: 0.94 } },   // dorado ↔ carmesí
     destello:  { tipo: 'efecto', modo: 'salto', colores: [[42, 90, 100], [0, 0, 100]], paso: 0.15, respaldo: 'festejo' },  // celebración corta
     apagado:   { tipo: 'apagado' },   // apaga todo; el look siguiente las vuelve a prender solo
     estrobo:   { tipo: 'efecto', modo: 'salto', colores: [[0, 0, 100], [0, 0, 0]], paso: 0, respaldo: 'festejo' },   // titila lo más rápido posible, 100 ↔ 0
     flashUnico: { tipo: 'flashUnico', ms: 40, lamparas: ['techo'], respaldo: 'festejo' },   // un solo destello blanco frío (solo techo) y vuelve a lo que había
     calido:    { tipo: 'color', h: 32, s: 75, brillo: 26, transicion: 2, respaldo: 'normal' },   // después de la respuesta: tenue, sin cortar el clima
-    fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[38, 95, 100], [350, 95, 100], [280, 90, 100], [195, 90, 100], [120, 85, 100]], paso: 0.4, respaldo: 'festejo' },
+    fiesta:    { tipo: 'efecto', modo: 'salto', colores: [[42, 95, 85], [26, 95, 75], [48, 80, 90], [10, 90, 65]], paso: 0.6, respaldo: 'festejo', tira: { modo: 'respirar', colores: [[40, 90, 60], [24, 95, 40]], paso: 1.2 } },   // festejo dorado (sin arcoíris)
   },
 
   /* Guion de luces: qué look va en cada momento.
@@ -202,7 +203,7 @@ window.TRIVIA = {
     // cine: lo arma la app sola (baja la luz y un pulso por crédito). Para personalizarlo, agregá cine: [[ms, look], ...]
     intro: [[0, 'noche'], [15300, 'dorado'], [16500, 'destello'], [17900, 'dorado'], [19700, 'calido']],   // golpe dorado con el título (seg. 15)
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
-    contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],   // primero baja el último a la fila a oscuras
+    contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],   // aparecen a oscuras y explota el festejo
     // presentador: lo arma la app según tus textos (oscuro → latido → latido rápido en "con ustedes…")
     // presentadorGolpe: lo arma la app: 2 compases de estrobo y después frases de 4 compases que van cambiando
     //   (las frases se eligen en presentador.frases), con un compás de estrobo cada 8
@@ -239,14 +240,20 @@ window.TRIVIA = {
   /* ---------- Participantes ----------
      foto: archivo subido al repositorio, por ejemplo 'fotos/paulina.jpg'. Si no hay foto, muestra las iniciales.
      genero: 'f' o 'm' (para decir "ganadora" o "ganador").
+     apodo: opcional, aparece chico debajo del nombre (si no, aparece el puesto).
+     guion: lo que vas a contar antes de decir el nombre; lo ves en el celu como ayuda (no sale en la tele).
      ⚠️ Edades FICTICIAS: reemplazar. */
   jugadores: [
-    { nombre: 'Paulina',  foto: '', genero: 'f', edad: 27, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '' },
-    { nombre: 'Carolina', foto: '', genero: 'f', edad: 26, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '' },
-    { nombre: 'Lucas',    foto: '', genero: 'm', edad: 29, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '' },
-    { nombre: 'Tomás',    foto: '', genero: 'm', edad: 28, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '' },
-    { nombre: 'Nicolás',  foto: '', genero: 'm', edad: 23, rol: 'Pasante',                      antiguedad: 'En Bioingeniería desde septiembre de 2026', frase: '' },
+    { nombre: 'Paulina',  foto: '', genero: 'f', edad: 27, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '', apodo: '', guion: '' },
+    { nombre: 'Carolina', foto: '', genero: 'f', edad: 26, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '', apodo: '', guion: '' },
+    { nombre: 'Lucas',    foto: '', genero: 'm', edad: 29, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '', apodo: '', guion: '' },
+    { nombre: 'Tomás',    foto: '', genero: 'm', edad: 28, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '', apodo: '', guion: '' },
+    { nombre: 'Nicolás',  foto: '', genero: 'm', edad: 23, rol: 'Pasante',                      antiguedad: 'En Bioingeniería desde septiembre de 2026', frase: '', apodo: '', guion: '' },
   ],
+
+  /* Presentación de contendientes: contás sus datos y, al decir el nombre, tocás el botón.
+     El nombre aparece con su sello y a los ms se va, para dejar la pantalla limpia. estilo: 'fotos' = la versión anterior */
+  presentacion: { ms: 3000 },
 
   /* Presentador: entra después de la intro y antes de presentar a los contendientes */
   presentador: {
@@ -280,7 +287,7 @@ window.TRIVIA = {
   },
 
   /* ---------- Lo que está en juego ----------
-     Antes de las reglas: se dan vuelta los premios de a uno y al final aparece el ticket dorado.
+     Después de las reglas: se dan vuelta los premios de a uno y al final aparece el ticket dorado.
      foto: opcional ('premios/archivo.jpg' subido al repositorio) · detalle: opcional, una línea */
   premiosEnJuego: [
     { nombre: 'Premio 1', detalle: '' },
@@ -295,10 +302,7 @@ window.TRIVIA = {
   /* Cierre: foto del equipo (subila al repositorio) */
   gracias: { foto: '', titulo: 'Gracias', texto: 'por otro año de equipo' },
 
-  ticketDorado: {
-    numero: 'Nº 002',
-    beneficios: ['Créditos dorados', 'Un día de vacaciones adicional'],   // sacá el día si no se aprueba
-  },
+  ticketDorado: {},   // el diseño del ticket (sin beneficios ni número)
 
   /* ---------- Reglas ----------
      La primera línea (cuántas preguntas hay de cada tipo) la arma la app sola. */
