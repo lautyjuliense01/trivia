@@ -37,10 +37,11 @@ window.TRIVIA = {
     graves: true,           // cada aviso entra con un golpe grave de cine (false = avisos en silencio)
     volGraves: 1,           // volumen de los graves (0 a 1.5)
     // Avisos de sala antes de los créditos. ms opcional; si no, se calcula por el largo del texto.
-    // sonido (opcional): 'grave' (el de siempre), 'envolvente' (crece, gira por la sala y golpea), 'audio/archivo.mp3' o '' (silencio).
+    // sonido (opcional): 'grave' (el de siempre), 'envolvente' (crece, gira por la sala y golpea), 'shh' (el "shhh" de la sala), 'audio/archivo.mp3' o '' (silencio).
     // audio opcional: 'audio/archivo.mp3' subido al repositorio (por ejemplo, una voz en off grabada).
     avisos: [
-      // icono: 'celular', 'silencio', 'marcador', 'salida', 'sonido', 'reloj' o 'estrella'
+      // icono: 'shh', 'celular', 'silencio', 'marcador', 'salida', 'sonido', 'reloj' o 'estrella'
+      { icono: 'shh',      texto: 'Silencio, por favor', sub: 'Se apagan las luces de la sala', sonido: 'shh' },
       { icono: 'celular',  texto: 'Por favor, apaguen sus celulares', sub: 'La función está por comenzar' },
       { icono: 'silencio', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe' },
       { icono: 'marcador', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan' },
@@ -80,7 +81,10 @@ window.TRIVIA = {
     cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false, credito: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
-    pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions' },
+    pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions', bucle: [7, 35], revela: 49 },
+                  // bucle: [desde, hasta] → al llegar a "hasta" vuelve a "desde", así la pregunta dura lo que haga falta (acepta decimales: 35.2)
+                  // revela: al tocar Revelar sale del bucle y la respuesta aparece justo en ese segundo; después el tema sigue hasta el final y pasa a "datos"
+                  // tension: (opcional) segundo en que la luz pasa a tensión; si no está, al final del bucle
     final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
@@ -276,7 +280,7 @@ window.TRIVIA = {
       { texto: 'Con ustedes', tema: 55 },
     ],
     // Golpe de entrada automático: segundo del tema en que cae (con la apertura en automático). null = siempre a mano.
-    golpeTema: 57,
+    golpeTema: 59,
     // Qué aparece en el golpe: 'logo' (el logo de la trivia, como en la tele) o 'nombre' (tu nombre y foto)
     revelar: 'logo',
     logoArriba: 'Segunda edición',
@@ -286,6 +290,11 @@ window.TRIVIA = {
     ritmo: { bpm: 129, fase: null },
     // Después del golpe: juegos de luces de 4 compases cada uno, en este orden (se repiten ~1 minuto)
     frases: ['fiestaHost', 'contraluz', 'fiestaDorada', 'barrido'],
+    // Efectos marcados a mano (segundos del video del tema). Se marcan en el ensayo desde el celu (🎯 Marcar efectos):
+    // en cada uno, un compás de estrobo antes y en la marca explota (confeti) y cambia el juego de luces.
+    // Vacío = como antes: el efecto sale solo cada 8 compases. Lo que marques en el celu manda sobre esto.
+    acentos: [],
+    // marcaDemora: { celu: 0.25, pantalla: 0.08 },   // segundos que se descuentan a cada toque (demora de la red + reacción)
   },
 
   /* ---------- Lo que está en juego ----------
