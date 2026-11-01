@@ -566,6 +566,30 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .av-div{width:min(220px,40vw);height:1px;position:relative;background:linear-gradient(90deg,transparent,rgba(233,196,106,.75),transparent)}
 .av-div::after{content:"◆";position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);font-size:9px;color:#f0cf7e;background:#0f0402;padding:0 8px}
 .av-s{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:clamp(20px,2.3vw,36px);color:#ecdcbc;text-align:center}
+/* v33: logo de la trivia en la entrada del presentador */
+.show-logo{position:relative;display:flex;flex-direction:column;align-items:center}
+.sl-top{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.55em;padding-left:.55em;text-transform:uppercase;color:#e8d3a6;font-size:clamp(16px,1.9vw,30px);display:flex;align-items:center;gap:.8em;opacity:0}
+.sl-top span{font-size:.5em;color:#f0cf7e;letter-spacing:0}
+.sl-title{font-family:'Cinzel',serif;font-weight:900;text-transform:uppercase;line-height:.9;letter-spacing:.05em;font-size:clamp(90px,13.5vw,240px);margin:.12em 0 .08em;
+  background:linear-gradient(180deg,#ffffff 0%,#fff0c8 30%,#e8bd62 55%,#a8761f 72%,#f6dc93 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 3px 0 rgba(70,35,0,.7)) drop-shadow(0 0 40px rgba(255,190,90,.45));opacity:0}
+.sl-rule{width:min(560px,60vw);height:2px;background:linear-gradient(90deg,transparent,rgba(243,210,130,.9),transparent);transform:scaleX(0)}
+.sl-sub{margin-top:.8em;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:clamp(22px,2.6vw,42px);color:#f1e2c2;opacity:0}
+.v-host.golpe .sl-title{animation:slSlam 1s cubic-bezier(.2,1.4,.4,1) both}
+.v-host.golpe .sl-top{animation:fadeIn .8s .5s both}
+.v-host.golpe .sl-rule{animation:slRule 1.2s .5s cubic-bezier(.2,.8,.2,1) both}
+.v-host.golpe .sl-sub{animation:fadeIn 1s .9s both}
+@keyframes slSlam{from{opacity:0;transform:scale(1.9);filter:drop-shadow(0 0 80px rgba(255,230,170,1))}to{opacity:1;transform:none}}
+@keyframes slRule{to{transform:scaleX(1)}}
+/* v33: puntos a mano en la tele */
+.aj-toast{position:fixed;left:50%;bottom:5vh;z-index:45;display:flex;align-items:center;gap:22px;padding:16px 40px;transform:translateX(-50%);
+  background:linear-gradient(180deg,rgba(22,6,4,.92),rgba(8,2,1,.95));border:1px solid rgba(233,196,106,.75);box-shadow:0 0 0 6px rgba(0,0,0,.35),0 0 0 7px rgba(233,196,106,.3),0 20px 60px rgba(0,0,0,.7);
+  animation:ajIn 3.6s cubic-bezier(.2,.8,.2,1) both}
+.aj-toast b{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(40px,4.6vw,76px);background:linear-gradient(180deg,#fffaf0,#f6e3b0 40%,#d8a94a 66%,#f6dc93);-webkit-background-clip:text;background-clip:text;color:transparent}
+.aj-toast.menos b{background:linear-gradient(180deg,#ffd2c8,#e0705c 60%,#a83a28);-webkit-background-clip:text;background-clip:text}
+.aj-toast span{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:clamp(24px,2.8vw,46px);color:#f1e2c2}
+@keyframes ajIn{0%{opacity:0;transform:translate(-50%,30px) scale(.9)}12%{opacity:1;transform:translate(-50%,0) scale(1)}85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,10px)}}
+.auto-banner{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between;padding:10px 12px;margin-bottom:10px;border-radius:10px;background:rgba(70,140,90,.18);border:1px solid rgba(120,220,150,.45);font-size:14px}
 /* v32: final de los créditos ("Segunda edición") con golpe y polvo dorado */
 .cred-card .cred-t{white-space:nowrap}
 .cred-final .cred-t{font-weight:900!important;animation-name:credTrackF,shine!important}
@@ -800,6 +824,12 @@ body{background:
     <div id="now-body"></div>
   </div>
 
+  <details class="card" id="ajuste-card">
+    <summary>± Puntos a mano</summary>
+    <p class="muted" style="margin:6px 0">Para sumar o restar por lo que pase en el momento. Cuenta para el marcador y el ganador.</p>
+    <div id="ajuste-list"></div>
+    <label class="muted" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="ajuste-tele" checked> Mostrarlo en la tele (+1 · nombre)</label>
+  </details>
   <details class="card" id="pistas-card">
     <summary>🎵 Pistas y efectos a mano</summary>
     <div class="row" style="margin:6px 0 10px"><button class="btn small" id="fx-flash-tele">⚡ Flash de pantalla</button><button class="btn ghost small" id="fx-flash-unico">💡 Flash pantalla + techo</button></div>
@@ -926,7 +956,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v32 · 01/11 14:55';
+const VERSION = 'v33 · 01/11 15:42';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1648,7 +1678,7 @@ const LOOKS = Object.assign({
 /* Textos de la espera. Cada uno puede ir atado a:
    voz: segundo de la voz de presentación · tema: segundo del video del tema (el mismo que ves en YouTube) · o ms desde que arranca.
    est = cuándo se estima que aparece (para las luces y por si YouTube no responde). */
-const VOZ_MS = () => ((D.musica && D.musica.anfitrionVoz && D.musica.anfitrionVoz.id) ? ((D.musica.anfitrionVoz.duracion || 21) * 1000) : 0);
+const VOZ_MS = () => { const v = D.musica && D.musica.anfitrionVoz; return v && v.id ? ((v.fin || v.duracion || 21) * 1000) : 0; };
 function hostTexts() {
   const p = D.presentador || {}, temaIni = (D.musica && D.musica.anfitrion && D.musica.anfitrion.inicio) || 0;
   let at = p.inicioTextos != null ? p.inicioTextos : 1200;
@@ -1769,6 +1799,7 @@ function pointsFor(q, res) {
 function computeScores(results) {
   const sc = P.map(() => 0);
   SCRIPT.forEach(sl => { if (sl.k === 'pregunta') pointsFor(qOf(sl), results[sl.id]).forEach(p => { if (sc[p] !== undefined) sc[p]++; }); });
+  Object.entries((results && results._ajuste) || {}).forEach(([p, v]) => { if (sc[p] !== undefined) sc[p] += v; });   // puntos a mano
   return sc;
 }
 function standing(results) {
@@ -2218,6 +2249,7 @@ function initScreen() {
   setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: fxPlayer ? fxPlayer.status() : null }); }, 1000);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
 
+  let lastAjuste = null;
   let cur = { slide: -1 }, curRev = null, confettiLoop = null, introTimer = null, cineHits = [], contPhase = null;
   const CONT_PRE = 1600;
   const stage = $('#stage');
@@ -2287,6 +2319,7 @@ function initScreen() {
       let idx = -1;
       tx.forEach((e, i) => { if (passed(e, now, fxS, mS)) idx = i; });
       if (!temaOn && mS && mS.key === 'anfitrion' && mS.t > 0) { temaOn = true; beams.level(.65); preBeat(vh); }
+      if (cur.autoGolpe != null && mS && mS.key === 'anfitrion' && mS.t >= cur.autoGolpe) { hostGolpe(vh); if (link) link.send({ type: 'golpe' }); return; }
       if (idx !== active && idx >= 0) {
         if (active >= 0 && !fadedOut) { els[active].classList.remove('on'); els[active].classList.add('off'); }
         els[idx].classList.remove('off'); void els[idx].offsetWidth; els[idx].classList.add('on');
@@ -2343,7 +2376,7 @@ function initScreen() {
     if (k === 8) {
       vh.classList.add('golpe'); hostFlash('duro'); confetti();
       beams.setup('top5'); beams.clearPools(); beams.level(1);
-      setTimeout(() => { const ph = vh.querySelector('.pl-photo'); if (ph && host === h) { beams.aimEls([ph], { ms: 260, sway: false }); beams.pools([ph]); } }, 40);
+      setTimeout(() => { const ph = vh.querySelector('.sl-title') || vh.querySelector('.pl-photo'); if (ph && host === h) { beams.aimEls([ph], { ms: 260, sway: false, spread: true }); beams.pools([ph], true); } }, 40);
       return;
     }
     if (k < 16) { if (k % 2 === 0) hostFlash('suave'); return; }
@@ -2375,7 +2408,7 @@ function initScreen() {
     if (bl.animate) {
       bl.getAnimations().forEach(a => a.cancel());
       bl.animate([{ opacity: down ? .95 : .75 }, { opacity: .12 }], { duration: per * 950, easing: 'cubic-bezier(.15,.7,.3,1)', fill: 'forwards' });
-      const nm = h.vh.querySelector('.host-name'), ph = h.vh.querySelector('.pl-photo-wrap');
+      const nm = h.vh.querySelector('.sl-title') || h.vh.querySelector('.host-name'), ph = h.vh.querySelector('.sl-top') || h.vh.querySelector('.pl-photo-wrap');
       if (nm) nm.animate([{ transform: `scale(${down ? 1.06 : 1.035})`, filter: 'brightness(1.3)' }, { transform: 'scale(1)', filter: 'brightness(1)' }], { duration: per * 800, easing: 'ease-out' });
       if (ph) ph.animate([{ transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: per * 700, easing: 'ease-out' });
     }
@@ -2627,6 +2660,13 @@ function initScreen() {
     document.body.classList.toggle('dimmed', ['presentacion', 'cuenta', 'redoble'].includes(m) || (SCRIPT[st.slide] || {}).k === 'presentacion');
     $('#yt-wrap').classList.toggle('hidden-player', !!st.hidePlayer);
     if (st.vol != null && st.vol !== musicVol) { musicVol = st.vol; music.setLevel(); if (fxPlayer) fxPlayer.setLevel(); }
+    if (st.ajusteMsg && st.ajusteMsg.id !== lastAjuste && P[st.ajusteMsg.p] && !['cuenta', 'desempate', 'ganador'].includes(sl.k)) {
+      lastAjuste = st.ajusteMsg.id;
+      const t = document.createElement('div'); t.className = 'aj-toast ' + (st.ajusteMsg.d > 0 ? 'mas' : 'menos');
+      t.innerHTML = `<b>${st.ajusteMsg.d > 0 ? '+1' : '−1'}</b><span>${esc(P[st.ajusteMsg.p].nombre)}</span>`;
+      document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
+      if (st.ajusteMsg.d > 0) boomGrave(0.4);
+    } else if (st.ajusteMsg) lastAjuste = st.ajusteMsg.id;
     choreo(st, sl, changed);
     direct(st);
     cur = JSON.parse(JSON.stringify(st));
@@ -2723,11 +2763,15 @@ function initScreen() {
       h = `<div class="v v-host" id="vhost">
           <div class="host-wait">${t.map((x, i) => { const len = Math.max(8, x.texto.length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2), last = i === t.length - 1;
             return `<div class="hw ${last ? 'last' : ''} ${two ? 'two' : ''}" style="--fs:${fs}vw"><div class="hw-flare"></div><span>${esc(x.texto)}</span></div>`; }).join('')}</div>
-          <div class="host-reveal">
+          ${(p.revelar || 'logo') === 'logo' ? `<div class="host-reveal"><div class="show-logo">
+            <div class="sl-top"><span>◆</span>${esc(p.logoArriba || 'Segunda edición')}<span>◆</span></div>
+            <div class="sl-title">${esc(D.titulo).split(/\s+/).join('<br>')}</div>
+            <div class="sl-rule"></div>
+            <div class="sl-sub">${esc(D.edicion)}</div></div></div>` : `<div class="host-reveal">
             <div class="host-tag">Su anfitrión</div>
             <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo host">${photoHTML(p)}</div></div>
             <div><h2 class="script pl-name host-name">${esc(p.nombre)}</h2><div class="pl-chips">${chips}</div>${p.frase ? `<p class="pl-frase">“${esc(p.frase)}”</p>` : ''}</div></div>
-          </div>
+          </div>`}
         </div>`;
     } else if (sl.k === 'contendientes' && (SCRIPT[cur.slide] || {}).k === 'presentacion' && !st._fase2) {
       // primero: el último participante baja a su lugar en la fila, con las luces apagándose
@@ -2987,6 +3031,7 @@ function initControl() {
       if (msg.type === 'ping') { lastHello = Date.now(); sendState(); }
       if (msg.type === 'log') { lastHello = Date.now(); log('📺 ' + msg.text, msg.kind || ''); }
       if (msg.type === 'musica') { lastHello = Date.now(); showMusic(msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a); }
+      if (msg.type === 'golpe' && seq && seq.phase === 'apertura') golpeAuto('en el segundo justo del tema');
       if (msg.type === 'ritmo' && msg.bpm) {
         S.ritmo = { bpm: msg.bpm, fase: msg.fase, ajuste: (ritmoValido(S.ritmo) && S.ritmo.ajuste) || 0, id: msg.id };
         store.set('game', S);
@@ -3571,7 +3616,7 @@ function initControl() {
     const m = momentOf(S);
     lightsFor(m);
     // La apertura de cine avanza sola a la fanfarria cuando terminan los créditos
-    if (SCRIPT[S.slide].k === 'cine') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); autoT = setTimeout(() => { if (SCRIPT[S.slide].k === 'cine') goSlide(S.slide + 1); }, CRED_END + 300); } }
+    if (SCRIPT[S.slide].k === 'cine') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); autoT = setTimeout(() => { if (SCRIPT[S.slide].k === 'cine') goSlide(S.slide + 1, true); }, CRED_END + 300); } }
     else { autoKey = null; clearTimeout(autoT); }
     const k = SCRIPT[S.slide].k;
     if (soft) { clearTimeout(commitT); commitT = setTimeout(sendState, 250); }
@@ -3580,10 +3625,12 @@ function initControl() {
     renderControl();
   }
 
-  function goSlide(i) {
+  function goSlide(i, auto = false) {
     i = Math.max(0, Math.min(SCRIPT.length - 1, i));
-    if (typeof seq !== 'undefined' && seq && SCRIPT[i].k !== 'previa') { seq = null; clearInterval(seqTick); $('#seq-toast').hidden = true; }
+    if (!auto && typeof seq !== 'undefined' && seq && SCRIPT[i].k !== 'previa') abortSeq('✋ Pasaste a manual');
     S.slide = i; S.overlay = null; S.sub = 0; S.manual = null; S.calib = false;
+    if (typeof seq !== 'undefined' && seq) seq.slideAt = Date.now();
+    S.autoGolpe = (typeof seq !== 'undefined' && seq && seq.phase === 'apertura' && SCRIPT[i].k === 'presentador' && GOLPE_TEMA != null) ? GOLPE_TEMA : null;
     S.step = isQ(SCRIPT[i]) ? 'pregunta' : (SCRIPT[i].k === 'presentador' ? 'espera' : null);
     clearTimeout(revealT);
     if (SCRIPT[i].k === 'ganador') return revealWinner();
@@ -3627,6 +3674,7 @@ function initControl() {
   }
 
   function next() {
+    if (seq) abortSeq('✋ Pasaste a manual');
     const sl = SCRIPT[S.slide];
     if (S.overlay) { S.overlay = null; commit(); return; }
     if (sl.k === 'cuenta' && (S.sub || 0) < countdownGroups(S.results).length) { S.sub = (S.sub || 0) + 1; commit(); return; }
@@ -3648,6 +3696,7 @@ function initControl() {
     if (S.slide < SCRIPT.length - 1) goSlide(nextIndex(S.slide, 1));
   }
   function prev() {
+    if (seq) abortSeq('✋ Pasaste a manual');
     if (S.overlay) { S.overlay = null; commit(); return; }
     if (SCRIPT[S.slide].k === 'cuenta' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
     if (SCRIPT[S.slide].k === 'reglas' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
@@ -3707,6 +3756,7 @@ function initControl() {
   }
 
   function renderControl() {
+    if (typeof renderAjustes === 'function' && $('#ajuste-card').open) renderAjustes();
     const sl = SCRIPT[S.slide];
     $('#now-label').textContent = `${S.slide + 1}/${SCRIPT.length} · ${sl.label}`;
     const body = $('#now-body');
@@ -3724,7 +3774,7 @@ function initControl() {
     else if (sl.k === 'presentacion') { const p = P[sl.p]; h = `<div class="now-title">${esc(p.nombre)}</div><p class="muted">${[p.edad ? p.edad + ' años' : '', p.rol, p.antiguedad].filter(Boolean).map(esc).join(' · ')}</p>`; }
     else if (sl.k === 'presentador') {
       h = S.step === 'golpe'
-        ? `<div class="now-title">🎤 ¡${esc(D.presentador.nombre)}!</div><p class="muted">Un compás de estrobo, tu nombre en el segundo y después fiesta al ritmo del tema. Cuando quieras, seguís con los contendientes.</p>`
+        ? `<div class="now-title">🎤 ¡${esc(D.presentador.nombre)}!</div><p class="muted">Un compás de estrobo, el logo de la trivia en el segundo y después fiesta al ritmo del tema. Cuando quieras, seguís con los contendientes.</p>`
         : `<div class="now-title">🎤 Tu entrada</div><p class="muted">Sala a oscuras${TRACKS.anfitrionVoz ? ', la voz de presentación y después tu tema' : ', suena tu tema'}, aparecen los textos y la luz late cada vez más rápido. Entrá y, cuando estés en tu lugar (idealmente en un golpe fuerte del tema), tocá <b>💥 ¡Golpe de entrada!</b>.${D.presentador.golpeAuto > 0 ? ` Si no lo tocás, sale solo a los ${Math.round(D.presentador.golpeAuto / 1000)} s.` : ''}</p>`;
       const rd = D.presentador.ritmo || {}, rit = ritmoValido(S.ritmo) ? S.ritmo : (rd.fase != null ? rd : null);
       const ritTxt = rit ? `${rit.bpm || HOST_BPM} bpm · fase ${(+rit.fase).toFixed(3)} s${rit.ajuste ? ` · ajuste ${rit.ajuste > 0 ? '+' : ''}${rit.ajuste} ms` : ''}` : 'sin calibrar: el compás arranca cuando tocás el golpe';
@@ -3758,7 +3808,12 @@ function initControl() {
       h = `<div class="now-title">${sl.k === 'ganador' ? winnerWord(s.top) + ' ' + s.top.map(i => P[i].nombre).join(', ') : 'Marcador'}</div>`;
       if (sl.k === 'ganador' && !s.decided) h += `<p class="muted">Hay empate. Volvé con ◀ al desempate y cargá las respuestas.</p>`;
     }
+    const enApertura = ['cine', 'intro'].includes(sl.k) || (sl.k === 'presentador' && S.step !== 'golpe');
+    if (seq && seq.phase === 'apertura') h = `<div class="auto-banner">🤖 <b>Automático hasta el golpe de entrada</b>${GOLPE_TEMA != null ? ` (segundo ${GOLPE_TEMA} del tema)` : ''}<button class="btn ghost small" id="auto-off">✋ Pasar a manual</button></div>` + h;
+    else if (enApertura) h = `<button class="btn ghost small" id="auto-on" style="width:100%;margin-bottom:10px">🤖 Seguir en automático hasta el golpe de entrada</button>` + h;
     body.innerHTML = h;
+    const ao = body.querySelector('#auto-off'); if (ao) ao.addEventListener('click', () => abortSeq('✋ Pasaste a manual'));
+    const an = body.querySelector('#auto-on'); if (an) an.addEventListener('click', startApertura);
     body.querySelectorAll('[data-pm]').forEach(b => b.addEventListener('click', () => { S.previaModo = b.dataset.pm; commit(); }));
     const ss = body.querySelector('#seq-start'); if (ss) ss.addEventListener('click', startPrevia);
     const sa = body.querySelector('#seq-abort'); if (sa) sa.addEventListener('click', () => abortSeq());
@@ -3871,7 +3926,8 @@ function initControl() {
   }
   function abortSeq(msg = '✋ Secuencia frenada: seguís a mano') {
     if (!seq) return;
-    seq = null; clearInterval(seqTick); $('#seq-toast').hidden = true;
+    seq = null; clearInterval(seqTick); clearTimeout(golpeFallbackT); $('#seq-toast').hidden = true;
+    if (S.autoGolpe != null) { S.autoGolpe = null; commit(); }
     if (link) link.send({ type: 'volRamp', cancel: true });
     log(msg, 'e'); renderControl();
   }
@@ -3885,27 +3941,60 @@ function initControl() {
       if (link) link.send(ms ? { type: 'volRamp', to: step.volumen, ms } : { type: 'vol', v: step.volumen });
     }
     log('✔ ' + seqDescribe(step), 'o');
-    if (step.siguiente) { seq = null; goSlide(SCRIPT.findIndex(x => x.k === 'cine')); return; }
+    if (step.siguiente) {   // la previa terminó: sigue en automático la apertura hasta el golpe de entrada
+      if (PREVIA.hastaGolpe !== false) { seq = { phase: 'apertura', pending: false }; goSlide(SCRIPT.findIndex(x => x.k === 'cine'), true); log('🤖 Automático hasta el golpe de entrada', 'o'); }
+      else { seq = null; goSlide(SCRIPT.findIndex(x => x.k === 'cine'), true); }
+      return;
+    }
     commit();
   }
-  function armStep(step, secs) {
+  function armStep(step, secs) { armAuto(seqDescribe(step), secs, () => { seq.i++; execStep(step); }); }
+  // Aviso arriba con cuenta regresiva; "Deshacer" frena todo y seguís a mano
+  function armAuto(label, secs, fn) {
     seq.pending = true;
     const total = Math.max(1, secs), t0 = Date.now();
-    $('#seq-msg').textContent = `⏱ ${seqDescribe(step)} en ${Math.ceil(total)} s`;
+    $('#seq-msg').textContent = `⏱ ${label} en ${Math.ceil(total)} s`;
     $('#seq-toast').hidden = false;
     clearInterval(seqTick);
-    const fire = () => { clearInterval(seqTick); $('#seq-toast').hidden = true; if (!seq) return; seq.i++; seq.pending = false; execStep(step); };
+    const fire = () => { clearInterval(seqTick); $('#seq-toast').hidden = true; if (!seq) return; seq.pending = false; fn(); };
     $('#seq-now').onclick = fire;
     seqTick = setInterval(() => {
       const left = total - (Date.now() - t0) / 1000;
       $('#seq-bar').style.width = Math.max(0, 100 * left / total) + '%';
-      $('#seq-msg').textContent = `⏱ ${seqDescribe(step)} en ${Math.max(0, Math.ceil(left))} s`;
+      $('#seq-msg').textContent = `⏱ ${label} en ${Math.max(0, Math.ceil(left))} s`;
       if (left <= 0) fire();
     }, 100);
+  }
+  const GOLPE_TEMA = D.presentador && D.presentador.golpeTema != null ? D.presentador.golpeTema : null;
+  let golpeFallbackT = null;
+  function golpeAuto(origen) {
+    clearTimeout(golpeFallbackT); clearInterval(seqTick); $('#seq-toast').hidden = true;
+    if (SCRIPT[S.slide].k !== 'presentador' || S.step === 'golpe') return;
+    S.step = 'golpe'; S.autoGolpe = null; seq = null; commit();
+    log(`💥 Golpe de entrada automático (${origen}). Desde acá seguís a mano`, 'o'); renderControl();
+  }
+  function startApertura() {
+    seq = { phase: 'apertura', pending: false };
+    if (SCRIPT[S.slide].k === 'presentador' && GOLPE_TEMA != null && S.step !== 'golpe') { S.autoGolpe = GOLPE_TEMA; commit(); }
+    log('🤖 Automático hasta el golpe de entrada', 'o'); renderControl();
   }
   $('#seq-undo').addEventListener('click', () => abortSeq());
   window.__onMusicStatus = a => {
     lastMus = a;
+    if (seq && seq.phase === 'apertura' && !seq.pending) {
+      const k = SCRIPT[S.slide].k, aviso = (PREVIA && PREVIA.avisoSeg) || 8;
+      if (k === 'intro') {
+        const sal = D.intro && D.intro.salida;   // segundo de la fanfarria en que pasa a tu entrada (si no, al terminar)
+        const at = a && a.key === 'intro' && a.d > 0 ? (sal || a.d - 1) : null;
+        const sinMusica = (!a || a.key !== 'intro') && Date.now() - (seq.slideAt || Date.now()) > 30000;
+        if ((at != null && a.t >= at - Math.min(aviso, 5)) || sinMusica) armAuto('Tu entrada', at != null ? Math.max(1, at - a.t) : 5, () => goSlide(SCRIPT.findIndex(x => x.k === 'presentador'), true));
+      }
+      if (k === 'presentador' && S.step !== 'golpe' && GOLPE_TEMA != null && a && a.key === 'anfitrion' && a.t >= GOLPE_TEMA - aviso) {
+        // la tele dispara el golpe justo en su segundo (es la que sabe exacto dónde va el tema); el celu lo hace igual si no llega el aviso
+        armAuto('💥 Golpe de entrada', Math.max(1, GOLPE_TEMA - a.t), () => { golpeFallbackT = setTimeout(() => golpeAuto('por tiempo'), 700); });
+      }
+      return;
+    }
     if (!seq || seq.pending || !PREVIA || !a || !a.d || a.key !== seq.pista) return;
     const step = (PREVIA.pasos || [])[seq.i];
     if (!step) return;
@@ -3913,6 +4002,22 @@ function initControl() {
     if (at != null && a.t >= at - aviso) armStep(step, at - a.t);
   };
 
+  // Puntos a mano
+  function renderAjustes() {
+    const aj = (S.results && S.results._ajuste) || {}, sc = computeScores(S.results || {});
+    $('#ajuste-list').innerHTML = P.map((p, i) => `<div class="row" style="justify-content:space-between;margin:6px 0">
+      <span><b>${esc(p.nombre)}</b> <span class="muted">· ${sc[i]} pts${aj[i] ? ` (a mano ${aj[i] > 0 ? '+' : ''}${aj[i]})` : ''}</span></span>
+      <span class="row" style="gap:6px"><button class="btn ghost small" data-aj="${i}" data-d="-1" style="min-width:52px">−1</button><button class="btn small" data-aj="${i}" data-d="1" style="min-width:52px">+1</button></span></div>`).join('');
+    $('#ajuste-list').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      const i = +b.dataset.aj, d = +b.dataset.d;
+      S.results = S.results || {}; S.results._ajuste = { ...(S.results._ajuste || {}) };
+      S.results._ajuste[i] = (S.results._ajuste[i] || 0) + d;
+      if (!S.results._ajuste[i]) delete S.results._ajuste[i];
+      S.ajusteMsg = $('#ajuste-tele').checked ? { p: i, d, id: Date.now() } : null;
+      log(`± ${d > 0 ? '+1' : '−1'} a mano para ${P[i].nombre}`, 'o');
+      commit();
+    }));
+  }
   // Pistas a mano
   const manualKeys = Object.keys(TRACKS).filter(k => k.startsWith('pista'));
   $('#pistas-card').hidden = manualKeys.length === 0;
@@ -3921,6 +4026,7 @@ function initControl() {
     $('#pistas').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { S.manual = b.dataset.k; commit(); renderPistas(); log('🎵 A mano: ' + TRACKS[b.dataset.k].name, 'o'); }));
   }
   renderPistas();
+  $('#ajuste-card').addEventListener('toggle', () => { if ($('#ajuste-card').open) renderAjustes(); });
   $('#pista-auto').addEventListener('click', () => { S.manual = null; commit(); renderPistas(); log('🎵 Música automática', 'o'); });
   $('#pista-stop').addEventListener('click', () => { S.manual = 'silencio'; commit(); renderPistas(); log('🎵 Silencio', 'o'); });
 

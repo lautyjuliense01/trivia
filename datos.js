@@ -67,6 +67,7 @@ window.TRIVIA = {
       { fin: true, siguiente: true, aviso: 'Arranca la apertura de cine' },
     ],
     avisoSeg: 8,             // segundos de aviso antes de cada paso
+    hastaGolpe: true,        // al terminar la previa sigue sola: apertura, fanfarria, tu entrada y el golpe (false = se frena en la apertura)
   },
 
   /* ---------- Música (ID del video de YouTube / YouTube Music) ----------
@@ -81,7 +82,7 @@ window.TRIVIA = {
     final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
-    anfitrionVoz: { id: 'q9C_euAFpW8', nombre: 'Voz: Ladies and gentlemen', inicio: 0, duracion: 21 },   // completa (21 s); el tema entra cuando termina
+    anfitrionVoz: { id: 'q9C_euAFpW8', nombre: 'Voz: Ladies and gentlemen', inicio: 0, duracion: 21, fin: 19 },   // los últimos 2 s son silencio: en el 19 entra el tema
                   // opcionales: fin: segundo en que se corta la voz · solape: segundos que se pisan voz y tema (0.3)
     anfitrion:    { id: 'p3l7fgvrEKM', nombre: 'Freed from Desire (Gala)', inicio: 10 },   // tu entrada (antes: I Gotta Feeling Jt0qUO4pqWQ)
     redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
@@ -125,7 +126,7 @@ window.TRIVIA = {
   },
 
   /* Intro: milisegundo de la fanfarria en que aparece el título (con Universal, el 15) */
-  intro: { titulo: 15000 },
+  intro: { titulo: 15000, salida: null },   // salida: segundo de la fanfarria en que pasa sola a tu entrada (null = cuando termina)
 
   /* ---------- Lámparas ----------
      Nombre → ID de Tuya. Los mismos IDs tienen que estar en TUYA_DEVICE del intermediario (separados por coma).
@@ -248,11 +249,19 @@ window.TRIVIA = {
     textos: [
       { texto: '¿Están listos?', voz: 2 },
       { texto: 'Damas y caballeros', voz: 7 },
-      { texto: 'Bienvenidos', voz: 13 },
-      { texto: 'Esta noche', tema: 12 },
-      { texto: 'Solo uno conoce todas las respuestas', tema: 18 },
+      { texto: 'Bienvenidos', voz: 10 },
+      { texto: 'Esta noche', tema: 12, dura: 9 },
+      { texto: 'Solo uno conoce todas las respuestas', tema: 21, dura: 11 },
+      { texto: 'Él escribió las preguntas', tema: 33, dura: 6.5 },
+      { texto: 'Sabe quién dijo qué', tema: 40, dura: 6.5 },
+      { texto: 'Y no va a soplar ninguna', tema: 47, dura: 7 },
       { texto: 'Con ustedes', tema: 55 },
     ],
+    // Golpe de entrada automático: segundo del tema en que cae (con la apertura en automático). null = siempre a mano.
+    golpeTema: 57,
+    // Qué aparece en el golpe: 'logo' (el logo de la trivia, como en la tele) o 'nombre' (tu nombre y foto)
+    revelar: 'logo',
+    logoArriba: 'Segunda edición',
     golpeAuto: 0,   // ms: si es mayor que 0, el golpe de entrada sale solo a ese tiempo (si no lo tocás antes)
     // Ritmo del tema para que la tele destelle en el bombo. Lo más fácil: calibrarlo en el ensayo desde el celu (🥁 Calibrar).
     // fase: segundo del video en que cae un golpe (lo da la calibración). Sin fase, el compás arranca cuando tocás el golpe.
