@@ -532,6 +532,36 @@ body.ens-body{overflow:hidden}
   #ens-ctl{flex:none;width:min(390px,42vw);height:calc(100% - 38px)}
   #ens-bar{order:3;width:100%}
 }
+/* v30: telón de terciopelo */
+body.has-curtain{background:linear-gradient(rgba(10,1,2,.40),rgba(10,1,2,.40)),var(--valance) center top/100% auto no-repeat,var(--curtain-l) left top/50% 100% no-repeat,var(--curtain-r) right top/50% 100% no-repeat,#120203!important}
+body.has-curtain .intro-curtain{width:50vw!important}
+body.has-curtain .intro-curtain.l{background:var(--curtain-l) center/100% 100% no-repeat!important;box-shadow:inset -18px 0 30px rgba(0,0,0,.5)!important}
+body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% no-repeat!important;box-shadow:inset 18px 0 30px rgba(0,0,0,.5)!important}
+.intro-curtain.l{transform-origin:0 0;animation:curtGatherL 3s var(--tTelon,4.4s) cubic-bezier(.6,0,.25,1) forwards!important}
+.intro-curtain.r{transform-origin:100% 0;animation:curtGatherR 3s var(--tTelon,4.4s) cubic-bezier(.6,0,.25,1) forwards!important}
+@keyframes curtGatherL{0%{transform:scaleX(1);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}100%{transform:scaleX(.17);clip-path:polygon(0 0,100% 0,100% 16%,0 100%)}}
+@keyframes curtGatherR{0%{transform:scaleX(1);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}100%{transform:scaleX(.17);clip-path:polygon(0 0,100% 0,100% 100%,0 16%)}}
+.intro-stage{position:fixed;inset:0;z-index:1;background:radial-gradient(ellipse 60% 55% at 50% 45%,rgba(90,16,16,.45),transparent 70%),linear-gradient(180deg,#060101 0%,#0d0203 70%,#030000 100%)}
+.intro-valance{position:fixed;left:0;right:0;top:0;height:20vh;z-index:5;pointer-events:none;background:var(--valance) center top/100% auto no-repeat}
+/* v30: avisos de sala en placas, con el foco sobre el telón */
+.cine .cine-dim{background:radial-gradient(ellipse 60% 82% at 50% 52%,rgba(0,0,0,0) 0%,rgba(0,0,0,.18) 45%,rgba(0,0,0,.7) 68%,rgba(0,0,0,.97) 88%);opacity:0;animation:cineDim 5.5s .4s ease-in-out forwards}
+.cine-black{position:absolute;inset:0;background:#000;opacity:0;animation:fadeIn 1.4s ease-in forwards}
+.av-card{gap:0}
+.av{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px;padding:clamp(22px,3vw,40px) clamp(36px,5vw,76px) clamp(20px,2.6vw,34px);max-width:78vw;
+  background:linear-gradient(180deg,rgba(22,6,4,.86),rgba(8,2,1,.93));border:1px solid rgba(233,196,106,.7);
+  box-shadow:0 0 0 7px rgba(0,0,0,.35),0 0 0 8px rgba(233,196,106,.3),0 30px 90px rgba(0,0,0,.7)}
+.av::before,.av::after{content:"◆";position:absolute;top:50%;transform:translateY(-50%);color:rgba(238,198,118,.9);font-size:12px}
+.av::before{left:-24px}.av::after{right:-24px}
+.av-ico{width:clamp(64px,7vw,108px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(233,196,106,.65);
+  box-shadow:inset 0 0 0 5px rgba(0,0,0,.35),inset 0 0 0 6px rgba(233,196,106,.25),0 0 30px rgba(255,190,90,.15)}
+.av-ico svg{width:58%;height:58%;fill:none;stroke:#f0cf7e;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(255,200,110,.45))}
+.av-ico svg .cut{stroke:#120402;stroke-width:5.5}
+.av-ico.txt{font-size:clamp(30px,3.4vw,52px)}
+.av-t{font-family:'Cinzel',serif;font-weight:700;text-transform:uppercase;letter-spacing:.08em;line-height:1.2;font-size:clamp(24px,3.1vw,52px);text-align:center;text-wrap:balance;max-width:66vw;
+  background:linear-gradient(180deg,#fffaf0 0%,#f6e3b0 40%,#d8a94a 66%,#f6dc93 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(255,200,110,.25))}
+.av-div{width:min(220px,40vw);height:1px;position:relative;background:linear-gradient(90deg,transparent,rgba(233,196,106,.75),transparent)}
+.av-div::after{content:"◆";position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);font-size:9px;color:#f0cf7e;background:#0f0402;padding:0 8px}
+.av-s{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:clamp(20px,2.3vw,36px);color:#ecdcbc;text-align:center}
 /* v26: entrada al ritmo */
 .v-host.golpe-pre .host-wait{opacity:0;transition:opacity .12s}
 #beat-layer{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0;will-change:opacity}
@@ -824,7 +854,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v29 · 31/10 20:14';
+const VERSION = 'v30 · 01/11 06:46';
 const D = window.TRIVIA;
 const VOLUME = 85;
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1340,6 +1370,119 @@ const credDur = c => (c && c.ms) || (c && c.estudio ? IDENT_MS : CRED);
 const CRED_AT = [];
 let CRED_END = CEL;
 CREDITS.forEach(c => { CRED_AT.push(CRED_END); CRED_END += credDur(c); });
+/* Telón de terciopelo dibujado una sola vez: pliegues irregulares, brillo de terciopelo, cenefa con flecos dorados */
+function renderCurtain(W, H, opt = {}) {
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  let seed = opt.seed || 20261;
+  const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const K = Array.from({ length: 80 }, rnd);
+  const noise1 = t => { const i = Math.floor(t), f = t - i, u = f * f * (3 - 2 * f); return K[i % 80] + (K[(i + 1) % 80] - K[i % 80]) * u; };
+  // pliegues: fase acumulada con período variable (algunos anchos, otros apretados)
+  const per0 = W / (opt.pliegues || 13), phase = new Float32Array(W), nap = new Float32Array(W);
+  let ph = rnd() * 6;
+  for (let x = 0; x < W; x++) { ph += 2 * Math.PI / (per0 * (0.55 + 0.9 * noise1(x / W * 11 + 3))); phase[x] = ph; nap[x] = (rnd() - 0.5) * 0.05; }
+  const img = ctx.createImageData(W, H), d = img.data;
+  const top = opt.cenefa === false ? 0 : Math.round(H * 0.11);
+  for (let y = 0; y < H; y++) {
+    const ty = y / H;
+    const light = 0.38 + 0.62 * Math.exp(-Math.pow((ty - 0.40) / 0.55, 2));   // luz de escenario: más fuerte al medio
+    const wav = 0.5 * Math.sin(ty * 2.3 + 0.7);
+    for (let x = 0; x < W; x++) {
+      const p = phase[x] + wav * Math.sin(phase[x] * 0.21);
+      const c = Math.cos(p), depth = 0.55 + 0.45 * noise1(phase[x] / 6.283 * 0.9 + 11);   // pliegues más y menos profundos
+      const dif = 1 - depth * (1 - Math.pow(0.5 + 0.5 * c, 1.35));
+      const spec = Math.pow(Math.max(0, Math.cos(p - 0.35)), 24);               // brillo del terciopelo sobre la cresta
+      const sheen = Math.pow(Math.max(0, Math.cos(p + 1.25)), 5) * 0.25;        // reflejo suave al costado del pliegue
+      const v = Math.max(0, (0.06 + 0.94 * dif) * light + nap[x] + (rnd() - 0.5) * 0.025);
+      const hl = (spec * 0.55 + sheen) * light * (0.6 + 0.4 * depth);
+      const i = (y * W + x) * 4;
+      d[i] = Math.min(255, 12 + 150 * v + 130 * hl);
+      d[i + 1] = Math.min(255, 2 + 10 * v + 62 * hl);
+      d[i + 2] = Math.min(255, 4 + 18 * v + 55 * hl);
+      d[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  // sombra de arriba (bajo la cenefa) y del piso
+  let g = ctx.createLinearGradient(0, top, 0, top + H * 0.12); g.addColorStop(0, 'rgba(0,0,0,.65)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, top, W, H * 0.12);
+  g = ctx.createLinearGradient(0, H * 0.78, 0, H); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.7)');
+  ctx.fillStyle = g; ctx.fillRect(0, H * 0.78, W, H * 0.22);
+  if (opt.inner) {   // costura del centro: donde se juntan los dos paños
+    const w = W * 0.035, x0 = opt.inner === 'right' ? W - w : 0;
+    const gs = ctx.createLinearGradient(x0, 0, x0 + w, 0);
+    if (opt.inner === 'right') { gs.addColorStop(0, 'rgba(0,0,0,0)'); gs.addColorStop(.75, 'rgba(0,0,0,.55)'); gs.addColorStop(1, 'rgba(255,90,90,.18)'); }
+    else { gs.addColorStop(0, 'rgba(255,90,90,.18)'); gs.addColorStop(.25, 'rgba(0,0,0,.55)'); gs.addColorStop(1, 'rgba(0,0,0,0)'); }
+    ctx.fillStyle = gs; ctx.fillRect(x0, 0, w, H);
+  }
+  if (opt.cenefa !== false) drawValance(ctx, W, top, rnd);
+  return cv;
+}
+function drawValance(ctx, W, Hv, rnd) {
+  const gold = (y0, y1) => { const g = ctx.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, '#fff2c4'); g.addColorStop(.45, '#d9a94a'); g.addColorStop(1, '#7a4f12'); return g; };
+  // fondo de la cenefa
+  ctx.fillStyle = '#2a0406'; ctx.fillRect(0, 0, W, Hv * 0.62);
+  const n = Math.max(4, Math.round(W / (Hv * 3.2))), sw = W / n, base = Hv * 0.5, sag = Hv * 0.5;
+  const edge = (x, x0) => base + sag * Math.sin(Math.PI * (x - x0) / sw);
+  for (let k = 0; k < n; k++) {
+    const x0 = k * sw;
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(x0 - 1, 0); ctx.lineTo(x0 + sw + 1, 0); ctx.lineTo(x0 + sw + 1, base);
+    for (let x = x0 + sw; x >= x0; x -= 4) ctx.lineTo(x, edge(x, x0));
+    ctx.closePath(); ctx.clip();
+    // pliegues horizontales que siguen la caída del drapeado
+    for (let t = 0; t <= 1.0001; t += 1 / 46) {
+      const c = Math.cos(t * Math.PI * 2 * 3.2), l = Math.pow(0.5 + 0.5 * c, 1.3), spec = Math.pow(Math.max(0, c), 16);
+      const light = 0.55 + 0.45 * Math.sin(Math.PI * t * 0.9 + 0.2);
+      ctx.strokeStyle = `rgb(${Math.round(20 + 150 * l * light + 110 * spec * light)},${Math.round(3 + 10 * l * light + 55 * spec * light)},${Math.round(5 + 18 * l * light + 45 * spec * light)})`;
+      ctx.lineWidth = Hv / 30;
+      ctx.beginPath();
+      for (let x = x0 - 2; x <= x0 + sw + 2; x += 6) { const y = t * base + t * sag * Math.sin(Math.PI * (x - x0) / sw); x === x0 - 2 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // cordón dorado y flecos sobre el borde
+  for (let k = 0; k < n; k++) {
+    const x0 = k * sw;
+    for (let x = x0; x <= x0 + sw; x += 2.2) {
+      const y = edge(x, x0), len = Hv * (0.13 + 0.03 * rnd());
+      ctx.strokeStyle = gold(y, y + len); ctx.globalAlpha = 0.75 + 0.25 * rnd(); ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (rnd() - 0.5), y + len); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = gold(base, base + sag); ctx.lineWidth = Math.max(2, Hv / 26);
+    ctx.beginPath(); for (let x = x0; x <= x0 + sw; x += 4) { const y = edge(x, x0); x === x0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke();
+  }
+  // borlas entre los drapeados
+  for (let k = 0; k <= n; k++) {
+    const x = k * sw, y = base, r = Hv * 0.08;
+    ctx.fillStyle = gold(y - r, y + r * 4);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x - r * 0.8, y + r * 0.6); ctx.lineTo(x + r * 0.8, y + r * 0.6); ctx.lineTo(x + r * 1.3, y + r * 4.2); ctx.lineTo(x - r * 1.3, y + r * 4.2); ctx.closePath(); ctx.fill();
+  }
+  // filo dorado de arriba
+  ctx.fillStyle = gold(0, Hv * 0.06); ctx.fillRect(0, 0, W, Math.max(2, Hv * 0.035));
+}
+
+/* Iconos de los avisos de sala (línea dorada) */
+const AV_ICONS = {
+  celular: '<rect x="15" y="5" width="18" height="38" rx="3.5"/><line x1="21" y1="38" x2="27" y2="38"/><line x1="8" y1="8" x2="40" y2="40" class="cut"/><line x1="8" y1="8" x2="40" y2="40"/>',
+  silencio: '<path d="M9 11h30a3 3 0 0 1 3 3v15a3 3 0 0 1-3 3H22l-8 7v-7H9a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z"/><line x1="8" y1="8" x2="40" y2="40" class="cut"/><line x1="8" y1="8" x2="40" y2="40"/>',
+  marcador: '<path d="M31 7l10 10-19 19H12V26z"/><line x1="27" y1="11" x2="37" y2="21"/><path d="M12 36l-4 4"/><path d="M6 44h36"/>',
+  salida: '<path d="M9 6h19v36H9z"/><circle cx="23.5" cy="25" r="1.4"/><path d="M31 24h12M38 19l5 5-5 5"/>',
+  sonido: '<path d="M7 19h7l9-7v24l-9-7H7z"/><path d="M29 18a8 8 0 0 1 0 12M33 13a15 15 0 0 1 0 22M37 8a22 22 0 0 1 0 32"/>',
+  reloj: '<circle cx="24" cy="24" r="17"/><path d="M24 13v11l7 5"/>',
+  estrella: '<path d="M24 6l5.3 11.6 12.7 1.4-9.5 8.6 2.7 12.4L24 33.6 12.8 40l2.7-12.4L6 19l12.7-1.4z"/>',
+};
+const AV_EMOJI = { '📵': 'celular', '🤫': 'silencio', '🖊️': 'marcador', '🖊': 'marcador', '🚪': 'salida', '🔊': 'sonido' };
+function avIconHTML(ic) {
+  const k = AV_ICONS[ic] ? ic : AV_EMOJI[ic];
+  if (k) return `<div class="av-ico"><svg viewBox="0 0 48 48" aria-hidden="true">${AV_ICONS[k]}</svg></div>`;
+  return ic ? `<div class="av-ico txt">${esc(ic)}</div>` : '';
+}
+
 /* Intro de estudio: amanece detrás de la niebla, se eleva un emblema monumental y aparece el nombre */
 function laurelLeaves() {
   let out = '';
@@ -1431,6 +1574,8 @@ function hostTexts() {
   });
 }
 const HOST_BPM = (D.presentador && D.presentador.ritmo && D.presentador.ritmo.bpm) || 128;
+// la calibración guardada en el celu vale solo para el tema con el que se hizo
+const ritmoValido = r => !!(r && r.id && TRACKS.anfitrion && r.id === TRACKS.anfitrion.id && (r.fase != null || r.ajuste));
 /* Después del golpe de entrada: frases de 4 compases que cambian de juego de luces, con un compás de estrobo cada 8 */
 const HOST_FRASES = (D.presentador && D.presentador.frases) || ['fiestaHost', 'contraluz', 'fiestaDorada', 'barrido'];
 function hostGolpeGuion() {
@@ -1949,6 +2094,19 @@ function createDirector(music, fx) {
 function initScreen() {
   $('#pantalla').hidden = false;
   $('#unlock-title').textContent = D.titulo;
+  // Telón de terciopelo: dos paños con costura al centro y la cenefa arriba (se dibuja una vez, en segundo plano)
+  setTimeout(() => {
+    try {
+      const W = Math.min(1280, Math.round(innerWidth * Math.min(2, devicePixelRatio || 1))) || 1280, H = Math.round(W * (innerHeight / innerWidth || 9 / 16));
+      const half = Math.round(W / 2), Hv = Math.round(H * 0.11);
+      const L = renderCurtain(half, H, { cenefa: false, inner: 'right', seed: 1101 }), R = renderCurtain(half, H, { cenefa: false, inner: 'left', seed: 2207 });
+      const V = document.createElement('canvas'); V.width = W; V.height = Math.round(Hv * 1.35);
+      let s0 = 77; drawValance(V.getContext('2d'), W, Hv, () => { s0 = (s0 * 16807) % 2147483647; return s0 / 2147483647; });
+      const put = (cv, name) => cv.toBlob(b => { if (b) document.documentElement.style.setProperty(name, `url(${URL.createObjectURL(b)})`); }, name === '--valance' ? 'image/png' : 'image/jpeg', 0.92);
+      put(L, '--curtain-l'); put(R, '--curtain-r'); put(V, '--valance');
+      setTimeout(() => document.body.classList.add('has-curtain'), 400);
+    } catch (e) { log('Telón: ' + e.message, 'e'); }
+  }, 60);
   let code = ENSAYO || store.get('screen_code');
   if (!/^\d{4}$/.test(code || '')) { code = String(Math.floor(1000 + Math.random() * 9000)); store.set('screen_code', code); }
 
@@ -1991,7 +2149,7 @@ function initScreen() {
       return est;
     };
   })();
-  function ritmoCfg() { return Object.assign({ bpm: HOST_BPM, ajuste: 0 }, (D.presentador && D.presentador.ritmo) || {}, ritmoSt || {}, calLocal || {}); }
+  function ritmoCfg() { return Object.assign({ bpm: HOST_BPM, ajuste: 0 }, (D.presentador && D.presentador.ritmo) || {}, ritmoValido(ritmoSt) ? ritmoSt : {}, calLocal || {}); }
   function hostPos(h) {
     const r = ritmoCfg(), per = 60 / (r.bpm || 128), t = songClock(), p = performance.now();
     let pos;
@@ -2128,7 +2286,7 @@ function initScreen() {
     if (!r) { $('#cal-r').textContent = '⚠️ Toques muy irregulares: empezá de nuevo'; calTaps = []; return; }
     const ok = r.err <= 45;
     $('#cal-r').textContent = `${r.bpm} bpm · fase ${r.fase.toFixed(3)} s · ±${r.err} ms · ${r.n} toques ${ok ? '✔ guardado' : '· irregular, seguí tocando'}`;
-    if (ok) { calLocal = { bpm: r.bpm, fase: r.fase }; if (link) link.send({ type: 'ritmo', bpm: r.bpm, fase: r.fase, err: r.err, n: r.n }); }
+    if (ok) { calLocal = { bpm: r.bpm, fase: r.fase }; if (link) link.send({ type: 'ritmo', bpm: r.bpm, fase: r.fase, err: r.err, n: r.n, id: TRACKS.anfitrion ? TRACKS.anfitrion.id : '' }); }
   }
   document.addEventListener('pointerdown', calTap, true);
   document.addEventListener('keydown', e => { if (e.code === 'Space' || e.key === ' ') calTap(e); });
@@ -2344,7 +2502,8 @@ function initScreen() {
         if (c.estudio) return `<div class="studio"><div class="studio-mark"><div class="studio-rays"></div><span>${esc(c.estudio.split(/\s+/).map(w => w[0]).join('').slice(0, 2))}</span></div><div class="studio-name">${esc(c.estudio)}</div>${c.texto ? `<div class="studio-sub">${esc(c.texto)}</div>` : ''}</div>`;
         return `${c.chico ? `<div class="cred-s">${esc(c.chico)}</div>` : ''}${c.grande ? `<div class="cred-t">${esc(c.grande)}</div>` : ''}`;
       };
-      h = `<div class="cine"><div class="cine-dim"></div>
+      const envIdx = AVISOS.findIndex(a => avSonido(a) === 'envolvente'), envAt = envIdx < 0 ? CEL - 600 : 200 + AVISOS.slice(0, envIdx).reduce((t, a) => t + avDur(a), 0);
+      h = `<div class="cine"><div class="cine-dim"></div><div class="cine-black" style="animation-delay:${envAt}ms"></div>
         ${(() => { let t = 200; return AVISOS.map((a, idx) => {
           const d = avDur(a), at = t, son = avSonido(a);
           let html;
@@ -2352,9 +2511,9 @@ function initScreen() {
             const hitAt = at + avSubida(a);
             html = `<div class="cine-card env" style="animation-delay:${at}ms;animation-duration:${d - 200}ms;--hit:${hitAt}ms"><div class="env-glow" style="animation-duration:${hitAt - at}ms,1.8s;animation-delay:${at}ms,${hitAt}ms"></div>${a.icono ? `<div class="cel-ico">${esc(a.icono)}</div>` : ''}<div class="cel-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="cel-s">${esc(a.sub)}</div>` : ''}</div>`;
             cineHits.push(setTimeout(() => swellEnvolvente(hitAt - at), at));
-            cineHits.push(setTimeout(() => { const f = document.createElement('div'); f.className = 'flash'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }, hitAt + 30));
+            cineHits.push(setTimeout(() => { const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }, hitAt + 30));
           } else {
-            html = `<div class="cine-card" style="animation-delay:${at}ms;animation-duration:${d - 200}ms"><div class="cel-ico">${esc(a.icono || '')}</div><div class="cel-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="cel-s">${esc(a.sub)}</div>` : ''}</div>`;
+            html = `<div class="cine-card av-card" style="animation-delay:${at}ms;animation-duration:${d - 200}ms"><div class="av">${avIconHTML(a.icono)}<div class="av-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="av-div"></div><div class="av-s">${esc(a.sub)}</div>` : ''}</div></div>`;
             if (son === 'grave') cineHits.push(setTimeout(() => boomGrave(idx === 0 ? 1 : 0.75), at + 120));
             else if (son) cineHits.push(setTimeout(() => playFile(son), at + 120));
           }
@@ -2377,8 +2536,8 @@ function initScreen() {
     } else if (sl.k === 'intro') {
       const ed = esc(D.edicion).replace(/(\d{4})\s*$/, '').trim();
       const yr = (D.edicion.match(/\d{4}/) || [''])[0];
-      h = `<div class="intro-black"></div>
-           <div class="intro-curtain l"></div><div class="intro-curtain r"></div>
+      h = `<div class="intro-black"></div><div class="intro-stage"></div>
+           <div class="intro-curtain l"></div><div class="intro-curtain r"></div><div class="intro-valance"></div>
            <div class="v"><div class="intro-title"><div class="marquee" style="display:inline-block"><div class="edition">${ed}</div><h1 class="script">${esc(D.titulo)}</h1></div></div>
            <div class="intro-year">${yr}</div></div>`;
       stage.style.setProperty('--tNegro', T_NEGRO + 'ms'); stage.style.setProperty('--tTelon', T_TELON + 'ms');
@@ -2658,7 +2817,7 @@ function initControl() {
       if (msg.type === 'log') { lastHello = Date.now(); log('📺 ' + msg.text, msg.kind || ''); }
       if (msg.type === 'musica') { lastHello = Date.now(); showMusic(msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a); }
       if (msg.type === 'ritmo' && msg.bpm) {
-        S.ritmo = { bpm: msg.bpm, fase: msg.fase, ajuste: (S.ritmo && S.ritmo.ajuste) || 0 };
+        S.ritmo = { bpm: msg.bpm, fase: msg.fase, ajuste: (ritmoValido(S.ritmo) && S.ritmo.ajuste) || 0, id: msg.id };
         store.set('game', S);
         if (msg.n === 8 || msg.n % 4 === 0) log(`🥁 Ritmo: ${msg.bpm} bpm · fase ${msg.fase} s (±${msg.err} ms, ${msg.n} toques). Para dejarlo fijo en datos.js: ritmo: { bpm: ${msg.bpm}, fase: ${msg.fase} }`, 'o');
         renderControl();
@@ -3380,8 +3539,8 @@ function initControl() {
       h = S.step === 'golpe'
         ? `<div class="now-title">🎤 ¡${esc(D.presentador.nombre)}!</div><p class="muted">Un compás de estrobo, tu nombre en el segundo y después fiesta al ritmo del tema. Cuando quieras, seguís con los contendientes.</p>`
         : `<div class="now-title">🎤 Tu entrada</div><p class="muted">Sala a oscuras${TRACKS.anfitrionVoz ? ', la voz de presentación y después tu tema' : ', suena tu tema'}, aparecen los textos y la luz late cada vez más rápido. Entrá y, cuando estés en tu lugar (idealmente en un golpe fuerte del tema), tocá <b>💥 ¡Golpe de entrada!</b>.${D.presentador.golpeAuto > 0 ? ` Si no lo tocás, sale solo a los ${Math.round(D.presentador.golpeAuto / 1000)} s.` : ''}</p>`;
-      const rd = D.presentador.ritmo || {}, rit = S.ritmo || (rd.fase != null ? rd : null);
-      const ritTxt = rit ? `${rit.bpm || HOST_BPM} bpm · fase ${(+rit.fase).toFixed(3)} s${S.ritmo && S.ritmo.ajuste ? ` · ajuste ${S.ritmo.ajuste > 0 ? '+' : ''}${S.ritmo.ajuste} ms` : ''}` : 'sin calibrar: el compás arranca cuando tocás el golpe';
+      const rd = D.presentador.ritmo || {}, rit = ritmoValido(S.ritmo) ? S.ritmo : (rd.fase != null ? rd : null);
+      const ritTxt = rit ? `${rit.bpm || HOST_BPM} bpm · fase ${(+rit.fase).toFixed(3)} s${rit.ajuste ? ` · ajuste ${rit.ajuste > 0 ? '+' : ''}${rit.ajuste} ms` : ''}` : 'sin calibrar: el compás arranca cuando tocás el golpe';
       h += `<p class="muted" style="margin:12px 0 6px">🥁 Ritmo de la tele: <b>${ritTxt}</b></p>
         <div class="players"><button class="pbtn ${S.calib ? 'on' : ''}" id="cal-tog">${S.calib ? '✔ Terminar calibración' : '🥁 Calibrar (ensayo)'}</button>${rit ? '<button class="pbtn" data-aj="-30">−30 ms</button><button class="pbtn" data-aj="30">+30 ms</button>' : ''}</div>
         ${S.calib ? '<p class="muted" style="margin-top:6px">Con el tema sonando, tocá la pantalla de la tele (o la barra espaciadora de la notebook) en cada golpe del bombo. Después mirá el punto: si titila <b>después</b> del golpe, tocá +30; si titila <b>antes</b>, −30.</p>' : ''}`;
@@ -3418,7 +3577,7 @@ function initControl() {
     const sa = body.querySelector('#seq-abort'); if (sa) sa.addEventListener('click', () => abortSeq());
     const ct = body.querySelector('#cal-tog'); if (ct) ct.addEventListener('click', () => { S.calib = !S.calib; commit(); });
     body.querySelectorAll('[data-aj]').forEach(b => b.addEventListener('click', () => {
-      const rd = D.presentador.ritmo || {}, base = S.ritmo || { bpm: rd.bpm || HOST_BPM, fase: rd.fase, ajuste: rd.ajuste || 0 };
+      const rd = D.presentador.ritmo || {}, base = ritmoValido(S.ritmo) ? S.ritmo : { bpm: rd.bpm || HOST_BPM, fase: rd.fase, ajuste: rd.ajuste || 0, id: TRACKS.anfitrion ? TRACKS.anfitrion.id : '' };
       S.ritmo = { ...base, ajuste: (base.ajuste || 0) + +b.dataset.aj }; commit();
     }));
 

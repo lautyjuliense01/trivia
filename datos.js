@@ -35,10 +35,11 @@ window.TRIVIA = {
     // sonido (opcional): 'grave' (el de siempre), 'envolvente' (crece, gira por la sala y golpea), 'audio/archivo.mp3' o '' (silencio).
     // audio opcional: 'audio/archivo.mp3' subido al repositorio (por ejemplo, una voz en off grabada).
     avisos: [
-      { icono: '📵', texto: 'Por favor, apaguen sus celulares', sub: 'La función está por comenzar' },
-      { icono: '🤫', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe' },
-      { icono: '🖊️', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan' },
-      { icono: '🚪', texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final' },
+      // icono: 'celular', 'silencio', 'marcador', 'salida', 'sonido', 'reloj' o 'estrella'
+      { icono: 'celular',  texto: 'Por favor, apaguen sus celulares', sub: 'La función está por comenzar' },
+      { icono: 'silencio', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe' },
+      { icono: 'marcador', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan' },
+      { icono: 'salida',   texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final' },
       // Prueba de sonido para la barra: unos 5 s de sonido que crece y gira, golpe grave, destello del techo y aparece el texto.
       // subida: ms hasta el golpe · luz: false para que el techo no destelle
       { texto: 'Bioingeniería Surround', sub: 'Esta sala cuenta con sonido envolvente 7.1', sonido: 'envolvente', subida: 4800 },
@@ -78,7 +79,7 @@ window.TRIVIA = {
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
     anfitrionVoz: { id: 'q9C_euAFpW8', nombre: 'Voz: Damas y caballeros', inicio: 0 },   // suena antes de tu tema; el tema entra cuando termina
                   // opcionales: fin: segundo en que se corta la voz · solape: segundos que se pisan voz y tema (0.3)
-    anfitrion:    { id: 'Jt0qUO4pqWQ', nombre: 'I Gotta Feeling (Live, Stade de France)', inicio: 0 },   // tu entrada
+    anfitrion:    { id: 'p3l7fgvrEKM', nombre: 'Freed from Desire (Gala)', inicio: 0 },   // tu entrada (antes: I Gotta Feeling Jt0qUO4pqWQ)
     redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
     respuesta:    { id: '',            nombre: 'A definir: golpe de respuesta' },      // al revelar; después pasa a "datos"
 
@@ -247,7 +248,7 @@ window.TRIVIA = {
     golpeAuto: 0,   // ms: si es mayor que 0, el golpe de entrada sale solo a ese tiempo (si no lo tocás antes)
     // Ritmo del tema para que la tele destelle en el bombo. Lo más fácil: calibrarlo en el ensayo desde el celu (🥁 Calibrar).
     // fase: segundo del video en que cae un golpe (lo da la calibración). Sin fase, el compás arranca cuando tocás el golpe.
-    ritmo: { bpm: 128, fase: null },
+    ritmo: { bpm: 129, fase: null },
     // Después del golpe: juegos de luces de 4 compases cada uno, en este orden (se repiten ~1 minuto)
     frases: ['fiestaHost', 'contraluz', 'fiestaDorada', 'barrido'],
   },
