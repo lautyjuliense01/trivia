@@ -55,11 +55,11 @@ window.TRIVIA = {
      y un botón para deshacer: si lo tocás, se frena toda la secuencia y seguís a mano.
      en: segundo de la pista · resta: segundos antes del final · fin: cuando termina la pista */
   previa: {
-    resumen: 'Luz de sala y Hold the Line al 50 → al 1:30, pantalla hipnótica → a 1 min del final, luz ambiente y volumen subiendo hasta 100 → al terminar, arranca la apertura.',
-    inicio: { luz: 'sala', pista: 'pista0', volumen: 50, pantalla: 'apagado' },
+    resumen: 'Luz de sala y Hold the Line al 20 → al 1:30, pantalla hipnótica → a 1 min del final, luz ambiente y volumen subiendo hasta 70 → al terminar, arranca la apertura.',
+    inicio: { luz: 'sala', pista: 'pista0', volumen: 20, pantalla: 'apagado' },
     pasos: [
       { en: 90, pantalla: 'hipnotico', aviso: 'Pantalla hipnótica' },
-      { resta: 60, luz: 'ambiente', volumen: 100, rampa: true, aviso: 'Luz ambiente y volumen subiendo hasta 100' },
+      { resta: 60, luz: 'ambiente', volumen: 70, rampa: true, aviso: 'Luz ambiente y volumen subiendo hasta 70' },
       { fin: true, siguiente: true, aviso: 'Arranca la apertura de cine' },
     ],
     avisoSeg: 8,             // segundos de aviso antes de cada paso
@@ -193,7 +193,7 @@ window.TRIVIA = {
     // presentador: lo arma la app según tus textos (oscuro → latido → latido rápido en "con ustedes…")
     // presentadorGolpe: lo arma la app: 2 compases de estrobo y después frases de 4 compases que van cambiando
     //   (las frases se eligen en presentador.frases), con un compás de estrobo cada 8
-    reglas: 'sala',
+    reglas: 'calido',        // cálido y tenue; cada regla que se da vuelta tira un pulso de luz
     ronda: 'sala',
     // { fade: look, de, a, ms }: la luz se va apagando suave (una sola orden, la lámpara hace el fundido; máx. 10 s)
     pregunta: { fade: 'azul', de: 36, a: 12, ms: 10000 },
@@ -255,10 +255,13 @@ window.TRIVIA = {
 
   /* ---------- Reglas ----------
      La primera línea (cuántas preguntas hay de cada tipo) la arma la app sola. */
+  // Se muestran como tarjetas que se dan vuelta de a una (un toque por regla). La primera (rondas y preguntas) la arma la app.
+  // icono: 'marcador', 'estrella', 'diana', 'corona', 'reloj', 'silencio', 'celular', 'salida', 'sonido', 'rondas', 'regalo'
   reglas: [
-    'Cada uno responde en su pizarra.',
-    'En opción múltiple y ¿Quién dijo?, suma un punto cada uno que acierte.',
-    'En aproximación, el punto es para el que quede más cerca. Si empatan, suman todos los empatados.',
+    { icono: 'marcador', titulo: 'En la pizarra', texto: 'Cada uno escribe su respuesta. Nada de soplar.' },
+    { icono: 'estrella', titulo: 'Un punto', texto: 'En opción múltiple y ¿Quién dijo?, suma cada uno que acierte.' },
+    { icono: 'diana',    titulo: 'El más cerca', texto: 'En aproximación gana el punto quien quede más cerca. Si empatan, suman todos.' },
+    { icono: 'corona',   titulo: 'La corona', texto: 'Si al final hay empate, una pregunta de desempate define al ganador.' },
   ],
 
   /* ---------- Rondas y preguntas ----------
