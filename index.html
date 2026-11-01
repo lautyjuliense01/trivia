@@ -567,10 +567,16 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .av-div::after{content:"◆";position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);font-size:9px;color:#f0cf7e;background:#0f0402;padding:0 8px}
 .av-s{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:clamp(20px,2.3vw,36px);color:#ecdcbc;text-align:center}
 /* v33: logo de la trivia en la entrada del presentador */
-.show-logo{position:relative;display:flex;flex-direction:column;align-items:center}
+.show-logo{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;padding:clamp(26px,5vh,54px) clamp(60px,9vw,150px) clamp(24px,4.6vh,50px)}
+.sl-frame{position:absolute;inset:0;width:100%;height:100%;z-index:-1;filter:drop-shadow(0 20px 50px rgba(0,0,0,.6)) drop-shadow(0 0 30px rgba(255,190,90,.18))}
+.sl-art{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.5em;padding-left:.5em;text-transform:uppercase;font-size:clamp(20px,2.6vw,44px);color:#f0cf7e;margin-top:.3em;opacity:0}
+.v-host.golpe .sl-art{animation:fadeIn .6s .2s both}
+.show-logo.static .sl-top,.show-logo.static .sl-art,.show-logo.static .sl-title,.show-logo.static .sl-sub{opacity:1}
+.show-logo.static .sl-rule{transform:none}
+.intro-title .show-logo .sl-title{font-size:clamp(70px,10.5vw,190px)}
 .sl-top{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.55em;padding-left:.55em;text-transform:uppercase;color:#e8d3a6;font-size:clamp(16px,1.9vw,30px);display:flex;align-items:center;gap:.8em;opacity:0}
 .sl-top span{font-size:.5em;color:#f0cf7e;letter-spacing:0}
-.sl-title{font-family:'Cinzel',serif;font-weight:900;text-transform:uppercase;line-height:.9;letter-spacing:.05em;font-size:clamp(90px,13.5vw,240px);margin:.12em 0 .08em;
+.sl-title{font-family:'Cinzel',serif;font-weight:900;text-transform:uppercase;line-height:.92;letter-spacing:.05em;font-size:clamp(80px,11.5vw,210px);margin:.08em 0 .08em;
   background:linear-gradient(180deg,#ffffff 0%,#fff0c8 30%,#e8bd62 55%,#a8761f 72%,#f6dc93 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 3px 0 rgba(70,35,0,.7)) drop-shadow(0 0 40px rgba(255,190,90,.45));opacity:0}
 .sl-rule{width:min(560px,60vw);height:2px;background:linear-gradient(90deg,transparent,rgba(243,210,130,.9),transparent);transform:scaleX(0)}
@@ -956,7 +962,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v33 · 01/11 15:42';
+const VERSION = 'v34 · 01/11 15:58';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1585,6 +1591,7 @@ const AV_ICONS = {
   rondas: '<rect x="15" y="5" width="23" height="29" rx="2"/><path d="M11 10v26a2 2 0 0 0 2 2h21"/><path d="M7 15v26a2 2 0 0 0 2 2h21"/>',
   diana: '<circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="10"/><circle cx="24" cy="24" r="3"/><path d="M34 14l8-8M37 6h5v5"/>',
   corona: '<path d="M8 35L6 15l10 8 8-14 8 14 10-8-2 20z"/><path d="M9 41h30"/>',
+  ticket: '<path d="M5 14h38v6a4 4 0 0 0 0 8v6H5v-6a4 4 0 0 0 0-8z"/><path d="M31 15v18" stroke-dasharray="2 3"/><path d="M11 21h13M11 27h9"/>',
   regalo: '<rect x="7" y="17" width="34" height="8"/><path d="M10 25v17h28V25"/><path d="M24 17v25"/><path d="M24 17c-3-6-12-8-12-2s9 2 12 2zM24 17c3-6 12-8 12-2s-9 2-12 2z"/>',
 };
 const AV_EMOJI = { '📵': 'celular', '🤫': 'silencio', '🖊️': 'marcador', '🖊': 'marcador', '🚪': 'salida', '🔊': 'sonido' };
@@ -1887,6 +1894,21 @@ function rulesCards() {
   return [first, ...(D.reglas || []).map(r => typeof r === 'string' ? { texto: r } : r)];
 }
 function rulesList() { return rulesCards().map(r => (r.titulo ? r.titulo + ': ' : '') + r.texto); }
+/* Logo del show (marco de ticket dorado). El artículo inicial ("El", "La"…) va chico arriba */
+const PREMIO = D.premio || 'el ticket dorado';
+const deTitulo = () => /^el\s/i.test(D.titulo) ? 'del ' + D.titulo.replace(/^el\s+/i, '') : 'de ' + D.titulo;
+function showLogoHTML(arriba, cls = '') {
+  const w = D.titulo.trim().split(/\s+/), art = /^(el|la|los|las)$/i.test(w[0]) && w.length > 1 ? w.shift() : '';
+  return `<div class="show-logo ${cls}">
+    <svg class="sl-frame" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="slg-${cls || 'a'}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2c4"/><stop offset=".5" stop-color="#d9a94a"/><stop offset="1" stop-color="#8a5f1a"/></linearGradient></defs>
+      <path d="M40 10H960a30 30 0 0 0 30 30V250a50 50 0 0 0 0 100V560a30 30 0 0 0-30 30H40a30 30 0 0 0-30-30V350a50 50 0 0 0 0-100V40A30 30 0 0 0 40 10z" fill="rgba(14,4,2,.72)" stroke="url(#slg-${cls || 'a'})" stroke-width="3" vector-effect="non-scaling-stroke"/>
+      <path d="M58 30H942a22 22 0 0 0 22 22V262a38 38 0 0 0 0 76V548a22 22 0 0 0-22 22H58a22 22 0 0 0-22-22V338a38 38 0 0 0 0-76V52A22 22 0 0 0 58 30z" fill="none" stroke="url(#slg-${cls || 'a'})" stroke-width="1" stroke-opacity=".6" vector-effect="non-scaling-stroke"/></svg>
+    ${arriba ? `<div class="sl-top"><span>◆</span>${esc(arriba)}<span>◆</span></div>` : ''}
+    ${art ? `<div class="sl-art">${esc(art)}</div>` : ''}
+    <div class="sl-title">${w.map(esc).join('<br>')}</div>
+    <div class="sl-rule"></div>
+    <div class="sl-sub">${esc(D.edicion)}</div></div>`;
+}
 function winnerWord(top) {
   if (top.length !== 1) return '¡Empate en la cima!';
   return P[top[0]].genero === 'f' ? '¡Tenemos ganadora!' : '¡Tenemos ganador!';
@@ -2518,7 +2540,7 @@ function initScreen() {
       case 'intro':
         beams.setup('fox'); beams.over(true); beams.clearPools(); beams.level(0);
         later(600, () => { beams.level(1); beams.play('fox'); });
-        later(T_TITULO + 100, () => { const m = sq('.intro-title .marquee'); beams.aimEls([m], { ms: 700, spread: true }); beams.pools([m], true); });
+        later(T_TITULO + 100, () => { const m = sq('.intro-title .show-logo'); beams.aimEls([m], { ms: 700, spread: true }); beams.pools([m], true); });
         later(T_TITULO + 3700, () => beams.over(false));
         break;
       case 'presentacion':
@@ -2739,8 +2761,7 @@ function initScreen() {
       const yr = (D.edicion.match(/\d{4}/) || [''])[0];
       h = `<div class="intro-black"></div><div class="intro-stage"></div>
            <div class="intro-curtain l"></div><div class="intro-curtain r"></div><div class="intro-valance"></div>
-           <div class="v"><div class="intro-title"><div class="marquee" style="display:inline-block"><div class="edition">${ed}</div><h1 class="script">${esc(D.titulo)}</h1></div></div>
-           <div class="intro-year">${yr}</div></div>`;
+           <div class="v"><div class="intro-title">${showLogoHTML('', 'static')}</div></div>`;
       stage.style.setProperty('--tNegro', T_NEGRO + 'ms'); stage.style.setProperty('--tTelon', T_TELON + 'ms');
       stage.style.setProperty('--tTitulo', T_TITULO + 'ms'); stage.style.setProperty('--tAnio', T_ANIO + 'ms');
       introTimer = setTimeout(() => { bulbify(); confetti(); }, T_TITULO + 800);
@@ -2763,11 +2784,7 @@ function initScreen() {
       h = `<div class="v v-host" id="vhost">
           <div class="host-wait">${t.map((x, i) => { const len = Math.max(8, x.texto.length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2), last = i === t.length - 1;
             return `<div class="hw ${last ? 'last' : ''} ${two ? 'two' : ''}" style="--fs:${fs}vw"><div class="hw-flare"></div><span>${esc(x.texto)}</span></div>`; }).join('')}</div>
-          ${(p.revelar || 'logo') === 'logo' ? `<div class="host-reveal"><div class="show-logo">
-            <div class="sl-top"><span>◆</span>${esc(p.logoArriba || 'Segunda edición')}<span>◆</span></div>
-            <div class="sl-title">${esc(D.titulo).split(/\s+/).join('<br>')}</div>
-            <div class="sl-rule"></div>
-            <div class="sl-sub">${esc(D.edicion)}</div></div></div>` : `<div class="host-reveal">
+          ${(p.revelar || 'logo') === 'logo' ? `<div class="host-reveal">${showLogoHTML(p.logoArriba || 'Segunda edición', 'host')}</div>` : `<div class="host-reveal">
             <div class="host-tag">Su anfitrión</div>
             <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo host">${photoHTML(p)}</div></div>
             <div><h2 class="script pl-name host-name">${esc(p.nombre)}</h2><div class="pl-chips">${chips}</div>${p.frase ? `<p class="pl-frase">“${esc(p.frase)}”</p>` : ''}</div></div>
@@ -2781,13 +2798,13 @@ function initScreen() {
     } else if (sl.k === 'contendientes') {
       h = `<div class="v v-cont"><div class="cont-title">Los contendientes</div>
         <div class="cont-row">${P.map((p, i) => `<div class="cont-card" style="animation-delay:${0.25 + i * 0.4}s"><div class="pl-photo">${photoHTML(p)}</div><div class="script">${esc(p.nombre)}</div></div>`).join('')}</div>
-        <div class="cont-sub" style="animation-delay:${0.6 + P.length * 0.4}s">¿Quién se llevará la corona?</div></div>`;
+        <div class="cont-sub" style="animation-delay:${0.6 + P.length * 0.4}s">¿Quién se llevará ${esc(PREMIO)}?</div></div>`;
     } else if (sl.k === 'cuenta') {
       const cg = countdownGroups(st.results || {});
       const shownPlayers = new Set(cg.flatMap(g => g.players));
       const hidden = P.length - shownPlayers.size;
       const rows = [];
-      for (let k = 0; k < hidden; k++) rows.push(`<div class="cd-row hid"><span class="cd-pos">?</span><span class="cd-av"><span class="ini q">?</span></span><span class="cd-name">???</span><span class="cd-pts">${avIconHTML('corona')}</span></div>`);
+      for (let k = 0; k < hidden; k++) rows.push(`<div class="cd-row hid"><span class="cd-pos">?</span><span class="cd-av"><span class="ini q">?</span></span><span class="cd-name">???</span><span class="cd-pts">${avIconHTML('ticket')}</span></div>`);
       [...cg].reverse().forEach(g => g.players.forEach(pi => rows.push(`<div class="cd-row" data-g="${g.pos}"><span class="cd-pos">${g.pos}°</span><span class="cd-av">${photoHTML(P[pi])}</span><span class="cd-name">${esc(P[pi].nombre)}</span><span class="cd-pts">${g.score} ${g.score === 1 ? 'pt' : 'pts'}</span></div>`)));
       h = `<div class="v v-cd enter"><h2 class="script">La cuenta final</h2><div class="round-sub" style="margin-top:4px">Del último al primero</div><div class="cd-banner" id="cd-banner"></div><div class="cd-list">${rows.join('')}</div></div>`;
     } else if (sl.k === 'reglas') {
@@ -2806,7 +2823,7 @@ function initScreen() {
     } else if (sl.k === 'marcador') {
       const final = sl.r === D.rondas.length - 1;
       h = `<div class="v v-score enter"><h2 class="script">${final ? 'Marcador final' : 'Marcador'}</h2>
-           <div class="round-sub" style="margin-top:6px">${final ? '¿Quién se lleva la corona?' : 'Después de la ronda ' + (sl.r + 1)}</div>
+           <div class="round-sub" style="margin-top:6px">${final ? '¿Quién se lleva ' + esc(PREMIO) + '?' : 'Después de la ronda ' + (sl.r + 1)}</div>
            <div class="bars">${scoreRowsHTML(st.results || {})}</div></div>`;
     } else if (sl.k === 'premios') {
       const groups = rankGroups(st.results || {});
@@ -2925,11 +2942,11 @@ function initScreen() {
 
   function winnerHTML(st) {
     const s = standing(st.results || {});
-    const names = s.top.map(i => `<div class="win-card">${s.decided ? `<div class="win-crown">${avIconHTML('corona')}</div>` : ''}<div class="pl-photo">${photoHTML(P[i])}</div><h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
+    const names = s.top.map(i => `<div class="win-card">${s.decided ? `<div class="win-crown">${avIconHTML('ticket')}</div>` : ''}<div class="pl-photo">${photoHTML(P[i])}</div><h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
     const extra = s.decided ? `${s.max} ${s.max === 1 ? 'punto' : 'puntos'}${s.byTie ? ' · ganó el desempate' : ''}` : `${s.max} ${s.max === 1 ? 'punto' : 'puntos'} cada uno · ¡Vamos al desempate!`;
     const medal = { 2: '🥈', 3: '🥉' };
     const rest = s.decided ? finalRanking(st.results || {}).filter(g => g.pos > 1).flatMap(g => g.players.map(i => `<span class="${g.pos <= 3 ? 'pod' : ''}">${medal[g.pos] || ''} ${g.pos}° ${esc(P[i].nombre)} · ${g.score} ${g.score === 1 ? 'pt' : 'pts'}</span>`)).join('') : '';
-    const sub = s.decided ? `<div class="win-sub">${P[s.top[0]].genero === 'f' ? 'Ganadora' : 'Ganador'} de ${esc(D.titulo)} · ${esc((D.edicion.match(/\d{4}/) || [''])[0])}</div>` : '';
+    const sub = s.decided ? `<div class="win-sub">${P[s.top[0]].genero === 'f' ? 'Ganadora' : 'Ganador'} ${esc(deTitulo())} · ${esc((D.edicion.match(/\d{4}/) || [''])[0])}</div>` : '';
     return `<div class="v"><div class="win-pre">${winnerWord(s.top)}</div><div class="win-names ${s.top.length > 1 ? 'multi' : ''}">${names}</div>${sub}<div class="win-pts">${extra}</div>${rest ? `<div class="win-rest">${rest}</div>` : ''}</div>`;
   }
 
@@ -2964,7 +2981,7 @@ function initScreen() {
       if (changed || st.step !== cur.step || JSON.stringify(st.results) !== JSON.stringify(cur.results)) {
         clearInterval(confettiLoop);
         if (st.step === 'redoble') {
-          box.innerHTML = `<div class="v"><div class="win-crown big">${avIconHTML('corona')}</div><div class="win-pre">Y la corona de ${esc(D.titulo)} es para…</div></div>`;
+          box.innerHTML = `<div class="v"><div class="win-crown big">${avIconHTML('ticket')}</div><div class="win-pre">Y ${esc(PREMIO)} es para…</div></div>`;
         } else {
           box.innerHTML = winnerHTML(st);
           fixPhotos(box);

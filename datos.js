@@ -7,7 +7,8 @@
    ===================================================================== */
 
 window.TRIVIA = {
-  titulo: 'Trivia Night',
+  titulo: 'El Ticket Dorado',
+  premio: 'el ticket dorado',     // lo que se lleva el ganador ("¿Quién se llevará el ticket dorado?")
   edicion: 'Edición Bioingeniería 2026',
 
   /* ---------- Apertura de cine ----------
@@ -273,12 +274,12 @@ window.TRIVIA = {
   /* ---------- Reglas ----------
      La primera línea (cuántas preguntas hay de cada tipo) la arma la app sola. */
   // Se muestran como tarjetas que se dan vuelta de a una (un toque por regla). La primera (rondas y preguntas) la arma la app.
-  // icono: 'marcador', 'estrella', 'diana', 'corona', 'reloj', 'silencio', 'celular', 'salida', 'sonido', 'rondas', 'regalo'
+  // icono: 'marcador', 'estrella', 'diana', 'ticket', 'corona', 'reloj', 'silencio', 'celular', 'salida', 'sonido', 'rondas', 'regalo'
   reglas: [
     { icono: 'marcador', titulo: 'En la pizarra', texto: 'Cada uno escribe su respuesta. Nada de soplar.' },
     { icono: 'estrella', titulo: 'Un punto', texto: 'En opción múltiple y ¿Quién dijo?, suma cada uno que acierte.' },
     { icono: 'diana',    titulo: 'El más cerca', texto: 'En aproximación gana el punto quien quede más cerca. Si empatan, suman todos.' },
-    { icono: 'corona',   titulo: 'La corona', texto: 'Si al final hay empate, una pregunta de desempate define al ganador.' },
+    { icono: 'ticket',   titulo: 'Desempate', texto: 'Si al final hay empate, una pregunta más define quién se lleva el ticket dorado.' },
   ],
 
   /* ---------- Rondas y preguntas ----------
