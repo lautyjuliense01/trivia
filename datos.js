@@ -37,11 +37,11 @@ window.TRIVIA = {
     graves: true,           // cada aviso entra con un golpe grave de cine (false = avisos en silencio)
     volGraves: 1,           // volumen de los graves (0 a 1.5)
     // Avisos de sala antes de los créditos. ms opcional; si no, se calcula por el largo del texto.
-    // sonido (opcional): 'grave' (el de siempre), 'envolvente' (crece, gira por la sala y golpea), 'shh' (el "shhh" de la sala), 'audio/archivo.mp3' o '' (silencio).
+    // sonido (opcional): 'grave' (el de siempre), 'envolvente' (crece, gira por la sala y golpea), 'audio/archivo.mp3' o '' (silencio).
     // audio opcional: 'audio/archivo.mp3' subido al repositorio (por ejemplo, una voz en off grabada).
     avisos: [
       // icono: 'shh', 'celular', 'silencio', 'marcador', 'salida', 'sonido', 'reloj' o 'estrella'
-      { icono: 'shh',      texto: 'Silencio, por favor', sub: 'Se apagan las luces de la sala', sonido: 'shh' },
+      { icono: 'shh',      texto: 'Silencio, por favor', sub: 'Se apagan las luces de la sala', sonido: '' },   // sin sonido
       { icono: 'celular',  texto: 'Por favor, apaguen sus celulares', sub: 'La función está por comenzar' },
       { icono: 'silencio', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe' },
       { icono: 'marcador', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan' },
@@ -73,6 +73,12 @@ window.TRIVIA = {
     hastaGolpe: true,        // al terminar la previa sigue sola: apertura, fanfarria, tu entrada y el golpe (false = se frena en la apertura)
   },
 
+  /* ---------- Cortometraje antes de la película (como Pixar) ----------
+     Va después de los avisos de sala ("Bioingeniería Surround") y antes de la intro de estudio.
+     A pantalla completa, sin controles; cuando termina sigue sola. Vacío el id = no hay corto.
+     inicio / fin: segundos para recortarlo (fin sirve para cortar antes de la pantalla final de YouTube) · volumen: 0 a 1 */
+  corto: { id: 'QBx00CEmQeE', nombre: 'Cortometraje', inicio: 0, fin: null, volumen: 1 },
+
   /* ---------- Música (ID del video de YouTube / YouTube Music) ----------
      El ID es lo que va después de "watch?v=" en el link.
      "inicio" = segundo desde el que arranca (opcional). */
@@ -82,7 +88,8 @@ window.TRIVIA = {
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
     pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions', bucle: [7, 35], revela: 49 },
-                  // bucle: [desde, hasta] → al llegar a "hasta" vuelve a "desde", así la pregunta dura lo que haga falta (acepta decimales: 35.2)
+                  // bucle: [desde, hasta] → al llegar a "hasta" vuelve a "desde", así la pregunta dura lo que haga falta (acepta decimales: 35.2).
+                  //   Se afina en el celu, en la pregunta (🔁 Bucle del tema), y después se copia acá.
                   // revela: al tocar Revelar sale del bucle y la respuesta aparece justo en ese segundo; después el tema sigue hasta el final y pasa a "datos"
                   // tension: (opcional) segundo en que la luz pasa a tensión; si no está, al final del bucle
     final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate

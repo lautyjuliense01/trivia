@@ -434,6 +434,10 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 #seq-toast{position:sticky;top:6px;z-index:30;margin-bottom:12px;padding:12px 14px;border-radius:16px;background:rgba(40,8,8,.96);border:2px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.6)}
 #seq-msg,#rev-msg{font-weight:800;font-size:16px}
 .mk-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.bq{margin-top:12px;padding:8px 10px;border:1px solid rgba(232,211,166,.25);border-radius:12px}.bq summary{cursor:pointer;font-weight:700;font-size:14px}
+.bq-row{margin-top:10px}.bq-l{font-size:13px;margin-bottom:4px}
+.bq-btns{display:flex;gap:6px;align-items:center}.bq-btns .pbtn{flex:1;min-width:0;padding:8px 4px;font-size:14px}
+.bq-v{flex:0 0 62px;text-align:center;font-variant-numeric:tabular-nums;font-size:17px}
 #mk-tap.hit{transform:scale(.97);filter:brightness(1.25)}
 .lk-g{margin:12px 0 6px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#cdb98f}
 .lk-list{display:flex;flex-direction:column;gap:6px}
@@ -443,7 +447,7 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .lk span{display:flex;flex-direction:column;gap:2px;min-width:0}
 .lk b{font-size:15px}
 .lk small{font-size:12.5px;color:#bfae8a;line-height:1.3}
-.lk-auto{margin-top:12px}.lk-auto summary{font-size:13px;color:#cdb98f;cursor:pointer;margin-bottom:6px}
+
 #rev-toast{position:sticky;top:6px;z-index:30;margin-bottom:12px;padding:12px 14px;border-radius:16px;background:rgba(30,18,4,.96);border:2px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.6)}
 #rev-toast[hidden]{display:none}
 #rev-bar{transition:width .2s linear}
@@ -809,6 +813,11 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 /* v26: calibración del ritmo */
 #calib{position:fixed;left:50%;bottom:6vh;transform:translateX(-50%);z-index:40;display:flex;align-items:center;gap:22px;padding:18px 28px;background:rgba(8,4,2,.86);border:1px solid rgba(233,196,106,.55);border-radius:6px;max-width:min(900px,92vw);text-align:left}
 #calib[hidden]{display:none}
+.yt-apoyo{position:fixed;left:-4000px;top:0;width:240px;height:200px;overflow:hidden;opacity:0;pointer-events:none}
+#corto{position:fixed;inset:0;z-index:2147483000;background:#000;opacity:0;pointer-events:none;transition:opacity .7s ease;overflow:hidden}
+#corto.on{opacity:1;pointer-events:auto;cursor:none}
+#corto iframe{position:absolute;left:0;top:-14vh;width:100vw;height:128vh;border:0;pointer-events:none}
+.corto-shield{position:absolute;inset:0;cursor:none}
 #marcar{position:fixed;left:50%;bottom:3vh;transform:translateX(-50%);z-index:40;display:flex;align-items:center;gap:22px;padding:18px 28px;background:rgba(8,4,2,.96);border:1px solid rgba(233,196,106,.55);border-radius:6px;max-width:min(900px,92vw);text-align:left}
 #marcar[hidden]{display:none}
 #mk-dot{transition:transform .15s}#mk-dot.pop{transform:scale(1.35)}
@@ -987,8 +996,7 @@ body{background:
     <label class="muted" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="ajuste-tele" checked> Mostrarlo en la tele (+1 · nombre)</label>
   </details>
   <details class="card" id="pistas-card">
-    <summary>🎵 Pistas y efectos a mano</summary>
-    <div class="row" style="margin:6px 0 10px"><button class="btn small" id="fx-flash-tele">⚡ Flash de pantalla</button><button class="btn ghost small" id="fx-flash-unico">💡 Flash pantalla + techo</button></div>
+    <summary>🎵 Pistas a mano</summary>
     <p class="muted" style="margin:6px 0">Suena en la tele hasta que pases a otra pantalla o toques Automático.</p>
     <div class="players" id="pistas"></div>
     <div class="row" style="margin-top:8px"><button class="btn ghost small" id="pista-auto">↩ Automático</button><button class="btn ghost small" id="pista-stop">⏹ Silencio</button></div>
@@ -1038,8 +1046,11 @@ body{background:
   </details>
 
   <details class="card">
-    <summary>Luces</summary>
+    <summary>💡 Luces</summary>
     <div style="margin-top:10px">
+      <div class="muted">Tocá un combo: hace todo junto (techo, tira y tele) como en el show.</div>
+      <div id="ty-looks" style="margin-top:8px"></div>
+      <details style="margin-top:16px"><summary>⚙️ Conexión y demoras</summary><div style="margin-top:10px">
       <h2>Tuya directo</h2>
       <input type="text" id="ty-url" placeholder="Dirección del intermediario (https://…workers.dev)" autocomplete="off" style="width:100%;margin-bottom:8px">
       <div class="row">
@@ -1059,8 +1070,7 @@ body{background:
         <label class="muted" for="ty-lamps">Lámparas que se usan</label>
         <select id="ty-lamps" style="flex:0 0 auto"></select>
       </div>
-      <div class="muted" style="margin-top:12px">Luces a mano (tocá para ponerla en las lámparas y la tele):</div>
-      <div id="ty-looks" style="margin-top:6px"></div>
+      </div></details>
       <details style="margin-top:14px"><summary>Respaldo SmartThings (si Tuya falla)</summary><div style="margin-top:10px">
     <div class="row">
       <input type="password" id="st-token" placeholder="Token personal de SmartThings" autocomplete="off">
@@ -1113,7 +1123,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v41 · 01/11 20:16';
+const VERSION = 'v42 · 01/11 21:35';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1284,8 +1294,11 @@ const YT_ERRORS = {
 
 
 let musicVol = VOLUME;
-function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded) {
-  let rampOn = false, loopOn = false, tRaw = -1, tAt = 0;
+function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApoyoBucle = false) {
+  let rampOn = false, loopOn = false;
+  // Bucle sin corte: un segundo reproductor (mudo) arranca unos segundos antes en el punto de vuelta, se sincroniza y en el salto se intercambian
+  let shadow = null, shadowReady = false, swap = null, swapFail = false;
+  const raw = new WeakMap();
   const lv = () => Math.round(musicVol * ((current && tracks[current] && tracks[current].vol != null) ? tracks[current].vol : 1));   // volumen del show × el del tema
   let player = null, ready = false, current = null, fadeTimer = null, needsFadeIn = false, muteCheck = null;
   const S = () => (window.YT && YT.PlayerState) || { PLAYING: 1, ENDED: 0 };
@@ -1301,31 +1314,48 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded) {
           log('Reproductor de YouTube listo', 'o');
         },
         onError: e => {
+          if (e.target && e.target !== player) { swapFail = true; swap = null; return; }   // falló el reproductor de apoyo: el bucle usa el salto común
           const t = current ? tracks[current].name : '?';
           log(`YouTube no reproduce «${t}»: ${YT_ERRORS[e.data] || 'error ' + e.data}`, 'e');
           onLabel && onLabel(`⚠️ ${t}: no se puede reproducir`);
         },
-        onStateChange: e => {
-          if (e.data === S().ENDED && current) {
-            if (tracks[current].loop === false) { const k = current; current = null; onLabel && onLabel('Música: —'); if (onEnded) { try { onEnded(k); } catch {} } }
-            else { player.seekTo(tracks[current].start || 0, true); player.playVideo(); }
-          }
-          if (e.data === S().PLAYING && current) {
-            onLabel && onLabel('♪ ' + tracks[current].name);
-            if (window.__onTrackPlaying) { try { window.__onTrackPlaying(current); } catch {} }
-            if (needsFadeIn) {
-              // El volumen se ajusta recién cuando el video ya suena: antes YouTube lo ignora.
-              needsFadeIn = false;
-              try { player.unMute(); } catch {}
-              fadeTo(lv(), 900, 0);
-              clearTimeout(muteCheck);
-              muteCheck = setTimeout(checkAudible, 1200);
-            }
-          }
-        },
+        onStateChange: e => stateHandler(e),
       },
     });
+    if (conApoyoBucle && Object.values(tracks).some(t => t.bucle)) {
+      const box = document.createElement('div'); box.className = 'yt-apoyo'; box.innerHTML = `<div id="${containerId}-b"></div>`;
+      document.body.appendChild(box);
+      shadow = new YT.Player(containerId + '-b', {
+        width: 240, height: 200,
+        playerVars: { playsinline: 1, controls: 0, rel: 0, fs: 0, iv_load_policy: 3 },
+        events: {
+          onReady: () => { shadowReady = true; try { shadow.unMute(); shadow.setVolume(0); } catch {} },
+          onError: e => { if (e.target === player) return; swapFail = true; swap = null; },
+          onStateChange: e => stateHandler(e),
+        },
+      });
+    }
   }).catch(err => log(err.message, 'e'));
+  // eventos del reproductor principal (después de un intercambio del bucle, puede ser cualquiera de los dos)
+  function stateHandler(e) {
+    if (e.target && player && e.target !== player) return;   // el reproductor de apoyo del bucle no manda
+    if (e.data === S().ENDED && current) {
+      if (tracks[current].loop === false) { const k = current; current = null; onLabel && onLabel('Música: —'); if (onEnded) { try { onEnded(k); } catch {} } }
+      else { player.seekTo(tracks[current].start || 0, true); player.playVideo(); }
+    }
+    if (e.data === S().PLAYING && current) {
+      onLabel && onLabel('♪ ' + tracks[current].name);
+      if (window.__onTrackPlaying) { try { window.__onTrackPlaying(current); } catch {} }
+      if (needsFadeIn) {
+        // El volumen se ajusta recién cuando el video ya suena: antes YouTube lo ignora.
+        needsFadeIn = false;
+        try { player.unMute(); } catch {}
+        fadeTo(lv(), 900, 0);
+        clearTimeout(muteCheck);
+        muteCheck = setTimeout(checkAudible, 1200);
+      }
+    }
+  }
 
   function checkAudible() {
     if (!ready || !current) return;
@@ -1366,7 +1396,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded) {
     if (!tr) return;
     if (current === key && player.getPlayerState() === S().PLAYING && !opts.restart) return;
     if (player.getPlayerState() === S().PLAYING && !opts.instant) await fadeTo(0, 600);
-    current = key; loopOn = !!tr.bucle; tRaw = -1;
+    current = key; loopOn = !!tr.bucle; swapStop();
     needsFadeIn = !opts.instant;
     if (opts.instant) { clearInterval(fadeTimer); try { player.unMute(); player.setVolume(lv()); } catch {} }
     if (cued === key && opts.from == null) { cued = null; try { player.playVideo(); } catch {} }
@@ -1387,6 +1417,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded) {
   // Llamar SIEMPRE desde un toque del usuario: es lo que habilita el audio.
   function enableSound(playIfIdle = true) {
     if (!ready) return false;
+    try { if (shadow && shadowReady) { shadow.unMute(); shadow.setVolume(0); } } catch {}
     try {
       clearInterval(fadeTimer);
       player.unMute();
@@ -1411,25 +1442,62 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded) {
     return { key: current, name: tracks[current].name, t, d, loop: tracks[current].loop !== false };
   }
   /* Bucle dentro del tema (ej.: del 35 vuelve al 7) para que una pregunta dure lo que haga falta.
-     pos() estima el segundo exacto: YouTube actualiza la posición de a saltos, acá se interpola. */
-  function pos() {
-    if (!ready || !current) return null;
+     posOf() estima el segundo exacto: YouTube actualiza la posición de a saltos, acá se interpola. */
+  function posOf(p) {
+    if (!p) return null;
     let t = 0, playing = false;
-    try { t = player.getCurrentTime() || 0; playing = player.getPlayerState() === S().PLAYING; } catch {}
-    const p = performance.now();
-    if (t !== tRaw) { tRaw = t; tAt = p; return t; }
-    return playing ? t + Math.min(0.6, (p - tAt) / 1000) : t;
+    try { t = p.getCurrentTime() || 0; playing = p.getPlayerState() === S().PLAYING; } catch {}
+    const now = performance.now(), r = raw.get(p);
+    if (!r || r.t !== t) { raw.set(p, { t, at: now }); return t; }
+    return playing ? t + Math.min(0.6, (now - r.at) / 1000) : t;
+  }
+  function pos() { return ready && current ? posOf(player) : null; }
+  function swapStop() {
+    if (swap && shadow) { try { shadow.pauseVideo(); shadow.setVolume(0); shadow.setPlaybackRate(1); } catch {} }
+    swap = null;
+  }
+  function doSwap() {
+    const old = player;
+    try { if (swap.rate !== 1) shadow.setPlaybackRate(1); shadow.setVolume(lv()); } catch {}
+    try { old.setVolume(0); } catch {}
+    player = shadow; shadow = old; swap = null;
+    setTimeout(() => { try { if (shadow === old) { old.pauseVideo(); old.setVolume(0); } } catch {} }, 200);
   }
   setInterval(() => {
     if (!loopOn || !ready || !current) return;
     const b = tracks[current].bucle;
     if (!b) return;
-    const t = pos();
-    if (t != null && t >= b[1] - 0.02 && t < b[1] + 2) { try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); tRaw = -1; } catch {} }
-  }, 20);
-  function release() { loopOn = false; }
+    const t = posOf(player);
+    if (t == null) return;
+    const now = performance.now();
+    const conApoyo = shadow && shadowReady && !swapFail;
+    if (conApoyo && !swap && t >= b[1] - 3.2 && t < b[1] - 0.5) {
+      // prepara el reproductor de apoyo: arranca mudo en el punto de vuelta, con la misma distancia al salto
+      swap = { at: now, rate: 1, diff: 9, fixAt: now };
+      try { shadow.setVolume(0); shadow.setPlaybackRate(1); shadow.loadVideoById({ videoId: tracks[current].id, startSeconds: Math.max(0, b[0] - (b[1] - t) + 0.6) }); } catch { swap = null; swapFail = true; }
+    }
+    if (swap) {
+      let ps = -1; try { ps = shadow.getPlayerState(); } catch {}
+      if (ps === S().PLAYING) {
+        const ts = posOf(shadow), want = b[0] + (t - b[1]), diff = ts - want;   // > 0: el de apoyo va adelantado
+        swap.diff = diff;
+        const set = r => { if (swap.rate !== r) { try { shadow.setPlaybackRate(r); } catch {} swap.rate = r; } };
+        if (Math.abs(diff) > 1 && now - swap.fixAt > 900) { try { shadow.seekTo(want + 0.5, true); raw.delete(shadow); } catch {} swap.fixAt = now; set(1); }
+        else if (diff < -0.03) set(1.25);                 // atrasado: lo apura un poco (está mudo, no se nota)
+        else if (diff > 0.03) set(0.75);                  // adelantado: lo frena
+        else if (Math.abs(diff) <= 0.012) set(1);
+      }
+      if (t >= b[1] - 0.012) {
+        if (ps === S().PLAYING && Math.abs(swap.diff) < 0.08) doSwap();
+        else { swapStop(); try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); raw.delete(player); } catch {} }   // no llegó a sincronizar: salto común
+      }
+      return;
+    }
+    if (t >= b[1] - 0.02 && t < b[1] + 2) { try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); raw.delete(player); } catch {} }   // sin apoyo listo: salto común
+  }, 15);
+  function release() { loopOn = false; swapStop(); }
   function relock() { if (!current || !tracks[current].bucle) return; loopOn = true; const t = pos(), b = tracks[current].bucle; if (t != null && t >= b[1]) seek(b[0]); }
-  function seek(t) { if (!ready || !current) return; try { player.seekTo(t, true); tRaw = -1; } catch {} }
+  function seek(t) { if (!ready || !current) return; swapStop(); try { player.seekTo(t, true); raw.delete(player); } catch {} }
   function duck(k, ms) { if (!ready || !current) return; fadeTo(Math.round(lv() * k), 180).then(() => setTimeout(() => { if (current) fadeTo(lv(), 700); }, Math.max(200, ms - 180))); }
   function ramp(to, ms) { if (!ready) return; rampOn = true; musicVol = to; fadeTo(lv(), Math.max(300, ms)).then(() => { rampOn = false; }); }
   function cancelRamp() { if (!rampOn) return; clearInterval(fadeTimer); rampOn = false; try { musicVol = player.getVolume(); } catch {} }
@@ -1660,6 +1728,10 @@ const credDur = (c, i) => (c && c.ms) || (c && c.estudio ? (CRED_IDENT || IDENT_
 const CRED_AT = [];
 let CRED_END = CEL;
 CREDITS.forEach((c, i) => { CRED_AT.push(CRED_END); CRED_END += credDur(c, i); });
+/* Cortometraje antes de la película (como en el cine): parte la apertura en dos, avisos → corto → estudio y créditos */
+const CORTO = D.corto && D.corto.id ? D.corto : null;
+const cineOff = sl => (sl && sl.parte === 'creditos' ? CEL - 800 : 0);                     // en la parte de créditos todo arranca a los 0,8 s
+const cineFin = sl => (sl && sl.parte === 'avisos' ? CEL + 700 : CRED_END - cineOff(sl));   // ms hasta que pasa sola a lo siguiente
 /* Telón de terciopelo dibujado una sola vez: pliegues irregulares, brillo de terciopelo, cenefa con flecos dorados */
 function renderCurtain(W, H, opt = {}) {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -1961,7 +2033,10 @@ Object.entries(D.musica || {}).forEach(([k, v]) => {
 });
 
 function buildScript() {
-  const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }, { k: 'cine', label: 'Apertura de cine: celulares y créditos' }, { k: 'intro', label: 'Intro de película (fanfarria)' }];
+  const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }];
+  if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
+  else s.push({ k: 'cine', label: 'Apertura de cine: celulares y créditos' });
+  s.push({ k: 'intro', label: 'Intro de película (fanfarria)' });
   if (D.presentador) s.push({ k: 'presentador', label: 'Entrada del presentador: ' + D.presentador.nombre });
   s.push({ k: 'presentamos', label: 'Título: presentamos a los contendientes' });
   P.forEach((p, i) => s.push({ k: 'presentacion', p: i, label: 'Presentación: ' + p.nombre }));
@@ -2094,6 +2169,14 @@ function bucleKeyOf(st) {
   if (!isQ(sl0) || st.overlay || st.manual) return null;
   const k = musicKeyOf({ slide: st.slide, step: 'pregunta' });
   return k && TRACKS[k] && TRACKS[k].bucle && TRACKS[k].revela != null ? k : null;
+}
+/* Ajuste fino del bucle desde el celu (S.bucleAj = { tema: [desde, hasta] }); sin ajuste, vale lo de datos.js */
+function aplicarBucleAj(st) {
+  Object.entries(TRACKS).forEach(([k, t]) => {
+    if (t.bucle0 === undefined) t.bucle0 = t.bucle;
+    const aj = st && st.bucleAj && st.bucleAj[k];
+    t.bucle = Array.isArray(aj) && aj[1] > aj[0] ? aj.slice() : t.bucle0;
+  });
 }
 const mmssD = t => Math.floor(t / 60) + ':' + (t % 60).toFixed(1).padStart(4, '0');
 const tensionOf = b => (b.tension != null ? b.tension : (b.bucle ? b.bucle[1] : b.revela - 6));
@@ -2416,31 +2499,6 @@ function boomGrave(size = 1, when = 0) {
   const rg = ctx.createGain(); rg.gain.setValueAtTime(0.0001, t0); rg.gain.exponentialRampToValueAtTime(0.45 * s, t0 + 0.04); rg.gain.setTargetAtTime(0.0001, t0 + 0.3, 1.1);
   r.connect(rl); rl.connect(rh); rh.connect(rg); wideOut(ctx, rg, bus, 1); rg.connect(bus.rev); r.start(t0); r.stop(t0 + 6.5);
 }
-/* "Shhh" de sala de cine: un siseo grave y largo al centro, y otro más chico desde un costado, con la reverberación de la sala */
-function shhh() {
-  const ctx = audioCtx();
-  if (!ctx) return;
-  const bus = sfxOut(ctx), t0 = ctx.currentTime + 0.03;
-  const voz = (t, d, pan, amp, f) => {
-    const n = ctx.createBufferSource(); n.buffer = noise(ctx); n.loop = true;
-    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1500; hp.Q.value = 0.7;
-    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.3;
-    bp.frequency.setValueAtTime(f * 0.85, t); bp.frequency.linearRampToValueAtTime(f, t + 0.25); bp.frequency.linearRampToValueAtTime(f * 0.93, t + d);
-    const pk = ctx.createBiquadFilter(); pk.type = 'peaking'; pk.frequency.value = f * 1.9; pk.Q.value = 2; pk.gain.value = 5;   // un poco de brillo, como un "sh" real
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 7500;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(amp, t + 0.16);
-    g.gain.linearRampToValueAtTime(amp * 1.08, t + d * 0.45); g.gain.linearRampToValueAtTime(amp * 0.75, t + d - 0.3); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.5; const lg = ctx.createGain(); lg.gain.value = amp * 0.07;   // el aire no sale parejo
-    lfo.connect(lg); lg.connect(g.gain);
-    n.connect(hp); hp.connect(bp); bp.connect(pk); pk.connect(lp); lp.connect(g);
-    const pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    if (pn) { pn.pan.value = pan; g.connect(pn); pn.connect(bus.master); pn.connect(bus.rev); } else { g.connect(bus.master); g.connect(bus.rev); }
-    n.start(t); n.stop(t + d + 0.05); lfo.start(t); lfo.stop(t + d + 0.05);
-  };
-  voz(t0, 1.9, 0, 1.1, 2900);
-  voz(t0 + 0.55, 1.3, -0.75, 0.35, 3300);
-}
 /* "Sonido envolvente": acorde que crece y gira por la sala, corte seco y golpe grave */
 function swellEnvolvente(riseMs = 4800) {
   const ctx = audioCtx();
@@ -2544,10 +2602,11 @@ function createDirector(music, fx) {
     }
     if (m === 'cine' && lastMoment !== 'cine' && !TRACKS.cine) setTimeout(() => music.cue('intro'), 300); // la fanfarria queda cargada
     if (m === 'cine' && lastMoment !== 'cine' && TRACKS.cine) {
-      // los avisos van en silencio (con voz); la música de los créditos entra con el primer crédito
-      music.stop(800); setTimeout(() => music.cue('cine'), 1200);
-      afterT = setTimeout(() => music.play('cine'), Math.max(0, AV_MS - 300));
-      lastKey = 'cine'; lastMoment = m; return;
+      // los avisos van en silencio; la música de los créditos entra con el primer crédito (con corto: en la segunda parte)
+      const parte = (SCRIPT[st.slide] || {}).parte || 'todo';
+      music.stop(800);
+      if (parte !== 'avisos') { setTimeout(() => music.cue('cine'), parte === 'creditos' ? 50 : 1200); afterT = setTimeout(() => music.play('cine'), Math.max(0, CEL - 300 - cineOff(SCRIPT[st.slide]))); }
+      lastKey = parte === 'avisos' ? null : 'cine'; lastMoment = m; return;
     }
     if (fx && ['pizarras', 'tension'].includes(m) && TRACKS.redoble) fx.cue('redoble');
     if (m === 'redoble') {
@@ -2600,10 +2659,63 @@ function initScreen() {
     $('#scr-yt-label').textContent = t;
     const bad = /⚠️/.test(t);
     $('#yt-toast').hidden = !bad; if (bad) $('#yt-toast').textContent = t;
-  }, muted => { $('#scr-sound').hidden = !muted; }, k => { if (typeof direct === 'function' && direct.ended) direct.ended(k); });
+  }, muted => { $('#scr-sound').hidden = !muted; }, k => { if (typeof direct === 'function' && direct.ended) direct.ended(k); }, true);
 
   const fxPlayer = Object.values(TRACKS).length && (TRACKS.redoble || TRACKS.anfitrionVoz || TRACKS.muletilla) ? createMusic('yt-fx', TRACKS, () => {}, () => {}) : null;
   const direct = createDirector(music, fxPlayer);
+  /* Cortometraje: reproductor propio a pantalla completa, sin controles ni nada encima, por arriba de todo.
+     El iframe es más alto que la pantalla: el video queda entero y la barra de título de YouTube cae afuera. */
+  let cortoP = null, cortoReady = false, cortoT = null, cortoOn = false, cortoSt = 0, cortoSlide = -1, cortoSent = 0;
+  const cortoVol = () => { if (cortoP && cortoReady) try { cortoP.setVolume(Math.round(Math.min(100, musicVol * (CORTO.volumen || 1)))); } catch {} };
+  function cortoInit() {
+    if (!CORTO || cortoP) return;
+    const box = document.createElement('div'); box.id = 'corto'; box.innerHTML = '<div id="corto-yt"></div><div class="corto-shield"></div>';
+    document.body.appendChild(box);
+    loadYouTubeApi().then(YT => {
+      cortoP = new YT.Player('corto-yt', {
+        width: '100%', height: '100%',
+        playerVars: { autoplay: 0, controls: 0, disablekb: 1, fs: 0, rel: 0, iv_load_policy: 3, modestbranding: 1, playsinline: 1, cc_load_policy: 0, vq: 'hd1080' },
+        events: {
+          onReady: () => { cortoReady = true; },
+          onError: e => cortoEnd('YouTube no reproduce el corto: ' + (YT_ERRORS[e.data] || 'error ' + e.data)),
+          onStateChange: e => {
+            if (!cortoOn) return;
+            if (e.data === YT.PlayerState.PLAYING) { $('#corto').classList.add('on'); try { cortoP.setPlaybackQuality && cortoP.setPlaybackQuality('highres'); } catch {} }
+            if (e.data === YT.PlayerState.ENDED) cortoEnd();
+          },
+        },
+      });
+    }).catch(() => {});
+  }
+  cortoInit();
+  function cortoStart(slide) {
+    if (!CORTO) return;
+    cortoOn = true; cortoSt = Date.now(); cortoSlide = slide;
+    const go = () => {
+      if (!cortoOn) return;
+      if (!cortoReady) { if (Date.now() - cortoSt > 12000) return cortoEnd('el reproductor del corto no cargó'); return setTimeout(go, 300); }
+      try { cortoP.unMute(); cortoVol(); cortoP.loadVideoById({ videoId: CORTO.id, startSeconds: CORTO.inicio || 0, suggestedQuality: 'hd1080' }); } catch {}
+    };
+    setTimeout(go, 400);   // un instante de negro, como en el cine
+    clearInterval(cortoT);
+    cortoT = setInterval(() => {
+      if (!cortoOn || !cortoReady) return;
+      let t = 0, d = 0, stt = -1;
+      try { t = cortoP.getCurrentTime() || 0; d = cortoP.getDuration() || 0; stt = cortoP.getPlayerState(); } catch {}
+      const fin = CORTO.fin || d;
+      if (link && Date.now() - cortoSent > 1000) { cortoSent = Date.now(); link.send({ type: 'cortoEstado', t, d: fin }); }
+      if (stt !== 1 && t < 0.5 && Date.now() - cortoSt > 20000) return cortoEnd('el corto no arrancó');
+      if (fin > 0 && t > 1 && t >= fin - 0.45) cortoEnd();   // se va a negro antes de que YouTube muestre su pantalla final
+    }, 100);
+  }
+  function cortoEnd(err) {
+    if (!cortoOn) return;
+    cortoOn = false; clearInterval(cortoT);
+    $('#corto').classList.remove('on');
+    setTimeout(() => { try { cortoP.stopVideo(); } catch {} }, 800);
+    if (link) link.send({ type: 'cortoFin', slide: cortoSlide, error: err || null });
+  }
+  function cortoStop() { if (!cortoOn) return; cortoOn = false; clearInterval(cortoT); $('#corto').classList.remove('on'); try { cortoP.stopVideo(); } catch {} }
   setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: fxPlayer ? fxPlayer.status() : null }); }, 1000);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
 
@@ -2940,7 +3052,7 @@ function initScreen() {
         break;
       case 'gracias':
         beams.setup('top3'); beams.clearPools(); beams.level(.55); beams.play('calm'); break;
-      case 'cine': case 'previa': case 'cierre':
+      case 'cine': case 'corto': case 'previa': case 'cierre':
         beams.setup('top2'); beams.level(0); beams.clearPools(); break;
       case 'presentamos':
         beams.setup('top4'); beams.clearPools(); beams.level(1);
@@ -3055,12 +3167,21 @@ function initScreen() {
 
   const link = createLink(code, 'screen', msg => {
     if (msg.type === 'luz') { applyTint(msg.L || LOOKS[msg.look], msg.ms); return; }
-    if (msg.type === 'vol') { music.cancelRamp(); musicVol = msg.v; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); return; }
+    if (msg.type === 'vol') { music.cancelRamp(); musicVol = msg.v; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); cortoVol(); return; }
     if (msg.type === 'volRamp') { if (msg.cancel) music.cancelRamp(); else music.ramp(msg.to, msg.ms); return; }
     if (msg.type === 'reconectar') { link.reconnectDown(); return; }
     if (msg.type === 'ticketShow') { ticketShow(); return; }
     if (msg.type === 'saltar') { revSaltar(msg.slide); return; }
+    if (msg.type === 'probarSalto') {
+      const bk = bucleKeyOf(cur);
+      if (bk && music.current() === bk && music.looping()) { music.seek(TRACKS[bk].bucle[1] - (msg.antes || 4)); link.send({ type: 'log', text: `🔁 Escuchá el salto: faltan ${msg.antes || 4} s`, kind: 'o' }); }
+      else link.send({ type: 'log', text: '🔁 Para probar el salto tiene que estar sonando el tema de la pregunta (antes de revelar)', kind: 'e' });
+      return;
+    }
     if (msg.type === 'marca') { if (mkOn) addMark('celu'); return; }
+    if (msg.type === 'flashSuave') { hostFlash('suave'); return; }
+    if (msg.type === 'confeti') { confetti(); return; }
+    if (msg.type === 'tvEstrobo') { const per = 30000 / HOST_BPM; for (let i = 0; i * per < (msg.ms || 1860); i++) setTimeout(() => hostFlash('duro'), i * per); return; }
     if (msg.type === 'flashDuro') { const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); return; }
     if (msg.type === 'state' && msg.state) {
       if (msg.state.rev !== curRev) { curRev = msg.state.rev; const pc = $('#previa-code'); if (pc) pc.hidden = true; render(msg.state); }
@@ -3089,6 +3210,7 @@ function initScreen() {
     const sl = SCRIPT[st.slide] || SCRIPT[0];
     const changed = st.slide !== cur.slide;
     ritmoSt = st.ritmo || null;
+    aplicarBucleAj(st);
     calibSet(!!st.calib && sl.k === 'presentador');
     marcasSt = st.marcar && mkLocal && Date.now() - mkLocal.at < 1500 ? mkLocal.t : acentosDe(st);
     if (host) host.marks = host.t0 != null ? marcasSt : null;
@@ -3109,7 +3231,7 @@ function initScreen() {
     document.body.classList.toggle('tension', ['intro', 'pregunta', 'pizarras', 'tension', 'redoble', 'cuenta', 'contendientes'].includes(m));
     document.body.classList.toggle('dimmed', ['presentacion', 'cuenta', 'redoble'].includes(m) || (SCRIPT[st.slide] || {}).k === 'presentacion');
     $('#yt-wrap').classList.toggle('hidden-player', !!st.hidePlayer);
-    if (st.vol != null && st.vol !== musicVol) { musicVol = st.vol; music.setLevel(); if (fxPlayer) fxPlayer.setLevel(); }
+    if (st.vol != null && st.vol !== musicVol) { musicVol = st.vol; music.setLevel(); if (fxPlayer) fxPlayer.setLevel(); cortoVol(); }
     if (st.ajusteMsg && st.ajusteMsg.id !== lastAjuste && P[st.ajusteMsg.p] && !['cuenta', 'desempate', 'ganador'].includes(sl.k)) {
       lastAjuste = st.ajusteMsg.id;
       const t = document.createElement('div'); t.className = 'aj-toast ' + (st.ajusteMsg.d > 0 ? 'mas' : 'menos');
@@ -3161,6 +3283,7 @@ function initScreen() {
 
   function buildSlide(st, sl) {
     hostStop(); hostTextsStop();
+    if (sl.k !== 'corto') cortoStop();
     clearInterval(confettiLoop); clearTimeout(introTimer); clearTimeout(contPhase);
     cineHits.forEach(h => { clearTimeout(h); clearInterval(h); }); cineHits = [];
     let h = '';
@@ -3184,8 +3307,10 @@ function initScreen() {
         return `${c.chico ? `<div class="cred-s">${esc(c.chico)}</div>` : ''}${c.grande ? `<div class="cred-t" style="font-size:${fs}vw">${esc(c.grande)}</div>` : ''}`;
       };
       const envIdx = AVISOS.findIndex(a => avSonido(a) === 'envolvente'), envAt = envIdx < 0 ? CEL - 600 : 200 + AVISOS.slice(0, envIdx).reduce((t, a) => t + avDur(a), 0);
-      h = `<div class="cine"><div class="cine-dim"></div><div class="cine-black" style="animation-delay:${envAt}ms"></div>
-        ${(() => { let t = 200; return AVISOS.map((a, idx) => {
+      const parte = sl.parte || 'todo', off = cineOff(sl), conAv = parte !== 'creditos', conCred = parte !== 'avisos';
+      const CAT = CRED_AT.map(x => x - off);
+      h = `<div class="cine"><div class="cine-dim"></div><div class="cine-black" style="${conAv ? `animation-delay:${envAt}ms` : 'animation:none;opacity:1'}"></div>
+        ${!conAv ? '' : (() => { let t = 200; return AVISOS.map((a, idx) => {
           const d = avDur(a), at = t, son = avSonido(a);
           let html;
           if (son === 'envolvente') {
@@ -3196,32 +3321,34 @@ function initScreen() {
           } else {
             html = `<div class="cine-card av-card" style="animation-delay:${at}ms;animation-duration:${d - 200}ms"><div class="av">${avIconHTML(a.icono)}<div class="av-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="av-div"></div><div class="av-s">${esc(a.sub)}</div>` : ''}</div></div>`;
             if (son === 'grave') cineHits.push(setTimeout(() => boomGrave(idx === AVISOS.findIndex(x => avSonido(x) === 'grave') ? 1 : 0.75), at + 120));
-            else if (son === 'shh') cineHits.push(setTimeout(() => shhh(), at + 250));
             else if (son) cineHits.push(setTimeout(() => playFile(son), at + 120));
           }
           if (a.audio) cineHits.push(setTimeout(() => playFile(a.audio), at + 350));
           t += d; return html; }).join(''); })()}
-        ${CREDITS.map((c, i) => c && c.estudio
-          ? `<div class="cine-card ident-card" style="animation-delay:${CRED_AT[i]}ms;animation-duration:${credDur(c, i)}ms">${identHTML(c, CRED_AT[i], credDur(c, i))}</div>`
-          : `<div class="cine-card cred-card ${i === CREDITS.length - 1 && AP.duracionCreditos ? 'cred-final' : ''}" data-i="${i}" style="animation-delay:${CRED_AT[i]}ms;animation-duration:${credDur(c, i)}ms;--cs:${CRED_AT[i]}ms;--cd:${credDur(c, i)}ms">${i === CREDITS.length - 1 && AP.duracionCreditos ? `<div class="cf-rays"></div><div class="cf-dust">${Array.from({ length: 36 }, () => `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * 6).toFixed(2)}s;animation-duration:${(5 + Math.random() * 5).toFixed(2)}s"></i>`).join('')}</div>` : ''}${credHTML(c, i === CREDITS.length - 1 && !!AP.duracionCreditos)}</div>`).join('')}
+        ${!conCred ? '' : CREDITS.map((c, i) => c && c.estudio
+          ? `<div class="cine-card ident-card" style="animation-delay:${CAT[i]}ms;animation-duration:${credDur(c, i)}ms">${identHTML(c, CAT[i], credDur(c, i))}</div>`
+          : `<div class="cine-card cred-card ${i === CREDITS.length - 1 && AP.duracionCreditos ? 'cred-final' : ''}" data-i="${i}" style="animation-delay:${CAT[i]}ms;animation-duration:${credDur(c, i)}ms;--cs:${CAT[i]}ms;--cd:${credDur(c, i)}ms">${i === CREDITS.length - 1 && AP.duracionCreditos ? `<div class="cf-rays"></div><div class="cf-dust">${Array.from({ length: 36 }, () => `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * 6).toFixed(2)}s;animation-duration:${(5 + Math.random() * 5).toFixed(2)}s"></i>`).join('')}</div>` : ''}${credHTML(c, i === CREDITS.length - 1 && !!AP.duracionCreditos)}</div>`).join('')}
       </div>`;
       // el golpe del final cae con el momento fuerte de la música (apertura.climax, en segundos del video); si no se indicó, 2 s después de que entra
-      if (AP.duracionCreditos) {
-        const li = CREDITS.length - 1, ini = CRED_AT[li], est = AP.climax != null ? CEL - 200 + AP.climax * 1000 : ini + 2000;
+      if (AP.duracionCreditos && conCred) {
+        const li = CREDITS.length - 1, ini = CAT[li], est = AP.climax != null ? CEL - 200 + AP.climax * 1000 - off : ini + 2000;
         const pegar = () => { const el = stage.querySelector(`.cred-final[data-i="${li}"]`); if (!el || el.classList.contains('hit')) return; el.classList.add('hit'); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); };
         if (AP.climax != null) cineHits.push(setInterval(() => { const ms = music.status(); if (ms && ms.key === 'cine' && ms.t >= AP.climax) pegar(); }, 60));
         cineHits.push(setTimeout(pegar, Math.max(ini + 300, est + (AP.climax != null ? 1200 : 0))));
       }
       const golpes = (D.apertura && D.apertura.golpes) || (TRACKS.cine ? 'extremos' : 'todos');
-      CREDITS.forEach((c, i) => {
+      if (conCred) CREDITS.forEach((c, i) => {
         if (c && c.estudio) {   // la intro de estudio: golpe grave cuando el emblema se asienta
-          if (!(D.apertura && D.apertura.graveEstudio === false)) cineHits.push(setTimeout(() => boomGrave(0.9), CRED_AT[i] + Math.round(6000 * credDur(c, i) / IDENT_MS)));
+          if (!(D.apertura && D.apertura.graveEstudio === false)) cineHits.push(setTimeout(() => boomGrave(0.9), CAT[i] + Math.round(6000 * credDur(c, i) / IDENT_MS)));
           return;
         }
         const last = i === CREDITS.length - 1;
         if (golpes === 'ninguno' || (golpes === 'extremos' && !last)) return;
-        cineHits.push(setTimeout(() => boomGrave(last ? 1 : 0.55), CRED_AT[i] + 200));
+        cineHits.push(setTimeout(() => boomGrave(last ? 1 : 0.55), CAT[i] + 200));
       });
+    } else if (sl.k === 'corto') {
+      h = `<div class="cine"><div class="cine-black" style="animation:none;opacity:1"></div></div>`;
+      cortoStart(st.slide);
     } else if (sl.k === 'intro') {
       const ed = esc(D.edicion).replace(/(\d{4})\s*$/, '').trim();
       const yr = (D.edicion.match(/\d{4}/) || [''])[0];
@@ -3536,6 +3663,7 @@ function initControl() {
   /* --- Estado de la partida (persistente) --- */
   const saved = store.get('game', null);
   let S = Object.assign({ slide: 0, step: null, overlay: null, results: {}, delayMs: 2000 }, saved || {});
+  aplicarBucleAj(S);
   if (S.slide >= SCRIPT.length) S.slide = 0;
   $('#set-delay').value = String(S.delayMs);
   $('#set-delay').addEventListener('change', () => { S.delayMs = +$('#set-delay').value; commit(false); });
@@ -3571,6 +3699,11 @@ function initControl() {
       if (msg.type === 'musica') { lastHello = Date.now(); musNow = { a: msg.a, at: Date.now() }; showMusic(msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a); }
       if (msg.type === 'revelaEn' && msg.slide === S.slide && S.step === 'redoble' && revPlan) revSchedule(msg.ms - 120, msg.ten - 120);
       if (msg.type === 'revelar' && msg.slide === S.slide && S.step === 'redoble') { revDone(); S.step = 'revelado'; commit(); }
+      if (msg.type === 'cortoEstado') { cortoProg = { t: msg.t, d: msg.d }; const el = $('#corto-prog'); if (el) el.textContent = msg.d ? `${mmss(msg.t)} de ${mmss(msg.d)}` : 'cargando…'; }
+      if (msg.type === 'cortoFin' && SCRIPT[S.slide].k === 'corto' && msg.slide === S.slide) {
+        if (msg.error) log('🎞️ ' + msg.error + ' — sigo con la apertura', 'e'); else log('🎞️ Terminó el corto', 'o');
+        goSlide(S.slide + 1, true);
+      }
       if (msg.type === 'marcas' && Array.isArray(msg.t)) {
         S.acentos = { id: msg.vid, t: msg.t }; commit(true);
         if (msg.nueva != null) log(`🎯 Efecto marcado en ${mmssD(msg.nueva)} (${msg.t.length} en total)`, 'o');
@@ -4080,55 +4213,53 @@ function initControl() {
     runSteps(cue);
   }
 
-  $('#fx-flash-tele').addEventListener('click', () => fireLook('flashTele', true));
-  $('#fx-flash-unico').addEventListener('click', () => fireLook('flashUnico', true));
-  /* Luces a mano: solo las que tiene sentido tocar, con qué son. Las del show quedan aparte (se disparan solas). */
-  const LOOK_INFO = {
-    salaInicio: ['sala', 'Llegada', 'Techo blanco cálido, tira apagada. Mientras llega la gente.'],
-    sala:       ['sala', 'Luz de sala', 'Techo blanco cálido y tira suave. Para charlar, entre rondas y en el marcador.'],
-    ambiente:   ['sala', 'Ambiente', 'Cálido y tenue, prende la tira. Previa y créditos finales.'],
-    calido:     ['sala', 'Cálido', 'Ámbar suave. Reglas, premios y después de cada respuesta.'],
-    azul:       ['show', 'Pregunta', 'Azul que va bajando despacio mientras leés la pregunta.'],
-    escenario:  ['show', 'Escenario', 'Azul tenue de presentación.'],
-    oscuro:     ['show', 'Casi a oscuras', 'Azul casi negro. Justo antes de un golpe o de revelar.'],
-    tension:    ['show', 'Tensión', 'Rojo que respira lento.'],
-    dorado:     ['show', 'Golpe dorado', 'Dorado a pleno. El momento de la respuesta.'],
-    fiesta:     ['show', 'Fiesta', 'Dorado y ámbar que cambian, la tira respira. Ganador y festejos.'],
-    apagado:    ['show', 'Apagar todo', 'Apaga techo y tira. La próxima luz las vuelve a prender.'],
-    noche:      ['auto', 'Noche', 'Intro de película: azul de noche para los reflectores.'],
-    pulso:      ['auto', 'Pulso', 'Destello cálido corto: créditos, cada regla y cada premio.'],
-    flash:      ['auto', 'Flash blanco', 'Destello con cada participante que presentás.'],
-    destello:   ['auto', 'Destello de festejo', 'Dorado y blanco rápido, en el título de la intro.'],
-    latido:     ['auto', 'Latido', 'Tu entrada: rojo que late con la voz y los textos.'],
-    latidoRapido: ['auto', 'Latido rápido', 'Tu entrada: late al doble en "Con ustedes".'],
-    estroboHost: ['auto', 'Estrobo de tu entrada', 'El golpe de entrada y antes de cada efecto marcado.'],
-    fiestaHost: ['auto', 'Fiesta de tu entrada', 'Juego de luces 1 después del golpe.'],
-    contraluz:  ['auto', 'Contraluz', 'Juego 2: techo casi apagado, la tira detrás de la tele salta.'],
-    fiestaDorada: ['auto', 'Fiesta dorada', 'Juego 3 después del golpe.'],
-    barrido:    ['auto', 'Barrido', 'Juego 4: dorado ↔ carmesí respirando.'],
-    flashSolo:  ['auto', 'Destello del techo', 'Sin tocar la tele: el golpe de "Bioingeniería Surround".'],
-  };
-  const LOOK_GRUPOS = [['sala', 'Sala'], ['show', 'Show'], ['auto', 'Las usa el show solo (para probarlas)']];
+  /* Combos de luz: lo mismo que hace el show en cada momento, todo junto (techo, tira y tele).
+     luz: [[ms, look], ...] · tele: [[ms, acción]] (flashDuro, flashSuave, confeti, tvEstrobo) · '@prev' = vuelve a lo que había */
+  const TICKET_LOOK = { tipo: 'color', h: 40, s: 92, brillo: 45, transicion: 0.4, nombre: 'ticket dorado', respaldo: 'festejo' };
+  const BAR_MS = Math.round(4 * 60000 / HOST_BPM);
+  const COMBOS = [
+    { n: 'Llegada', d: 'Techo de sala con la tira apagada. Mientras llega la gente.', sw: 'salaInicio', luz: [[0, 'salaInicio']] },
+    { n: 'Luz de sala', d: 'Techo blanco cálido y tira suave. Entre rondas y en el marcador.', sw: 'sala', luz: [[0, 'sala']] },
+    { n: 'Bajan las luces', d: 'Cálido y tenue, prende la tira y la tele se oscurece. Previa y cierre.', sw: 'ambiente', luz: [[0, 'ambiente']] },
+    { n: 'Cálido', d: 'Ámbar suave. Reglas, premios y después de cada respuesta.', sw: 'calido', luz: [[0, 'calido']] },
+    { n: 'Pulso', d: 'Un golpe de luz cálida y vuelve a cálido. Con cada regla y cada premio.', sw: 'pulso', luz: [[0, 'pulso'], [1300, 'calido']] },
+    { n: 'Golpe del título', d: 'Destello en la tele, dorado a pleno, festejo con confeti y queda cálido. Como cuando aparece el logo.', sw: 'dorado', luz: [[0, 'dorado'], [1200, 'destello'], [2600, 'dorado'], [4400, 'calido']], tele: [[0, 'flashDuro'], [0, 'confeti']] },
+    { n: 'Participante', d: 'Flash blanco en techo y tele, y queda el azul de escenario. Con cada contendiente.', sw: 'escenario', luz: [[0, 'flash'], [650, 'escenario']] },
+    { n: 'Todos juntos', d: 'A oscuras, flash y fiesta con confeti. Cuando aparecen los contendientes juntos.', sw: 'fiesta', luz: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']], tele: [[2250, 'confeti']] },
+    { n: 'Estrobo', d: 'Un compás de estrobo en las lámparas y la tele, y vuelve a lo que había.', sw: 'estrobo', luz: [[0, 'estroboHost'], [BAR_MS + 60, '@prev']], tele: [[0, 'tvEstrobo', { ms: BAR_MS }]] },
+    { n: 'Estrobo + explosión', d: 'Un compás de estrobo y explota: destello, confeti y fiesta. El efecto de tu entrada.', sw: 'fiestaHost', luz: [[0, 'estroboHost'], [BAR_MS, 'fiesta']], tele: [[0, 'tvEstrobo', { ms: BAR_MS }], [BAR_MS, 'flashDuro'], [BAR_MS, 'confeti']] },
+    { n: 'Destello', d: 'Un destello blanco en el techo y la tele, y vuelve a lo que había.', sw: 'flash', luz: [[0, 'flashUnico']] },
+    { n: 'Destello solo tele', d: 'Solo la pantalla, sin tocar las lámparas.', sw: 'flash', luz: [[0, 'flashTele']] },
+    { n: 'Pregunta', d: 'Azul que va bajando despacio mientras leés la pregunta.', sw: 'azul', cue: 'pregunta' },
+    { n: 'Casi a oscuras', d: 'Azul casi negro. Justo antes de un golpe o de revelar.', sw: 'oscuro', luz: [[0, 'oscuro']] },
+    { n: 'Tensión', d: 'Rojo que respira lento.', sw: 'tension', luz: [[0, 'tension']] },
+    { n: 'Respuesta', d: 'Dorado a pleno con destello y confeti en la tele; a los segundos queda cálido.', sw: 'dorado', luz: [[0, 'dorado'], ['fest', 'calido']], tele: [[0, 'flashSuave'], [0, 'confeti']] },
+    { n: 'Ticket dorado', d: 'Destello del techo y dorado intenso.', sw: 'dorado', luz: [[0, 'flashSolo'], [150, TICKET_LOOK]], tele: [[0, 'flashSuave']] },
+    { n: 'Fiesta', d: 'Dorado y ámbar que cambian, la tira respira, confeti. Ganador y festejos.', sw: 'fiesta', luz: [[0, 'fiesta']], tele: [[0, 'confeti']] },
+    { n: 'Apagar todo', d: 'Apaga techo y tira; la próxima luz las vuelve a prender.', sw: 'apagado', luz: [[0, 'apagado']] },
+  ];
   function lookSwatch(L) {
     if (!L || L.tipo === 'apagado') return '#000';
+    if (L.tipo === 'flashUnico' || L.tipo === 'flashTele') return '#fff';
     const c = ([h, s2, b]) => `hsl(${h},${s2}%,${Math.max(14, Math.min(62, 14 + b * 0.5))}%)`;
     if (L.tipo === 'blanco') return `hsl(40,${Math.max(10, 70 - (L.calidez || 0))}%,${Math.max(30, Math.min(88, 30 + (L.brillo || 60) * 0.55))}%)`;
     if (L.tipo === 'efecto' && L.colores) return `linear-gradient(90deg,${L.colores.map(c).join(',')})`;
     if (L.tipo === 'color') return c([L.h || 0, L.s == null ? 100 : L.s, L.brillo == null ? 100 : L.brillo]);
     return '#888';
   }
+  function runCombo(c) {
+    const prev = prevLookObj, fest = +($('#st-fest-ms') ? $('#st-fest-ms').value : 6000) || 6000;
+    if (c.cue) { clearLights(); runCue(GUION[c.cue]); }
+    else runSteps(c.luz.map(([t, l]) => [t === 'fest' ? fest : t, l === '@prev' ? (prev || 'sala') : l]));
+    (c.tele || []).forEach(([t, type, extra]) => lightTimers.push(setTimeout(() => { if (link) link.send({ type, ...(extra || {}) }); }, Math.max(0, (t === 'fest' ? fest : t) - lat()) + scrDelay())));
+    log('💡 ' + c.n, 'o');
+  }
   function renderLooks() {
     const box = $('#ty-looks');
-    const item = k => { const [, n, d] = LOOK_INFO[k] || ['', k, 'Definida en datos.js']; return `<button class="lk" data-look="${k}"><i style="background:${lookSwatch(LOOKS[k])}"></i><span><b>${esc(n)}</b><small>${esc(d)}</small></span></button>`; };
-    const otros = Object.keys(LOOKS).filter(k => !LOOK_INFO[k] && !['pizarras', 'foco', 'estrobo', 'flashUnico', 'flashTele'].includes(k));
-    box.innerHTML = LOOK_GRUPOS.map(([g, t]) => {
-      const ks = Object.keys(LOOK_INFO).filter(k => LOOK_INFO[k][0] === g && LOOKS[k]).concat(g === 'auto' ? otros : []);
-      const inner = `<div class="lk-list">${ks.map(item).join('')}</div>`;
-      return g === 'auto' ? `<details class="lk-auto"><summary>${t}</summary>${inner}</details>` : `<div class="lk-g">${t}</div>${inner}`;
-    }).join('');
-    box.querySelectorAll('button[data-look]').forEach(b => b.addEventListener('click', () => {
+    box.innerHTML = `<div class="lk-list">${COMBOS.map((c, i) => `<button class="lk" data-combo="${i}"><i style="background:${lookSwatch(LOOKS[c.sw])}"></i><span><b>${esc(c.n)}</b><small>${esc(c.d)}</small></span></button>`).join('')}</div>`;
+    box.querySelectorAll('button[data-combo]').forEach(b => b.addEventListener('click', () => {
       box.querySelectorAll('.lk.on').forEach(x => x.classList.remove('on')); b.classList.add('on');
-      clearLights(); fireLook(b.dataset.look, true);
+      runCombo(COMBOS[+b.dataset.combo]);
     }));
   }
   renderLooks();
@@ -4159,7 +4290,13 @@ function initControl() {
     } catch (e) { log('Tuya: ' + e.message, 'e'); }
   });
 
-  function cineSteps() {
+  function cineSteps(sl) {
+    const parte = (sl && sl.parte) || 'todo', off = cineOff(sl), todo = cineStepsTodo();
+    if (parte === 'avisos') return todo.filter(([t]) => t < CEL).concat([[CEL - 300, 'oscuro']]);
+    if (parte === 'creditos') return [[0, 'oscuro']].concat(todo.filter(([t]) => t >= CEL - 300).map(([t, l]) => [Math.max(100, t - off), l]));
+    return todo;
+  }
+  function cineStepsTodo() {
     // arranca desde la luz ambiente (así termina la previa) y se va apagando
     const amb = LOOKS.ambiente || LOOKS.calido;
     const st = [[0, { ...amb, transicion: 0.6, nombre: 'ambiente' }]];
@@ -4196,7 +4333,7 @@ function initControl() {
     lastLightKey = key;
     if (m === 'redoble' || m === 'revelado') return; // los maneja reveal()
     if (SCRIPT[S.slide].k === 'ganador') return;      // lo maneja revealWinner()
-    if (m === 'cine') return runSteps(GUION.cine || cineSteps());
+    if (m === 'cine') return runSteps(GUION.cine || cineSteps(SCRIPT[S.slide]));
     if (m === 'presentadorGolpe' && !(D.guion && D.guion.presentadorGolpe)) return runSteps(golpeSteps());
     runCue(GUION[m]);
   }
@@ -4221,11 +4358,12 @@ function initControl() {
   let commitT = null, autoT = null, autoKey = null;
   function commit(soft = false) {
     S.rev = Date.now() + Math.random();
+    aplicarBucleAj(S);
     store.set('game', S);
     const m = momentOf(S);
     lightsFor(m);
     // La apertura de cine avanza sola a la fanfarria cuando terminan los créditos
-    if (SCRIPT[S.slide].k === 'cine') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); autoT = setTimeout(() => { if (SCRIPT[S.slide].k === 'cine') goSlide(S.slide + 1, true); }, CRED_END + 300); } }
+    if (SCRIPT[S.slide].k === 'cine') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); const k0 = S.slide; autoT = setTimeout(() => { if (S.slide === k0) goSlide(S.slide + 1, true); }, cineFin(SCRIPT[S.slide]) + 300); } }
     else { autoKey = null; clearTimeout(autoT); }
     const k = SCRIPT[S.slide].k;
     if (soft) { clearTimeout(commitT); commitT = setTimeout(sendState, 250); }
@@ -4264,7 +4402,7 @@ function initControl() {
     return i;
   }
 
-  let revealT = null, musNow = null, revPlan = null, revTick = null;
+  let revealT = null, musNow = null, revPlan = null, revTick = null, cortoProg = null, bucleOpen = false;
   /* Pregunta con tema en bucle: la luz pasa a tensión en el tramo final y la respuesta cae en el segundo "revela" del tema.
      La tele es la que revela en el segundo justo; el celu programa las lámparas con lo que le dice la tele. */
   function revSchedule(msRev, msTen) {
@@ -4388,7 +4526,7 @@ function initControl() {
     clearTimeout(resetArmed); resetArmed = null; b.textContent = 'Reiniciar partida';
     if (seq) abortSeq('Secuencia de previa cancelada');
     const ini = (PREVIA && PREVIA.inicio) || {};
-    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol, ritmo: S.ritmo, acentos: S.acentos, previaModo: ini.pantalla || 'apagado' };
+    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol, ritmo: S.ritmo, acentos: S.acentos, bucleAj: S.bucleAj, previaModo: ini.pantalla || 'apagado' };
     log('Partida reiniciada · luz de sala, lista para la previa', 'o');
     lastLightKey = null; lastLook = null;
     commit();
@@ -4406,7 +4544,8 @@ function initControl() {
       if (S.step === 'redoble') return revPlan ? `⏳ Sale sola en el segundo ${revPlan.en}` : '🥁 …';
     }
     if (sl.k === 'logo' || sl.k === 'previa') return '🎬 Empezar ▶';
-    if (sl.k === 'cine') return '⏭ Saltar a la fanfarria';
+    if (sl.k === 'cine') return sl.parte === 'avisos' ? '⏭ Saltar al corto' : '⏭ Saltar a la fanfarria';
+    if (sl.k === 'corto') return '⏭ Saltar el corto';
     if (sl.k === 'cuenta') {
       const cg = countdownGroups(S.results), k = S.sub || 0;
       if (k < cg.length) return `Revelar ${cg[k].pos}° puesto ▶`;
@@ -4439,7 +4578,10 @@ function initControl() {
         : `<button class="btn" id="seq-start" style="width:100%;margin-top:10px;font-size:17px">${pruebaPrevia() ? `▶ Comenzar previa · 🧪 desde ${mmss(PRUEBA_DESDE)}` : '▶ Comenzar previa automática'}</button><p class="muted" style="margin-top:6px">${esc((D.previa.resumen) || '')}</p>
           ${PRUEBA_DESDE ? `<label class="prueba-chk${pruebaPrevia() ? ' on' : ''}"><input type="checkbox" id="prueba-previa" ${pruebaPrevia() ? 'checked' : ''}><span>🧪 Prueba: la canción arranca en ${mmss(PRUEBA_DESDE)}${pruebaPrevia() ? ' · <b>destildalo la noche del show</b>' : ''}</span></label>` : ''}`) : ''}`;
 
-    else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round(CRED_END / 1000)} s.</p>`;
+    else if (sl.k === 'corto') h = `<div class="now-title">🎞️ ${esc(CORTO.nombre || 'Cortometraje')}</div><p class="muted">A pantalla completa, sin controles. Cuando termina sigue sola con la intro de estudio y los créditos.</p><p style="margin:6px 0">⏱ <b id="corto-prog">${cortoProg && cortoProg.d ? `${mmss(cortoProg.t)} de ${mmss(cortoProg.d)}` : 'arrancando…'}</b></p>`;
+    else if (sl.k === 'cine' && sl.parte === 'avisos') h = `<div class="now-title">Apertura de cine: avisos</div><p class="muted">Los avisos de sala mientras la luz baja hasta negro. Pasa sola al cortometraje en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
+    else if (sl.k === 'cine' && sl.parte === 'creditos') h = `<div class="now-title">Apertura de cine: estudio y créditos</div><p class="muted">Desde negro: la intro de estudio y los créditos con la música de cine. Pasa sola a la fanfarria en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
+    else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
     else if (sl.k === 'intro') h = `<div class="now-title">Intro de película · ${esc(TRACKS.intro ? TRACKS.intro.name : 'sin música')}</div><p class="muted">Dura unos 10 s con la fanfarria. Las luces arrancan en tensión y pasan a festejo cuando aparece el título.</p>`;
     else if (sl.k === 'presentacion' || sl.k === 'presentamos') {
       const nx = sl.k === 'presentamos' ? 0 : sl.p + 1, q = P[nx];
@@ -4490,12 +4632,22 @@ function initControl() {
       let tieInfo = '';
       if (sl.k === 'desempate') { const t = standing(S.results).tied; tieInfo = `<p class="muted">Empatados: <b>${t.map(i => esc(P[i].nombre)).join(', ')}</b>. Gana el más cerca.</p>`; }
       h = `<div class="now-title">${txt}</div>${opts}${tieInfo}<div class="answer"><small>Respuesta</small>${esc(ans)}</div>${q.nota ? `<div class="note"><small>Dato curioso</small>${esc(q.nota)}</div>` : ''}`;
+      // Ajuste fino del bucle del tema (para que el salto no se note)
+      const bk = bucleKeyOf(S);
+      if (bk) {
+        const b = TRACKS[bk].bucle, b0 = TRACKS[bk].bucle0 || b, aj = S.bucleAj && S.bucleAj[bk];
+        const fila = (i, t) => `<div class="bq-row"><div class="muted bq-l">${t}</div><div class="bq-btns">${[-0.1, -0.02].map(d => `<button class="pbtn small" data-bq="${i}" data-d="${d}">${String(d).replace('-', '−')}</button>`).join('')}<b class="bq-v">${b[i].toFixed(2)}</b>${[0.02, 0.1].map(d => `<button class="pbtn small" data-bq="${i}" data-d="${d}">+${d}</button>`).join('')}</div></div>`;
+        h += `<details class="bq" ${bucleOpen ? 'open' : ''}><summary>🔁 Bucle del tema: del ${b[1].toFixed(2)} vuelve al ${b[0].toFixed(2)}${aj ? ' (ajustado en este celu)' : ''}</summary>
+          ${fila(1, 'Salta en')}${fila(0, 'Vuelve a')}
+          <div class="row" style="margin-top:8px"><button class="btn small" id="bq-test" style="flex:1">▶ Escuchar el salto (4 s antes)</button>${aj ? '<button class="btn ghost small" id="bq-reset">↩ Los de datos.js</button>' : ''}</div>
+          <p class="muted" style="margin-top:8px;font-size:12.5px">Si se <b>repite</b> un pedacito, subí "vuelve a" o bajá "salta en"; si se <b>saltea</b> un pedacito, al revés. Cuando quede bien, en datos.js: <code>bucle: [${b[0].toFixed(2)}, ${b[1].toFixed(2)}]</code>${b0 && (b0[0] !== b[0] || b0[1] !== b[1]) ? ` (hoy dice ${b0[0]}, ${b0[1]})` : ''}</p></details>`;
+      }
     } else if (sl.k === 'marcador' || sl.k === 'ganador') {
       const s = standing(S.results);
       h = `<div class="now-title">${sl.k === 'ganador' ? winnerWord(s.top) + ' ' + s.top.map(i => P[i].nombre).join(', ') : 'Marcador'}</div>`;
       if (sl.k === 'ganador' && !s.decided) h += `<p class="muted">Hay empate. Volvé con ◀ al desempate y cargá las respuestas.</p>`;
     }
-    const enApertura = ['cine', 'intro'].includes(sl.k) || (sl.k === 'presentador' && S.step !== 'golpe');
+    const enApertura = ['cine', 'corto', 'intro'].includes(sl.k) || (sl.k === 'presentador' && S.step !== 'golpe');
     if (seq && seq.phase === 'apertura') h = `<div class="auto-banner">🤖 <b>Automático hasta el golpe de entrada</b>${GOLPE_TEMA != null ? ` (segundo ${GOLPE_TEMA} del tema)` : ''}<button class="btn ghost small" id="auto-off">✋ Pasar a manual</button></div>` + h;
     else if (enApertura) h = `<button class="btn ghost small" id="auto-on" style="width:100%;margin-bottom:10px">🤖 Seguir en automático hasta el golpe de entrada</button>` + h;
     body.innerHTML = h;
@@ -4503,6 +4655,17 @@ function initControl() {
     const an = body.querySelector('#auto-on'); if (an) an.addEventListener('click', startApertura);
     body.querySelectorAll('[data-pm]').forEach(b => b.addEventListener('click', () => { S.previaModo = b.dataset.pm; commit(); }));
     const ss = body.querySelector('#seq-start'); if (ss) ss.addEventListener('click', startPrevia);
+    const bqd = body.querySelector('details.bq'); if (bqd) bqd.addEventListener('toggle', () => { bucleOpen = bqd.open; });
+    body.querySelectorAll('[data-bq]').forEach(btn => btn.addEventListener('click', () => {
+      const bk = bucleKeyOf(S); if (!bk) return;
+      const b = TRACKS[bk].bucle.slice(), i = +btn.dataset.bq;
+      b[i] = Math.round((b[i] + +btn.dataset.d) * 100) / 100;
+      if (!(b[1] > b[0] + 2)) return;
+      S.bucleAj = { ...(S.bucleAj || {}), [bk]: b }; commit();
+      log(`🔁 Bucle: del ${b[1].toFixed(2)} vuelve al ${b[0].toFixed(2)}`, 'o');
+    }));
+    const bqt = body.querySelector('#bq-test'); if (bqt) bqt.addEventListener('click', () => { if (link) link.send({ type: 'probarSalto', antes: 4 }); });
+    const bqr = body.querySelector('#bq-reset'); if (bqr) bqr.addEventListener('click', () => { const bk = bucleKeyOf(S); if (S.bucleAj) { const n = { ...S.bucleAj }; delete n[bk]; S.bucleAj = n; } commit(); });
     const pp = body.querySelector('#prueba-previa'); if (pp) pp.addEventListener('change', () => { try { localStorage.setItem(STORE_PFX + 'pruebaPrevia', pp.checked ? '1' : '0'); } catch {} log(pp.checked ? `🧪 Prueba: la previa arranca en ${mmss(PRUEBA_DESDE)}` : '🧪 Prueba desactivada: la previa arranca desde el principio', 'o'); renderControl(); });
     const sa = body.querySelector('#seq-abort'); if (sa) sa.addEventListener('click', () => abortSeq());
     const ct = body.querySelector('#cal-tog'); if (ct) ct.addEventListener('click', () => { S.calib = !S.calib; if (S.calib) S.marcar = false; commit(); });
