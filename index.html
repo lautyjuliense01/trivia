@@ -102,6 +102,8 @@ body.suspense .stage{animation:heartbeat 1.1s ease-in-out infinite}
 #unlock{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(20,0,0,.82);text-align:center;padding:20px}
 #unlock .script{font-size:clamp(40px,6vw,80px)}
 #unlock p{max-width:560px;color:var(--muted);line-height:1.5}
+#corto-pick{display:flex;flex-direction:column;align-items:center;gap:8px}#corto-pick[hidden]{display:none}
+.corto-pick-s{font-size:15px;color:#e9dcc6}.corto-pick-s.ok{color:#9ff0b9}.corto-pick-s.no{color:#ffb3a6}
 
 /* ---------- Control (celu) ---------- */
 #control{padding:16px 14px 40px;max-width:560px;margin:0 auto}
@@ -433,6 +435,7 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .prueba-chk input{flex:0 0 auto;width:20px;height:20px;accent-color:#f0a43a}
 #seq-toast{position:sticky;top:6px;z-index:30;margin-bottom:12px;padding:12px 14px;border-radius:16px;background:rgba(40,8,8,.96);border:2px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.6)}
 #seq-msg,#rev-msg{font-weight:800;font-size:16px}
+.warn-big{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:rgba(224,90,72,.15);border:1px solid #e05a48;color:#ffb3a6;font-weight:700;font-size:15px}
 .mk-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .bq{margin-top:12px;padding:8px 10px;border:1px solid rgba(232,211,166,.25);border-radius:12px}.bq summary{cursor:pointer;font-weight:700;font-size:14px}
 .bq-row{margin-top:10px}.bq-l{font-size:13px;margin-bottom:4px}
@@ -838,6 +841,7 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 #corto.on{opacity:1;pointer-events:auto;cursor:none}
 #corto iframe{position:absolute;left:0;top:-14vh;width:100vw;height:128vh;border:0;pointer-events:none}
 .corto-shield{position:absolute;inset:0;cursor:none}
+#corto video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
 #marcar{position:fixed;left:50%;bottom:3vh;transform:translateX(-50%);z-index:40;display:flex;align-items:center;gap:22px;padding:18px 28px;background:rgba(8,4,2,.96);border:1px solid rgba(233,196,106,.55);border-radius:6px;max-width:min(900px,92vw);text-align:left}
 #marcar[hidden]{display:none}
 #mk-dot{transition:transform .15s}#mk-dot.pop{transform:scale(1.35)}
@@ -974,6 +978,7 @@ body{background:
   <div id="unlock" style="z-index:30">
     <div class="script" id="unlock-title"></div>
     <button class="btn" id="unlock-btn" style="font-size:20px;padding:16px 28px">Tocá para activar la pantalla</button>
+    <div id="corto-pick" hidden><button class="btn ghost" id="corto-pick-btn">🎞️ Elegir el video del corto</button><div class="corto-pick-s" id="corto-pick-s"></div><input type="file" id="corto-file" accept="video/*" hidden></div>
     <p>El navegador no deja reproducir sonido hasta que alguien toca la página una vez. Este toque también pone pantalla completa y evita que se apague.</p>
   </div>
 </section>
@@ -1150,7 +1155,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v44 · 02/11 00:30';
+const VERSION = 'v45 · 02/11 00:40';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1788,7 +1793,7 @@ const CRED_AT = [];
 let CRED_END = CEL;
 CREDITS.forEach((c, i) => { CRED_AT.push(CRED_END); CRED_END += credDur(c, i); });
 /* Cortometraje antes de la película (como en el cine): parte la apertura en dos, avisos → corto → estudio y créditos */
-const CORTO = D.corto && D.corto.id ? D.corto : null;
+const CORTO = D.corto && (D.corto.local || D.corto.archivo || D.corto.id) ? D.corto : null;   // local: el video se elige de los archivos de la compu de la tele
 const cineOff = sl => (sl && sl.parte === 'creditos' ? CEL - 800 : 0);                     // en la parte de créditos todo arranca a los 0,8 s
 const cineFin = sl => (sl && sl.parte === 'avisos' ? CEL + 700 : CRED_END - cineOff(sl));   // ms hasta que pasa sola a lo siguiente
 /* Telón de terciopelo dibujado una sola vez: pliegues irregulares, brillo de terciopelo, cenefa con flecos dorados */
@@ -2732,9 +2737,23 @@ function initScreen() {
   /* Cortometraje: reproductor propio a pantalla completa, sin controles ni nada encima, por arriba de todo.
      El iframe es más alto que la pantalla: el video queda entero y la barra de título de YouTube cae afuera. */
   let cortoP = null, cortoReady = false, cortoT = null, cortoOn = false, cortoSt = 0, cortoSlide = -1, cortoSent = 0;
-  const cortoVol = () => { if (cortoP && cortoReady) try { cortoP.setVolume(Math.round(Math.min(100, musicVol * (CORTO.volumen || 1)))); } catch {} };
+  let cortoV = null;   // corto como archivo (mp4 subido al repositorio)
+  const cortoVol = () => {
+    if (cortoV) { cortoV.volume = Math.min(1, Math.max(0, musicVol / 100 * (CORTO.volumen || 1))); return; }
+    if (cortoP && cortoReady) try { cortoP.setVolume(Math.round(Math.min(100, musicVol * (CORTO.volumen || 1)))); } catch {}
+  };
   function cortoInit() {
-    if (!CORTO || cortoP) return;
+    if (!CORTO || cortoP || cortoV) return;
+    if (CORTO.archivo || CORTO.local) {
+      const box = document.createElement('div'); box.id = 'corto';
+      box.innerHTML = `<video id="corto-v" preload="auto" playsinline ${CORTO.local ? '' : `src="${esc(CORTO.archivo)}"`}></video><div class="corto-shield"></div>`;
+      document.body.appendChild(box);
+      cortoV = box.querySelector('video');
+      cortoV.addEventListener('playing', () => { if (cortoOn) box.classList.add('on'); });
+      cortoV.addEventListener('ended', () => { if (cortoOn) cortoEnd(); });
+      cortoV.addEventListener('error', () => { if (CORTO.local && !cortoURL) return; if (cortoOn) cortoEnd('no se pudo reproducir el corto (' + (CORTO.local ? cortoNombre : CORTO.archivo) + ')'); else log('No se pudo cargar el corto: ' + (CORTO.local ? cortoNombre : CORTO.archivo), 'e'); });
+      return;
+    }
     const box = document.createElement('div'); box.id = 'corto'; box.innerHTML = '<div id="corto-yt"></div><div class="corto-shield"></div>';
     document.body.appendChild(box);
     loadYouTubeApi().then(YT => {
@@ -2753,10 +2772,56 @@ function initScreen() {
       });
     }).catch(() => {});
   }
+  /* Corto desde un archivo de la compu de la tele: se elige una vez en la pantalla de inicio.
+     En Chrome/Edge queda recordado: las veces siguientes, el toque de "activar" lo vuelve a cargar (puede pedir permiso). */
+  let cortoURL = null, cortoNombre = '';
+  const cortoDB = () => new Promise((res, rej) => { const r = indexedDB.open('bt_corto', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  async function cortoGuardar(h) { try { const db = await cortoDB(); db.transaction('h', 'readwrite').objectStore('h').put(h, 'video'); } catch {} }
+  async function cortoLeer() { try { const db = await cortoDB(); return await new Promise(res => { const q = db.transaction('h').objectStore('h').get('video'); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch { return null; } }
+  function cortoUsar(file) {
+    if (cortoURL) URL.revokeObjectURL(cortoURL);
+    cortoURL = URL.createObjectURL(file); cortoNombre = file.name;
+    if (cortoV) cortoV.src = cortoURL;
+    const s = $('#corto-pick-s'); s.textContent = `✔ Listo: ${file.name} (${Math.round(file.size / 1048576)} MB)`; s.className = 'corto-pick-s ok';
+    if (link) link.send({ type: 'log', text: `🎞️ Corto listo en la tele: ${file.name}`, kind: 'o' });
+  }
+  async function cortoLocalRecuperar() {
+    if (!CORTO || !CORTO.local || cortoURL) return;
+    const h = await cortoLeer();
+    if (!h || !h.getFile) return;
+    try { if ((await h.queryPermission({ mode: 'read' })) !== 'granted' && (await h.requestPermission({ mode: 'read' })) !== 'granted') return; cortoUsar(await h.getFile()); } catch {}
+  }
+  if (CORTO && CORTO.local) {
+    $('#corto-pick').hidden = false;
+    $('#corto-pick-s').textContent = 'Falta elegir el video (se elige una sola vez en esta compu)'; $('#corto-pick-s').className = 'corto-pick-s no';
+    cortoLeer().then(h => { if (h && !cortoURL) { $('#corto-pick-s').textContent = `Recordado: ${h.name}. Al tocar "activar" se carga (puede pedir permiso).`; $('#corto-pick-s').className = 'corto-pick-s'; } });
+    $('#corto-pick-btn').addEventListener('click', async () => {
+      if (window.showOpenFilePicker) {
+        try { const [h] = await showOpenFilePicker({ types: [{ description: 'Video', accept: { 'video/*': ['.mp4', '.mov', '.webm', '.mkv', '.m4v'] } }] }); cortoUsar(await h.getFile()); cortoGuardar(h); } catch {}
+      } else $('#corto-file').click();
+    });
+    $('#corto-file').addEventListener('change', e => { const f = e.target.files[0]; if (f) cortoUsar(f); });
+  }
   cortoInit();
   function cortoStart(slide) {
     if (!CORTO) return;
     cortoOn = true; cortoSt = Date.now(); cortoSlide = slide;
+    if (CORTO.local && !cortoURL) return setTimeout(() => cortoEnd('la tele no tiene elegido el video del corto'), 300);
+    if (cortoV) {
+      setTimeout(() => {
+        if (!cortoOn) return;
+        try { cortoV.currentTime = CORTO.inicio || 0; cortoVol(); cortoV.play().catch(e => cortoEnd('el corto no arrancó: ' + e.message)); } catch {}
+      }, 400);
+      clearInterval(cortoT);
+      cortoT = setInterval(() => {
+        if (!cortoOn) return;
+        const t = cortoV.currentTime || 0, fin = CORTO.fin || cortoV.duration || 0;
+        if (link && Date.now() - cortoSent > 1000) { cortoSent = Date.now(); link.send({ type: 'cortoEstado', t, d: fin }); }
+        if (cortoV.paused && t < 0.5 && Date.now() - cortoSt > 20000) return cortoEnd('el corto no arrancó');
+        if (CORTO.fin && t >= CORTO.fin - 0.45) cortoEnd();
+      }, 100);
+      return;
+    }
     const go = () => {
       if (!cortoOn) return;
       if (!cortoReady) { if (Date.now() - cortoSt > 12000) return cortoEnd('el reproductor del corto no cargó'); return setTimeout(go, 300); }
@@ -2778,10 +2843,10 @@ function initScreen() {
     if (!cortoOn) return;
     cortoOn = false; clearInterval(cortoT);
     $('#corto').classList.remove('on');
-    setTimeout(() => { try { cortoP.stopVideo(); } catch {} }, 800);
+    setTimeout(() => { try { if (cortoV) cortoV.pause(); else cortoP.stopVideo(); } catch {} }, 800);
     if (link) link.send({ type: 'cortoFin', slide: cortoSlide, error: err || null });
   }
-  function cortoStop() { if (!cortoOn) return; cortoOn = false; clearInterval(cortoT); $('#corto').classList.remove('on'); try { cortoP.stopVideo(); } catch {} }
+  function cortoStop() { if (!cortoOn) return; cortoOn = false; clearInterval(cortoT); $('#corto').classList.remove('on'); try { if (cortoV) cortoV.pause(); else cortoP.stopVideo(); } catch {} }
   setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: fxPlayer ? fxPlayer.status() : null }); }, 1000);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
 
@@ -3258,11 +3323,12 @@ function initScreen() {
     $('#scr-status').textContent = `${text} · código ${code}`;
     if (st === 'ok') link && link.send({ type: 'ping' });
   }, { auto: (D.conexion || {}).pantallaAuto !== false });   // la pantalla rehace sola un servidor caído (no se puede tocar durante el show)
-  setInterval(() => link.send({ type: 'hello' }), 3000);
+  setInterval(() => link.send({ type: 'hello', corto: CORTO && CORTO.local ? (cortoURL ? cortoNombre : false) : null }), 3000);
   window.__logSink = (text, kind) => link.send({ type: 'log', text, kind });
 
   $('#unlock-btn').addEventListener('click', async () => {
     $('#unlock').hidden = true;
+    cortoLocalRecuperar();   // si el video ya se eligió antes, con este mismo toque pide permiso y lo carga
     if (!ENSAYO) { try { await document.documentElement.requestFullscreen(); } catch {} }
     keepAwake(); audioCtx();
     music.enableSound(false);
@@ -3765,7 +3831,7 @@ function initControl() {
     link && link.stop();
     lastHello = 0; linkAt = Date.now();
     link = createLink(code, 'control', msg => {
-      if (msg.type === 'hello') lastHello = Date.now();
+      if (msg.type === 'hello') { lastHello = Date.now(); if (msg.corto !== undefined && msg.corto !== cortoTele) { cortoTele = msg.corto; renderControl(); } }
       if (msg.type === 'ping') { lastHello = Date.now(); sendState(); }
       if (msg.type === 'log') { lastHello = Date.now(); log('📺 ' + msg.text, msg.kind || ''); }
       if (msg.type === 'musica') { lastHello = Date.now(); musNow = { a: msg.a, at: Date.now() }; showMusic(msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a); }
@@ -4485,7 +4551,7 @@ function initControl() {
     return i;
   }
 
-  let revealT = null, musNow = null, revPlan = null, revTick = null, cortoProg = null, bucleOpen = false;
+  let revealT = null, musNow = null, revPlan = null, revTick = null, cortoProg = null, bucleOpen = false, cortoTele = null;
   /* Pregunta con tema en bucle: la luz pasa a tensión en el tramo final y la respuesta cae en el segundo "revela" del tema.
      La tele es la que revela en el segundo justo; el celu programa las lámparas con lo que le dice la tele. */
   function revSchedule(msRev, msTen) {
@@ -4655,13 +4721,13 @@ function initControl() {
     else if (sl.k === 'premios') h = `<div class="now-title">Entrega de premios</div><p class="muted">Muestra el orden en que eligen (ganador primero) con música de fondo y luz cálida.</p>`;
     else if (sl.k === 'gracias') h = `<div class="now-title">🙏 Tus palabras de cierre</div><p class="muted">Suena ${esc(TRACKS.gracias ? TRACKS.gracias.name : 'la música de cierre')} más bajo para que hables encima. En la tele: el logo, "Gracias" y el equipo. Cuando termines, tocá Siguiente para los créditos.</p>`;
     else if (sl.k === 'cierre') h = `<div class="now-title">Créditos finales</div><p class="muted">Créditos que suben como en el cine, con la música de cierre y luz ambiente.</p>`;
-    else if (sl.k === 'previa') h = `<div class="now-title">Previa</div><p class="muted">No adelanta nada del show. Elegí cómo se ve la tele:</p>
+    else if (sl.k === 'previa') h = `${CORTO && CORTO.local && cortoTele === false ? '<p class="warn-big">⚠️ Falta elegir el video del corto en la tele (botón 🎞️ en su pantalla de inicio).</p>' : ''}<div class="now-title">Previa</div><p class="muted">No adelanta nada del show. Elegí cómo se ve la tele:</p>
       <div class="players">${[['apagado', '⬛ Tele apagada'], ['hipnotico', '🌀 Hipnótica'], ['polvo', '✨ Polvo de luz']].map(([v, t]) => `<button class="pbtn ${(S.previaModo || 'apagado') === v ? 'on' : ''}" data-pm="${v}">${t}</button>`).join('')}</div>
       ${D.previa ? (seq ? `<p class="muted" style="margin-top:10px">▶ Previa en marcha · próximo: <b>${esc(seqDescribe((D.previa.pasos || [])[seq.i] || { aviso: 'nada más' }))}</b></p><button class="btn ghost small" id="seq-abort">✋ Frenar la secuencia</button>`
         : `<button class="btn" id="seq-start" style="width:100%;margin-top:10px;font-size:17px">${pruebaPrevia() ? `▶ Comenzar previa · 🧪 desde ${mmss(PRUEBA_DESDE)}` : '▶ Comenzar previa automática'}</button><p class="muted" style="margin-top:6px">${esc((D.previa.resumen) || '')}</p>
           ${PRUEBA_DESDE ? `<label class="prueba-chk${pruebaPrevia() ? ' on' : ''}"><input type="checkbox" id="prueba-previa" ${pruebaPrevia() ? 'checked' : ''}><span>🧪 Prueba: la canción arranca en ${mmss(PRUEBA_DESDE)}${pruebaPrevia() ? ' · <b>destildalo la noche del show</b>' : ''}</span></label>` : ''}`) : ''}`;
 
-    else if (sl.k === 'corto') h = `<div class="now-title">🎞️ ${esc(CORTO.nombre || 'Cortometraje')}</div><p class="muted">A pantalla completa, sin controles. Cuando termina sigue sola con la intro de estudio y los créditos.</p><p style="margin:6px 0">⏱ <b id="corto-prog">${cortoProg && cortoProg.d ? `${mmss(cortoProg.t)} de ${mmss(cortoProg.d)}` : 'arrancando…'}</b></p>`;
+    else if (sl.k === 'corto') h = `${CORTO.local && cortoTele === false ? '<p class="warn-big">⚠️ La tele no tiene elegido el video: si llega acá, se saltea.</p>' : ''}<div class="now-title">🎞️ ${esc(CORTO.nombre || 'Cortometraje')}</div><p class="muted">A pantalla completa, sin controles. Cuando termina sigue sola con la intro de estudio y los créditos.</p><p style="margin:6px 0">⏱ <b id="corto-prog">${cortoProg && cortoProg.d ? `${mmss(cortoProg.t)} de ${mmss(cortoProg.d)}` : 'arrancando…'}</b></p>`;
     else if (sl.k === 'cine' && sl.parte === 'avisos') h = `<div class="now-title">Apertura de cine: avisos</div><p class="muted">Los avisos de sala mientras la luz baja hasta negro. Pasa sola al cortometraje en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
     else if (sl.k === 'cine' && sl.parte === 'creditos') h = `<div class="now-title">Apertura de cine: estudio y créditos</div><p class="muted">Desde negro: la intro de estudio y los créditos con la música de cine. Pasa sola a la fanfarria en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
     else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round(cineFin(sl) / 1000)} s.</p>`;

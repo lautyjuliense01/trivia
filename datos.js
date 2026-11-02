@@ -90,9 +90,11 @@ window.TRIVIA = {
 
   /* ---------- Cortometraje antes de la película (como Pixar) ----------
      Va después de los avisos de sala ("Bioingeniería Surround") y antes de la intro de estudio.
-     A pantalla completa, sin controles; cuando termina sigue sola. Vacío el id = no hay corto.
+     A pantalla completa, sin controles; cuando termina sigue sola.
      inicio / fin: segundos para recortarlo (fin sirve para cortar antes de la pantalla final de YouTube) · volumen: 0 a 1 */
-  corto: { id: '', nombre: 'Cortometraje', inicio: 0, fin: null, volumen: 1 },   // desactivado
+  corto: { local: true, archivo: '', id: '', nombre: 'La historia de Bioingeniería', inicio: 0, fin: null, volumen: 1 },
+  // local: true = el video se elige de los archivos de la compu de la tele (botón 🎞️ en su pantalla de inicio; en Chrome/Edge queda recordado)
+  // archivo: mp4 subido al repositorio (si pesa menos de 100 MB) · id: un video de YouTube · todo vacío/false = sin corto
 
   /* ---------- Música (ID del video de YouTube / YouTube Music) ----------
      El ID es lo que va después de "watch?v=" en el link.
