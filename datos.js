@@ -109,7 +109,7 @@ window.TRIVIA = {
     cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false, credito: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
-    pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions', bucle: [7, 35], revela: 49 },
+    pregunta:     { id: 'usLbaOEjqV4', nombre: '100-1000 Questions', bucle: [8.186, 36], revela: 49 },   // analizado del audio: el tramo se repite cada 27,814 s (el 36,000 es idéntico al 8,186)
                   // bucle: [desde, hasta] → al llegar a "hasta" vuelve a "desde", así la pregunta dura lo que haga falta (acepta decimales: 35.2).
                   //   Se afina en el celu, en la pregunta (🔁 Bucle del tema), y después se copia acá.
                   // revela: al tocar Revelar sale del bucle y la respuesta aparece justo en ese segundo; después el tema sigue hasta el final y pasa a "datos"
