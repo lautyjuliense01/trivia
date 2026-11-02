@@ -1155,7 +1155,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v45 · 02/11 00:40';
+const VERSION = 'v46 · 02/11 01:15';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1347,6 +1347,11 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
         },
         onError: e => {
           if (e.target && e.target !== player) { swapFail = true; swap = null; return; }   // falló el reproductor de apoyo: el bucle usa el salto común
+          if (current && retried !== current && [2, 5].includes(e.data)) {   // a veces YouTube falla al primer intento: un reintento limpio
+            const k = current; retried = k; cued = null;
+            setTimeout(() => { if (current === k) try { player.loadVideoById({ videoId: tracks[k].id, startSeconds: tracks[k].start || 0 }); } catch {} }, 600);
+            log(`YouTube falló con «${tracks[k].name}», reintento…`, 'e'); return;
+          }
           const t = current ? tracks[current].name : '?';
           log(`YouTube no reproduce «${t}»: ${YT_ERRORS[e.data] || 'error ' + e.data}`, 'e');
           onLabel && onLabel(`⚠️ ${t}: no se puede reproducir`);
@@ -1422,7 +1427,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (!ready || !tracks[key] || current) return;
     try { player.cueVideoById({ videoId: tracks[key].id, startSeconds: tracks[key].start || 0 }); cued = key; } catch {}
   }
-  let xTimer = null;
+  let xTimer = null, playGen = 0, retried = null;
   // el reproductor viejo se desvanece por su cuenta (mientras el nuevo ya suena en el otro)
   function fadeOut(p, ms) {
     clearInterval(xTimer);
@@ -1438,6 +1443,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (!ready) { log('El reproductor todavía no está listo', 'e'); return; }
     const tr = tracks[key];
     if (!tr) return;
+    playGen++; retried = null;
     if (current === key && player.getPlayerState() === S().PLAYING && !opts.restart) return;
     if (opts.xfade > 0 && player.getPlayerState() === S().PLAYING) {
       if (shadow && shadowReady && !swapFail) {
@@ -1465,7 +1471,9 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (!ready) return;
     needsFadeIn = false;
     current = null;
+    const gen = ++playGen;
     await fadeTo(0, ms);
+    if (gen !== playGen) return;   // mientras se apagaba arrancó otro tema: no lo pauses
     try { player.pauseVideo(); } catch {}
     current = null;
     onLabel && onLabel('Música: en pausa');
@@ -1794,7 +1802,7 @@ let CRED_END = CEL;
 CREDITS.forEach((c, i) => { CRED_AT.push(CRED_END); CRED_END += credDur(c, i); });
 /* Cortometraje antes de la película (como en el cine): parte la apertura en dos, avisos → corto → estudio y créditos */
 const CORTO = D.corto && (D.corto.local || D.corto.archivo || D.corto.id) ? D.corto : null;   // local: el video se elige de los archivos de la compu de la tele
-const cineOff = sl => (sl && sl.parte === 'creditos' ? CEL - 800 : 0);                     // en la parte de créditos todo arranca a los 0,8 s
+const cineOff = sl => (sl && sl.parte === 'creditos' ? CEL - 1200 : 0);                     // en la parte de créditos todo arranca a los 0,8 s
 const cineFin = sl => (sl && sl.parte === 'avisos' ? CEL + 700 : CRED_END - cineOff(sl));   // ms hasta que pasa sola a lo siguiente
 /* Telón de terciopelo dibujado una sola vez: pliegues irregulares, brillo de terciopelo, cenefa con flecos dorados */
 function renderCurtain(W, H, opt = {}) {
@@ -1897,6 +1905,9 @@ const AV_ICONS = {
   shh: '<circle cx="24" cy="22.5" r="17"/><path d="M14.6 19q2.4 2 4.8 0M28.6 19q2.4 2 4.8 0"/><path d="M17 31q3.4-2.6 7-1.3 3.6-1.3 7 1.3-3.4 3-7 3t-7-3z"/><rect x="20.6" y="24.5" width="6.8" height="23.5" class="mask"/><path d="M21.2 47.5V27.6a2.8 2.8 0 0 1 5.6 0v19.9"/><path d="M22.8 28.7a1.2 1.2 0 0 1 2.4 0"/>',
   celular: '<rect x="15" y="5" width="18" height="38" rx="3.5"/><line x1="21" y1="38" x2="27" y2="38"/><line x1="8" y1="8" x2="40" y2="40" class="cut"/><line x1="8" y1="8" x2="40" y2="40"/>',
   silencio: '<path d="M9 11h30a3 3 0 0 1 3 3v15a3 3 0 0 1-3 3H22l-8 7v-7H9a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z"/><line x1="8" y1="8" x2="40" y2="40" class="cut"/><line x1="8" y1="8" x2="40" y2="40"/>',
+  mudo: '<path d="M7 19h7l9-7v24l-9-7H7z"/><path d="M30 18l11 12M41 18L30 30"/>',
+  camara: '<rect x="6" y="15" width="36" height="24" rx="3"/><path d="M17 15l3-5h8l3 5"/><circle cx="24" cy="27" r="7"/>',
+  comida: '<path d="M8 17h19v8a9.5 9.5 0 0 1-19 0z"/><path d="M27 19h3a4 4 0 0 1 0 8h-3"/><path d="M7 41h21"/><path d="M38 8v33M35 8v8a3 3 0 0 0 6 0V8"/>',
   butaca: '<path d="M12 22V12a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v10"/><path d="M8 22h32v10H8z"/><path d="M12 32v8M36 32v8"/>',
   pantalla: '<rect x="9" y="11" width="30" height="20" rx="2"/><path d="M5 37h38"/><line x1="8" y1="8" x2="40" y2="40" class="cut"/><line x1="8" y1="8" x2="40" y2="40"/>',
   medico: '<path d="M19 8h10v11h11v10H29v11H19V29H8V19h11z"/>',
@@ -1913,7 +1924,7 @@ const AV_ICONS = {
   ticket: '<path d="M5 14h38v6a4 4 0 0 0 0 8v6H5v-6a4 4 0 0 0 0-8z"/><path d="M31 15v18" stroke-dasharray="2 3"/><path d="M11 21h13M11 27h9"/>',
   regalo: '<rect x="7" y="17" width="34" height="8"/><path d="M10 25v17h28V25"/><path d="M24 17v25"/><path d="M24 17c-3-6-12-8-12-2s9 2 12 2zM24 17c3-6 12-8 12-2s-9 2-12 2z"/>',
 };
-const AV_EMOJI = { '📵': 'celular', '🤫': 'shh', '🖊️': 'marcador', '🖊': 'marcador', '🚪': 'salida', '🔊': 'sonido' };
+const AV_EMOJI = { '📵': 'celular', '🤫': 'mudo', '🖊️': 'marcador', '🖊': 'marcador', '🚪': 'salida', '🔊': 'sonido' };
 function avIconHTML(ic) {
   const k = AV_ICONS[ic] ? ic : AV_EMOJI[ic];
   if (k) return `<div class="av-ico"><svg viewBox="0 0 48 48" aria-hidden="true">${AV_ICONS[k]}</svg></div>`;
@@ -2676,7 +2687,8 @@ function createDirector(music, fx) {
       // los avisos van en silencio; la música de los créditos entra con el primer crédito (con corto: en la segunda parte)
       const parte = (SCRIPT[st.slide] || {}).parte || 'todo';
       music.stop(800);
-      if (parte !== 'avisos') { setTimeout(() => music.cue('cine'), parte === 'creditos' ? 50 : 1200); afterT = setTimeout(() => music.play('cine'), Math.max(0, CEL - 300 - cineOff(SCRIPT[st.slide]))); }
+      if (parte === 'todo') { setTimeout(() => music.cue('cine'), 1200); afterT = setTimeout(() => music.play('cine'), Math.max(0, CEL - 300)); }
+      else if (parte === 'creditos') afterT = setTimeout(() => music.play('cine', { instant: true }), Math.max(900, CEL - 300 - cineOff(SCRIPT[st.slide])));
       lastKey = parte === 'avisos' ? null : 'cine'; lastMoment = m; return;
     }
     if (fx && ['pizarras', 'tension'].includes(m) && TRACKS.redoble) fx.cue('redoble');
