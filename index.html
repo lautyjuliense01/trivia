@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>El Ticket Dorado</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Anton&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Anton&family=Montserrat:wght@400;600;800&family=Yellowtail&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s);"></script>
 <script>document.write('<script src="datos.js?t=' + Date.now() + '"><\/script>');</script>
 <style>
@@ -523,6 +523,30 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .cine-card.ident-card{animation-name:identInOut;transform:none}
 .mini-ident{display:contents}.mini-ident .id-emblem{zoom:.72}.mini-ident .id-name,.mini-ident .id-sub{zoom:.8}.mini-ident .id-rays{opacity:.55}
 @keyframes identInOut{0%{opacity:0}4%{opacity:1}92%{opacity:1}100%{opacity:0}}
+/* v31: productora chica "Bioingeniería Surround" (logo de neón antes del corto) */
+.neon{position:absolute;inset:0;overflow:hidden;background:#030304;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.nz-wall{position:absolute;inset:0;opacity:0;animation:fadeIn 1.4s .1s ease-out forwards;
+  background:radial-gradient(ellipse 70% 60% at 50% 46%,#16131a 0%,#0b0a0e 50%,#030304 85%),
+  repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 2px,transparent 2px 44px)}
+.nz-wall::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,.28) 0 2px,transparent 2px 96px);
+  -webkit-mask:repeating-linear-gradient(0deg,#000 0 44px,transparent 44px 88px);mask:repeating-linear-gradient(0deg,#000 0 44px,transparent 44px 88px)}
+.nz-spill{position:absolute;inset:0;opacity:0;transition:opacity .06s linear;
+  background:radial-gradient(ellipse 30% 26% at 50% 30%,rgba(60,230,255,.20),transparent 70%),radial-gradient(ellipse 48% 30% at 50% 47%,rgba(255,60,210,.24),transparent 72%),radial-gradient(ellipse 40% 18% at 50% 62%,rgba(60,230,255,.14),transparent 70%)}
+.nz-sign{position:relative;display:flex;flex-direction:column;align-items:center;gap:0;transform:translateY(-3vh)}
+.nz-ico{width:clamp(150px,17vw,260px);height:auto;overflow:visible}
+.nz-ico path{fill:none;stroke:rgba(140,180,190,.16);stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;transition:stroke .04s}
+.nz-ico.on path{stroke:#d8feff}
+.nz-ico.on{filter:drop-shadow(0 0 3px #7ff9ff) drop-shadow(0 0 10px #18e6ff) drop-shadow(0 0 28px rgba(0,190,255,.75))}
+.nz-script{font-family:'Yellowtail',cursive;font-size:clamp(70px,9.6vw,150px);line-height:1;margin-top:-.08em;padding:0 .2em;color:rgba(255,170,235,.10);transform:rotate(-4deg)}
+.nz-script.on{color:#fff1fb;text-shadow:0 0 3px #fff,0 0 9px #ff5ad9,0 0 20px #ff2bcc,0 0 42px #ff2bcc,0 0 80px rgba(255,30,190,.55)}
+.nz-block{font-family:'Montserrat',sans-serif;font-weight:800;font-size:clamp(30px,4vw,66px);letter-spacing:.55em;margin:.12em 0 0 .55em;
+  color:transparent;-webkit-text-stroke:2.5px rgba(140,190,200,.16)}
+.nz-block.on{-webkit-text-stroke:2.5px #d8feff;filter:drop-shadow(0 0 3px #7ff9ff) drop-shadow(0 0 10px #18e6ff) drop-shadow(0 0 26px rgba(0,190,255,.7))}
+.nz-block.on .nz-flaky{animation:nzFlaky 2.3s 1.1s steps(1) infinite}
+@keyframes nzFlaky{0%,36%,40%,43%,100%{-webkit-text-stroke-color:#d8feff}37%,42%{-webkit-text-stroke-color:rgba(140,190,200,.18)}}
+.nz-sub{position:absolute;left:0;right:0;bottom:21vh;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:clamp(22px,2.4vw,38px);
+  letter-spacing:.32em;color:#e9e4ee;opacity:0;animation:fadeIn 1.4s 3.9s ease-out forwards}
+.neon.apagado .nz-sub{transition:opacity .6s;opacity:0!important;animation:none}
 .ident{position:absolute;inset:0;overflow:hidden;animation-name:pushIn;animation-timing-function:cubic-bezier(.3,0,.7,1);animation-fill-mode:both}
 @keyframes pushIn{from{transform:scale(1)}to{transform:scale(1.09)}}
 .id-sky{position:absolute;inset:0;background:radial-gradient(ellipse 120% 70% at 50% 78%,#3a2408 0%,#140a02 45%,#030201 80%);opacity:0;animation:fadeIn 1.6s ease-out both}
@@ -587,6 +611,11 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .intro-curtain.r{transform-origin:100% 0;animation:curtGatherR 3s var(--tTelon,4.4s) cubic-bezier(.6,0,.25,1) forwards!important}
 @keyframes curtGatherL{0%{transform:scaleX(1);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}100%{transform:scaleX(.17);clip-path:polygon(0 0,100% 0,100% 16%,0 100%)}}
 @keyframes curtGatherR{0%{transform:scaleX(1);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}100%{transform:scaleX(.17);clip-path:polygon(0 0,100% 0,100% 100%,0 16%)}}
+/* v31: telón a la americana (pliegues en tiras) */
+.trav{position:fixed;top:0;bottom:0;width:50vw;z-index:5;pointer-events:none}
+.trav.l{left:0}.trav.r{right:0;transform:scaleX(-1)}
+.tv-s{position:absolute;top:0;left:0;height:100%;transform-origin:0 0;will-change:transform;background-repeat:no-repeat;background-color:#160204}
+.tv-o{position:absolute;inset:0;opacity:0;background:linear-gradient(90deg,rgba(0,0,0,.92),rgba(0,0,0,.35) 26%,rgba(0,0,0,0) 46%,rgba(0,0,0,0) 56%,rgba(0,0,0,.4) 76%,rgba(0,0,0,.95))}
 .intro-stage{position:fixed;inset:0;z-index:1;background:radial-gradient(ellipse 60% 55% at 50% 45%,rgba(90,16,16,.45),transparent 70%),linear-gradient(180deg,#060101 0%,#0d0203 70%,#030000 100%)}
 .intro-valance{position:fixed;left:0;right:0;top:0;height:20vh;z-index:5;pointer-events:none;background:var(--valance) center top/100% auto no-repeat}
 /* v30: avisos de sala en placas, con el foco sobre el telón */
@@ -1169,7 +1198,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v53 · 02/11 19:00';
+const VERSION = 'v54 · 02/11 21:00';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1386,6 +1415,14 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     }
     if (e.data === S().PLAYING && current) {
       onLabel && onLabel('♪ ' + tracks[current].name);
+      // velocidad propia de la pista (ej.: la voz de presentación al 0,9); las demás vuelven a la normal
+      try {
+        const want = tracks[current].rate || rateNow, k = current;
+        if (Math.abs((player.getPlaybackRate() || 1) - want) > 0.01) {
+          player.setPlaybackRate(want);
+          if (want !== 1) setTimeout(() => { try { if (current !== k) return; const got = player.getPlaybackRate(); if (Math.abs(got - want) > 0.01) log(`YouTube no acepta la velocidad ${want} en «${tracks[k].name}»: quedó en ${got}`, 'e'); else log(`«${tracks[k].name}» a velocidad ${want}`, 'o'); } catch {} }, 900);
+        }
+      } catch {}
       if (window.__onTrackPlaying) { try { window.__onTrackPlaying(current); } catch {} }
       if (needsFadeIn) {
         // El volumen se ajusta recién cuando el video ya suena: antes YouTube lo ignora.
@@ -1887,7 +1924,9 @@ const AVISOS = LOCUCION ? [
 const avSonido = a => (a.sonido != null ? a.sonido : (D.apertura && D.apertura.graves === false ? '' : 'grave'));   // 'grave', 'envolvente', 'archivo.mp3' o ''
 const avSubida = a => a.subida || 4800;   // envolvente: ms que crece el sonido antes del golpe
 const avDur = a => (a.ms || (avSonido(a) === 'envolvente' ? avSubida(a) + 4200 : Math.max(4200, ((a.texto || '') + ' ' + (a.sub || '')).length * 55 + 1500)));
-const AV_MS = AVISOS.reduce((t, a) => t + avDur(a), 0) + 400;
+/* Silencio antes del primer aviso: la previa termina, la luz baja y recién después arranca la locución */
+const SIL_MS = Math.max(0, Math.round(((D.apertura && D.apertura.silencio) || 0) * 1000)), AV_T0 = 200 + SIL_MS;
+const AV_MS = AVISOS.reduce((t, a) => t + avDur(a), 0) + 400 + SIL_MS;
 const CEL = AV_MS;
 /* Voz para los avisos (la voz en español del navegador) */
 let voiceEs = null;
@@ -1978,6 +2017,134 @@ function renderCurtain(W, H, opt = {}) {
   }
   if (opt.cenefa !== false) drawValance(ctx, W, top, rnd);
   return cv;
+}
+/* v31: telón a la americana. Cada paño es una tira de pliegues (los cortes caen en el fondo de cada pliegue),
+   así al correrse cada pliegue se cierra sobre sí mismo como tela real en vez de estirarse o doblarse. */
+function renderTraveler(W, H, seed, N = 9) {
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  let sd = seed | 0;
+  const rnd = () => { sd = sd + 0x6D2B79F5 | 0; let t = Math.imul(sd ^ sd >>> 15, 1 | sd); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  // anchos de pliegue irregulares (normalizados al ancho del paño)
+  let ws = Array.from({ length: N }, () => 0.75 + 0.55 * rnd()); const sum = ws.reduce((a, b) => a + b, 0); ws = ws.map(w => w / sum);
+  const F = ws.map(() => ({ d: 0.55 + 0.45 * rnd(), a: (rnd() - 0.5) * 0.24, b: 0.86 + 0.26 * rnd(), ph: rnd() * 6.28, wv: 0.03 + 0.05 * rnd(), dbl: rnd() < 0.55 ? 0.35 + 0.3 * rnd() : 0 }));   // dbl: pliegue con una ondita al medio
+  const x0s = []; { let x = 0; ws.forEach(w => { x0s.push(x); x += w; }); }
+  const img = ctx.createImageData(W, H), d = img.data;
+  const fold = new Int16Array(W), uArr = new Float32Array(W), nap = new Float32Array(W);
+  for (let x = 0, k = 0; x < W; x++) {
+    const fx = (x + 0.5) / W;
+    while (k < N - 1 && fx >= x0s[k + 1]) k++;
+    fold[x] = k; uArr[x] = (fx - x0s[k]) / ws[k]; nap[x] = (rnd() - 0.5) * 0.06;
+  }
+  const hemY = 0.962, thL = 0.32;   // ruedo · luz que viene del centro del escenario (lado de adentro del paño)
+  for (let y = 0; y < H; y++) {
+    const ty = y / H;
+    const light = 0.30 + 0.70 * Math.exp(-Math.pow((ty - 0.42) / 0.50, 2));
+    for (let x = 0; x < W; x++) {
+      const f = F[fold[x]], u = uArr[x], su = Math.sin(Math.PI * u);
+      let u2 = u + su * (f.a + f.wv * Math.sin(ty * 3.1 + f.ph));       // la cresta serpentea un poco a lo alto; los bordes quedan fijos
+      u2 = Math.min(1, Math.max(0, u2));
+      const th = (u2 - 0.5) * Math.PI;                                  // el pliegue como medio cilindro
+      const dif = Math.max(0, Math.cos(th - thL));
+      let ao = Math.pow(Math.sin(Math.PI * u2), 0.55 + 0.9 * f.d);      // el fondo del pliegue no recibe luz
+      if (f.dbl) ao *= 1 - f.dbl * Math.pow(Math.max(0, Math.cos((u2 - 0.5) * Math.PI * 4.2)), 3) * su;   // ondita secundaria: rompe la regularidad
+      const spec = Math.pow(dif, 22) * 0.42 + Math.pow(Math.max(0, Math.cos(th + 0.9)), 6) * 0.12;   // brillo del terciopelo + reflejo del otro lado
+      const lx = 0.78 + 0.22 * (x / W);                                 // más luz hacia el centro del escenario
+      let v = ao * (0.10 + 0.90 * dif) * light * lx * f.b + nap[x] * light + (rnd() - 0.5) * 0.02;
+      let hl = spec * ao * light * lx;
+      if (ty > hemY - 0.012) { const k = Math.min(1, (ty - (hemY - 0.012)) / 0.012); v *= 1 - 0.35 * k; hl *= 1 - 0.5 * k; }   // el ruedo, más pesado y oscuro
+      v = Math.max(0, v);
+      const i = (y * W + x) * 4;
+      d[i] = Math.min(255, 8 + 172 * v + 150 * hl);
+      d[i + 1] = Math.min(255, 1 + 9 * v + 74 * hl);
+      d[i + 2] = Math.min(255, 3 + 17 * v + 64 * hl);
+      d[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  // sombra bajo la cenefa
+  let g = ctx.createLinearGradient(0, 0, 0, H * 0.2); g.addColorStop(0, 'rgba(0,0,0,.75)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H * 0.2);
+  // galón dorado del ruedo (sigue la forma de cada pliegue) y fleco corto
+  const yG = H * hemY, gh = Math.max(3, H * 0.008);
+  for (let x = 0; x < W; x++) {
+    const f = F[fold[x]], u = uArr[x], th = (u - 0.5) * Math.PI, dif = Math.max(0, Math.cos(th - thL)), ao = Math.pow(Math.sin(Math.PI * u), 0.7);
+    const l = (0.25 + 0.75 * dif) * ao, sp = Math.pow(dif, 30) * ao;
+    ctx.fillStyle = `rgb(${Math.round(60 + 170 * l + 60 * sp)},${Math.round(34 + 120 * l + 70 * sp)},${Math.round(8 + 40 * l + 60 * sp)})`;
+    ctx.fillRect(x, yG, 1, gh);
+    if (x % 2 === 0) {
+      const len = H * (0.018 + 0.006 * rnd()) * (0.6 + 0.4 * ao);
+      ctx.fillStyle = `rgba(${Math.round(70 + 150 * l)},${Math.round(40 + 105 * l)},${Math.round(10 + 30 * l)},${(0.55 + 0.4 * ao).toFixed(2)})`;
+      ctx.fillRect(x, yG + gh, 1, len);
+    }
+  }
+  g = ctx.createLinearGradient(0, yG + gh, 0, H); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = g; ctx.fillRect(0, yG + gh, W, H - yG - gh);
+  // canto del paño que da al centro: una vuelta de tela con un filo de luz
+  g = ctx.createLinearGradient(W - W * 0.012, 0, W, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(.6, 'rgba(255,120,110,.10)'); g.addColorStop(1, 'rgba(0,0,0,.6)');
+  ctx.fillStyle = g; ctx.fillRect(W - W * 0.012, 0, W * 0.012, H);
+  return { canvas: cv, widths: ws };
+}
+let CURT = null;   // { url: [izq, der], widths: [izq, der], W, H }
+function curtainAssets(cb) {
+  if (CURT) { cb && cb(CURT); return; }
+  const W = Math.min(1920, Math.round(innerWidth * Math.min(2, devicePixelRatio || 1))) || 1280, H = Math.round(W * (innerHeight / innerWidth || 9 / 16));
+  const half = Math.round(W / 2), Hv = Math.round(H * 0.11);
+  const L = renderTraveler(half, H, 1101), R = renderTraveler(half, H, 2207);
+  const Rm = document.createElement('canvas'); Rm.width = half; Rm.height = H;   // el paño derecho, espejado, para el fondo de las demás pantallas
+  { const c = Rm.getContext('2d'); c.translate(half, 0); c.scale(-1, 1); c.drawImage(R.canvas, 0, 0); }
+  const V = document.createElement('canvas'); V.width = W; V.height = Math.round(Hv * 1.35);
+  let s0 = 77; drawValance(V.getContext('2d'), W, Hv, () => { s0 = (s0 * 16807) % 2147483647; return s0 / 2147483647; });
+  const out = { url: [null, null], widths: [L.widths, R.widths], W: half, H };
+  let pend = 4;
+  const done = () => { if (--pend) return; CURT = out; document.body.classList.add('has-curtain'); cb && cb(CURT); };
+  const put = (cv, name, k) => cv.toBlob(b => { if (b) { const u = URL.createObjectURL(b); if (name) document.documentElement.style.setProperty(name, `url(${u})`); if (k != null) out.url[k] = u; } done(); }, name === '--valance' ? 'image/png' : 'image/jpeg', 0.93);
+  put(L.canvas, '--curtain-l', 0); put(Rm, '--curtain-r', null); put(R.canvas, null, 1); put(V, '--valance', null);
+}
+/* Arma los dos paños de la intro (cada pliegue es una tira) y los deja cerrados */
+function travBuild(stage) {
+  curtainAssets(C => {
+    stage.querySelectorAll('.trav').forEach(el => {
+      const k = el.classList.contains('r') ? 1 : 0, Wc = el.clientWidth || innerWidth / 2, ws = C.widths[k];
+      let x = 0;
+      el.innerHTML = ws.map(w => { const px = w * Wc, h = `<div class="tv-s" style="width:${px.toFixed(2)}px;transform:translateX(${x.toFixed(2)}px);background-image:url(${C.url[k]});background-size:${Wc}px 100%;background-position:${(-x).toFixed(2)}px 0"><div class="tv-o"></div></div>`; x += px; return h; }).join('');
+      el.dataset.ok = '1';
+    });
+  });
+}
+/* Se corren: el canto de adentro tira y los pliegues se van juntando contra el costado, cada uno cuando le llega el empuje.
+   Lo de abajo del paño se atrasa un poco al moverse y se acomoda con un vaivén cuando frena. */
+function travOpen(stage, ms = 3600, pack = 0.27) {
+  const sides = [...stage.querySelectorAll('.trav')].map(el => {
+    const Wc = el.clientWidth || innerWidth / 2, k = el.classList.contains('r') ? 1 : 0;
+    const ws = (CURT ? CURT.widths[k] : []).map(w => w * Wc), x0 = []; let x = 0; ws.forEach(w => { x0.push(x); x += w; });
+    return { el, Wc, ws, x0, strips: [...el.querySelectorAll('.tv-s')], prev: x0.slice(), ang: ws.map(() => 0), angV: ws.map(() => 0) };
+  }).filter(sd => sd.strips.length);
+  if (!sides.length) return;
+  const H = innerHeight, t0 = performance.now(), ease = t => t * t * t * (t * (t * 6 - 15) + 10);
+  const smin = (a, b, kk) => { const h = Math.max(kk - Math.abs(a - b), 0) / kk; return Math.min(a, b) - h * h * kk / 4; };
+  let last = t0;
+  const frame = now => {
+    if (!sides[0].el.isConnected) return;
+    const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)); last = now;
+    const p = Math.min(1, (now - t0) / ms), e = ease(p);
+    let moving = p < 1;
+    sides.forEach(sd => {
+      const { Wc, ws, x0, strips } = sd, n = ws.length, Lw = Wc - (1 - pack) * Wc * e;   // canto de adentro
+      const xs = x0.map((x, i) => smin(x, Lw - pack * (Wc - x), 10));
+      for (let i = 0; i < n; i++) {
+        const right = i < n - 1 ? xs[i + 1] : Lw, w = Math.max(0.5, right - xs[i]), s = w / ws[i];
+        const v = (xs[i] - sd.prev[i]) / dt; sd.prev[i] = xs[i];
+        const target = Math.max(-3, Math.min(3, -v * 0.0048));   // grados: lo de abajo se atrasa
+        sd.angV[i] += (60 * (target - sd.ang[i]) - 8.5 * sd.angV[i]) * dt; sd.ang[i] += sd.angV[i] * dt;
+        if (Math.abs(sd.ang[i]) > 0.02 || Math.abs(sd.angV[i]) > 0.05) moving = true;
+        strips[i].style.transform = `translateX(${xs[i].toFixed(2)}px) skewX(${sd.ang[i].toFixed(3)}deg) scaleX(${s.toFixed(4)})`;
+        strips[i].firstChild.style.opacity = (0.72 * Math.min(1, (1 - s) / (1 - pack))).toFixed(3);   // al juntarse, los pliegues se hunden
+      }
+    });
+    if (moving) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
 }
 function drawValance(ctx, W, Hv, rnd) {
   const gold = (y0, y1) => { const g = ctx.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, '#fff2c4'); g.addColorStop(.45, '#d9a94a'); g.addColorStop(1, '#7a4f12'); return g; };
@@ -2125,6 +2292,63 @@ function identHTML(c, t0, dur) {
     <div class="id-fog f3" style="animation-duration:${dur}ms;animation-delay:${t0}ms"></div>
   </div>`;
 }
+/* Productora chica (antes del corto): cartel de neón que se enciende a los tirones, con zumbido y chasquidos */
+function neonHTML(c) {
+  const words = (c.estudio || '').trim().split(/\s+/), top = words.length > 1 ? words.slice(0, -1).join(' ') : words[0] || '', bot = words.length > 1 ? words[words.length - 1] : '';
+  const botHTML = [...bot.toUpperCase()].map((ch, i) => i === 1 ? `<span class="nz-flaky">${esc(ch)}</span>` : esc(ch)).join('');
+  const arc = (r, lado) => { const k = r * 0.7071, x = lado < 0 ? 130 - k : 130 + k; return `<path d="M${x.toFixed(1)},${(70 - k).toFixed(1)} A${r},${r} 0 0,${lado < 0 ? 0 : 1} ${x.toFixed(1)},${(70 + k).toFixed(1)}"/>`; };
+  return `<div class="neon"><div class="nz-wall"></div><div class="nz-spill"></div>
+    <div class="nz-sign">
+      <svg class="nz-ico" viewBox="0 0 260 140" aria-hidden="true"><path d="M92,70 H110 L118,46 L128,96 L137,56 L142,70 H168"/>${[52, 68, 84].map(r => arc(r, -1) + arc(r, 1)).join('')}</svg>
+      <div class="nz-script">${esc(top)}</div>
+      ${bot ? `<div class="nz-block">${botHTML}</div>` : ''}
+    </div>
+    ${c.texto ? `<div class="nz-sub">${esc(c.texto)}</div>` : ''}
+  </div>`;
+}
+function neonRun(t0, dur, timers) {
+  const FLICK = [[0, 1], [60, 0], [130, 1], [180, 0], [410, 1], [450, 0], [500, 1], [540, 0], [620, 1]];   // tirones hasta que prende
+  const parts = [['.nz-ico', 700], ['.nz-script', 1550], ['.nz-block', 2450]], lit = [0, 0, 0];
+  const apaga = dur - 750;
+  const root = () => document.querySelector('.neon');
+  const set = (i, on) => {
+    const r = root(); if (!r) return;
+    const el = r.querySelector(parts[i][0]); if (el) el.classList.toggle('on', !!on);
+    lit[i] = on ? 1 : 0;
+    const sp = r.querySelector('.nz-spill'); if (sp) sp.style.opacity = (lit.reduce((a, b) => a + b, 0) / 3).toFixed(2);
+  };
+  const ev = [];
+  parts.forEach((p, i) => FLICK.forEach(([dt, on]) => ev.push([t0 + p[1] + dt, i, on])));
+  ev.forEach(([at, i, on]) => timers.push(setTimeout(() => set(i, on), at)));
+  timers.push(setTimeout(() => { [0, 1, 2].forEach(i => set(i, 0)); const r = root(); if (r) r.classList.add('apagado'); }, t0 + apaga));
+  timers.push(setTimeout(() => boomGrave(0.28), t0 + parts[2][1] + 620));   // cuando prende entero, un golpe chico (es una productora chica)
+  // sonido: zumbido de 100 Hz que crece con cada tubo encendido y un chasquido en cada tirón
+  try {
+    const ctx = audioCtx(); if (!ctx) return;
+    const bus = sfxOut(ctx), T = ctx.currentTime + 0.03, at = ms => T + ms / 1000;
+    const hum = ctx.createOscillator(); hum.type = 'sawtooth'; hum.frequency.value = 100;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; lp.Q.value = 2;
+    const hg = ctx.createGain(); hg.gain.setValueAtTime(0, T);
+    hum.connect(lp); lp.connect(hg); hg.connect(bus.master); hum.start(T); hum.stop(at(dur + 400));
+    window.__neonStop = () => { try { const t = ctx.currentTime; hg.gain.cancelScheduledValues(t); hg.gain.setValueAtTime(0, t); hum.stop(t + 0.05); } catch {} window.__neonStop = null; };
+    const state = [0, 0, 0];
+    ev.slice().sort((a, b) => a[0] - b[0]).forEach(([ms, i, on]) => {
+      state[i] = on; const n = state.reduce((a, b) => a + b, 0);
+      hg.gain.setValueAtTime(0.022 * n, at(ms));
+      if (on) {
+        const c = ctx.createBufferSource(); c.buffer = noise(ctx);
+        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3200 + Math.random() * 1800; bp.Q.value = 1.2;
+        const cg = ctx.createGain(); cg.gain.setValueAtTime(0.16, at(ms)); cg.gain.exponentialRampToValueAtTime(0.0001, at(ms) + 0.035);
+        c.connect(bp); bp.connect(cg); cg.connect(bus.master); c.start(at(ms), Math.random() * 0.5); c.stop(at(ms) + 0.05);
+      }
+    });
+    hg.gain.setValueAtTime(0, at(apaga));
+    const c = ctx.createBufferSource(); c.buffer = noise(ctx);   // chasquido de la llave al apagar
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 0.9;
+    const cg = ctx.createGain(); cg.gain.setValueAtTime(0.22, at(apaga)); cg.gain.exponentialRampToValueAtTime(0.0001, at(apaga) + 0.06);
+    c.connect(bp); bp.connect(cg); cg.connect(bus.master); c.start(at(apaga)); c.stop(at(apaga) + 0.08);
+  } catch {}
+}
 /* Looks de luz: estados de la lámpara. Se pueden redefinir en datos.js (looks / guion) */
 const LOOKS = Object.assign({
   sala:      { tipo: 'blanco', brillo: 60, calidez: 20, transicion: 2, respaldo: 'normal' },
@@ -2161,14 +2385,16 @@ const LOOKS = Object.assign({
 /* Textos de la espera. Cada uno puede ir atado a:
    voz: segundo de la voz de presentación · tema: segundo del video del tema (el mismo que ves en YouTube) · o ms desde que arranca.
    est = cuándo se estima que aparece (para las luces y por si YouTube no responde). */
-const VOZ_MS = () => { const v = D.musica && D.musica.anfitrionVoz; return v && v.id ? ((v.fin || v.duracion || 21) * 1000) : 0; };
+const VOZ_VEL = () => { const v = D.musica && D.musica.anfitrionVoz; return (v && +v.velocidad > 0) ? +v.velocidad : 1; };
+const VOZ_PAUSA = () => { const v = D.musica && D.musica.anfitrionVoz; return v && v.id && +v.pausa > 0 ? Math.round(v.pausa * 1000) : 0; };   // negro y silencio entre la voz y el tema
+const VOZ_MS = () => { const v = D.musica && D.musica.anfitrionVoz; return v && v.id ? Math.round((v.fin || v.duracion || 21) * 1000 / VOZ_VEL()) + VOZ_PAUSA() : 0; };
 function hostTexts() {
   const p = D.presentador || {}, temaIni = (D.musica && D.musica.anfitrion && D.musica.anfitrion.inicio) || 0;
   let at = p.inicioTextos != null ? p.inicioTextos : 1200;
   return (p.textos || ['Damas y caballeros', 'Con ustedes']).map((x, i) => {
     const o = typeof x === 'string' ? { texto: x } : (x || {});
     let r;
-    if (o.voz != null) r = { texto: o.texto || '', clock: 'voz', t: o.voz, est: Math.round(o.voz * 1000) + 200 };
+    if (o.voz != null) r = { texto: o.texto || '', clock: 'voz', t: o.voz, est: Math.round(o.voz * 1000 / VOZ_VEL()) + 200 };
     else if (o.tema != null) r = { texto: o.texto || '', clock: 'tema', t: o.tema, est: VOZ_MS() + Math.round((o.tema - temaIni) * 1000) + 400 };
     else { r = { texto: o.texto || '', clock: 'ms', t: at, est: at }; at += o.ms || (i === 0 ? 5500 : 4300); }
     r.dur = o.dura ? o.dura * 1000 : 6000;   // cuánto queda en pantalla si el siguiente tarda
@@ -2234,7 +2460,7 @@ const TRACKS = {};
 Object.entries(D.musica || {}).forEach(([k, v]) => {
   const t = typeof v === 'string' ? { id: v } : (v || {});
   const bucle = Array.isArray(t.bucle) && t.bucle.length === 2 && t.bucle[1] > t.bucle[0] ? t.bucle.map(Number) : null;
-  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, salida: t.salida || null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
+  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
     loop: t.repetir != null ? !!t.repetir : (bucle ? false : !['redoble', 'respuesta', 'anfitrionVoz'].includes(k)) };
 });
 
@@ -2800,11 +3026,14 @@ function createDirector(music, fx) {
         const ya = (fin != null && s.t >= fin - solape)   // llegó al final (o al segundo "fin")
           || (!s && el > 1200)                               // terminó y se descargó
           || (s && !(s.d > 0) && el > 4000)                  // no cargó: que no quede la sala en silencio
-          || el > (v.max || ((v.duracion || 21) * 1000 + 5000));   // red de seguridad: nunca queda colgado
+          || el > (v.max || ((v.duracion || 21) * 1000 / VOZ_VEL() + 5000));   // red de seguridad: nunca queda colgado
         if (!ya) return;
         clearInterval(vozT); vozT = null;
         fx.stop(v.fin ? 400 : 250);
-        music.play(key, { instant: true });
+        // unos segundos en negro y en silencio antes de que arranque el tema (anfitrionVoz.pausa)
+        const pausa = VOZ_PAUSA();
+        if (pausa) afterT = setTimeout(() => { if (lastMoment === 'presentador') music.play(key, { instant: true }); }, pausa);
+        else music.play(key, { instant: true });
       }, 100);
       lastKey = key; lastMoment = m; return;
     }
@@ -2849,18 +3078,7 @@ function initScreen() {
   $('#pantalla').hidden = false;
   $('#unlock-title').textContent = D.titulo;
   // Telón de terciopelo: dos paños con costura al centro y la cenefa arriba (se dibuja una vez, en segundo plano)
-  setTimeout(() => {
-    try {
-      const W = Math.min(1280, Math.round(innerWidth * Math.min(2, devicePixelRatio || 1))) || 1280, H = Math.round(W * (innerHeight / innerWidth || 9 / 16));
-      const half = Math.round(W / 2), Hv = Math.round(H * 0.11);
-      const L = renderCurtain(half, H, { cenefa: false, inner: 'right', seed: 1101 }), R = renderCurtain(half, H, { cenefa: false, inner: 'left', seed: 2207 });
-      const V = document.createElement('canvas'); V.width = W; V.height = Math.round(Hv * 1.35);
-      let s0 = 77; drawValance(V.getContext('2d'), W, Hv, () => { s0 = (s0 * 16807) % 2147483647; return s0 / 2147483647; });
-      const put = (cv, name) => cv.toBlob(b => { if (b) document.documentElement.style.setProperty(name, `url(${URL.createObjectURL(b)})`); }, name === '--valance' ? 'image/png' : 'image/jpeg', 0.92);
-      put(L, '--curtain-l'); put(R, '--curtain-r'); put(V, '--valance');
-      setTimeout(() => document.body.classList.add('has-curtain'), 400);
-    } catch (e) { log('Telón: ' + e.message, 'e'); }
-  }, 60);
+  setTimeout(() => { try { curtainAssets(); } catch (e) { log('Telón: ' + e.message, 'e'); } }, 60);
   let code = ENSAYO || store.get('screen_code');
   if (!/^\d{4}$/.test(code || '')) { code = String(Math.floor(1000 + Math.random() * 9000)); store.set('screen_code', code); }
 
@@ -3597,7 +3815,7 @@ function initScreen() {
     if (locAudio) { try { locAudio.pause(); } catch {} locAudio = null; }
     if (sl.k !== 'corto') cortoStop();
     clearInterval(confettiLoop); clearTimeout(introTimer); clearTimeout(contPhase);
-    cineHits.forEach(h => { clearTimeout(h); clearInterval(h); }); cineHits = [];
+    cineHits.forEach(h => { clearTimeout(h); clearInterval(h); }); cineHits = []; if (window.__neonStop) window.__neonStop();
     let h = '';
     if (sl.k === 'logo') {
       h = `<div class="v enter"><div class="marquee" style="display:inline-block"><div class="edition">${esc(D.edicion)}</div><h1 class="script" style="font-size:clamp(70px,11vw,150px);margin:0;line-height:.95">${esc(D.titulo)}</h1></div>
@@ -3615,17 +3833,20 @@ function initScreen() {
         if (typeof c === 'string') c = { grande: c };
         if (c.estudio) return `<div class="studio"><div class="studio-mark"><div class="studio-rays"></div><span>${esc(c.estudio.split(/\s+/).map(w => w[0]).join('').slice(0, 2))}</span></div><div class="studio-name">${esc(c.estudio)}</div>${c.texto ? `<div class="studio-sub">${esc(c.texto)}</div>` : ''}</div>`;
         // tamaño calculado para que entre en un renglón aun con el espaciado inicial (así no salta de dos renglones a uno)
-        const n = (c.grande || '').length, fs = Math.min(fin ? 7 : 5.4, 92 / (Math.max(6, n) * (fin ? 1.12 : 1.2))).toFixed(2);
-        return `${c.chico ? `<div class="cred-s">${esc(c.chico)}</div>` : ''}${c.grande ? `<div class="cred-t" style="font-size:${fs}vw">${esc(c.grande)}</div>` : ''}`;
+        // si el texto grande es largo, va en dos renglones parejos (cortado a mano, así tampoco salta) y con letra más grande
+        const g = c.grande || '', sp = g.length > 24 && !g.includes('\n') ? [...g.matchAll(/ /g)].map(m => m.index).sort((a, b) => Math.abs(a - g.length / 2) - Math.abs(b - g.length / 2))[0] : null;
+        const lines = g.includes('\n') ? g.split('\n') : sp != null ? [g.slice(0, sp), g.slice(sp + 1)] : [g];   // \n en datos.js = corte elegido a mano
+        const n = Math.max(...lines.map(l => l.length)), fs = Math.min(fin ? 7 : 5.4, 92 / (Math.max(6, n) * (fin ? 1.12 : 1.2))).toFixed(2);
+        return `${c.chico ? `<div class="cred-s">${esc(c.chico)}</div>` : ''}${g ? `<div class="cred-t" style="font-size:${fs}vw">${lines.map(esc).join('<br>')}</div>` : ''}`;
       };
-      const envIdx = AVISOS.findIndex(a => avSonido(a) === 'envolvente'), envAt = envIdx < 0 ? CEL - 600 : 200 + AVISOS.slice(0, envIdx).reduce((t, a) => t + avDur(a), 0);
+      const envIdx = AVISOS.findIndex(a => avSonido(a) === 'envolvente'), envAt = envIdx < 0 ? CEL - 600 : AV_T0 + AVISOS.slice(0, envIdx).reduce((t, a) => t + avDur(a), 0);
       const parte = sl.parte || 'todo', off = cineOff(sl), conAv = parte !== 'creditos', conCred = parte !== 'avisos';
       const CAT = CRED_AT.map(x => x - off);
       if (LOCUCION && conAv) cineHits.push(setTimeout(() => {
         try { locAudio = new Audio(LOCUCION.archivo); locAudio.volume = Math.min(1, (LOCUCION.volumen || 1) * Math.max(0.2, musicVol / 70)); locAudio.play().catch(e => log('No se pudo reproducir la locución (' + LOCUCION.archivo + '): ' + e.message, 'e')); locAudio.onerror = () => log('No encuentro la locución: ' + LOCUCION.archivo, 'e'); } catch {}
-      }, 200));
+      }, AV_T0));
       h = `<div class="cine"><div class="cine-dim"></div><div class="cine-black" style="${conAv ? `animation-delay:${envAt}ms` : 'animation:none;opacity:1'}"></div>
-        ${!conAv ? '' : (() => { let t = 200; return AVISOS.map((a, idx) => {
+        ${!conAv ? '' : (() => { let t = AV_T0; return AVISOS.map((a, idx) => {
           const d = avDur(a), at = t, son = avSonido(a);
           let html;
           if (son === 'envolvente') {
@@ -3664,19 +3885,23 @@ function initScreen() {
       });
     } else if (sl.k === 'corto') {
       // antes del corto, la intro de estudio en versión corta (el corto también es una producción de la casa)
-      const est = CREDITS.find(c => c && c.estudio), MINI = CORTO.intro === false || !est ? 0 : 7000;
-      h = `<div class="cine"><div class="cine-black" style="animation:none;opacity:1"></div>${MINI ? `<div class="cine-card ident-card mini" style="animation-delay:300ms;animation-duration:${MINI}ms"><div class="mini-ident">${identHTML({ ...est, texto: CORTO.introTexto || 'presenta' }, 300, MINI)}</div></div>` : ''}</div>`;
-      if (MINI) cineHits.push(setTimeout(() => boomGrave(0.45), 300 + Math.round(6000 * MINI / IDENT_MS)));
+      // el corto lo presenta una productora chica, "Bioingeniería Surround", con su cartel de neón (corto.presenta en datos.js)
+      const pres = CORTO.intro === false || CORTO.presenta === false ? null : { estudio: 'Bioingeniería Surround', texto: CORTO.introTexto || 'presenta', ...(CORTO.presenta || {}) };
+      const MINI = pres ? (CORTO.introMs || 7200) : 0;
+      h = `<div class="cine"><div class="cine-black" style="animation:none;opacity:1"></div>${MINI ? `<div class="cine-card ident-card mini" style="animation-delay:300ms;animation-duration:${MINI}ms">${neonHTML(pres)}</div>` : ''}</div>`;
+      if (MINI) setTimeout(() => neonRun(300, MINI, cineHits), 0);
       cineHits.push(setTimeout(() => cortoStart(st.slide), MINI ? MINI + 500 : 0));
     } else if (sl.k === 'intro') {
       const ed = esc(D.edicion).replace(/(\d{4})\s*$/, '').trim();
       const yr = (D.edicion.match(/\d{4}/) || [''])[0];
       h = `<div class="intro-black"></div><div class="intro-stage"></div>
-           <div class="intro-curtain l"></div><div class="intro-curtain r"></div><div class="intro-valance"></div>
+           <div class="trav l"></div><div class="trav r"></div><div class="intro-valance"></div>
            <div class="v"><div class="intro-title">${showLogoHTML('', 'static')}</div></div>`;
       stage.style.setProperty('--tNegro', T_NEGRO + 'ms'); stage.style.setProperty('--tTelon', T_TELON + 'ms');
       stage.style.setProperty('--tTitulo', T_TITULO + 'ms'); stage.style.setProperty('--tAnio', T_ANIO + 'ms');
       introTimer = setTimeout(() => { bulbify(); confetti(); }, T_TITULO + 800);
+      setTimeout(() => travBuild(stage), 0);
+      cineHits.push(setTimeout(() => travOpen(stage, T_TITULO - T_TELON), T_TELON));   // el telón termina de correrse justo cuando entra el título
     } else if (sl.k === 'presentacion' && PRES_NUEVA) {
       const p = P[sl.p];
       h = `<div class="v v-pres2" id="vpres"><div class="pr-reveal">
@@ -4642,7 +4867,7 @@ function initControl() {
     const st = [[0, { ...amb, transicion: 0.6, nombre: 'ambiente' }]];
     if (suaveOK()) st.push([1200, { ...LOOKS.oscuro, transicion: Math.max(1, (CEL - 1800) / 1000), nombre: 'se apagan las luces (fundido)' }]);
     else { [0.7, 0.45, 0.25].forEach((k, i) => st.push([1200 + i * 1600, { ...amb, brillo: Math.max(1, Math.round((amb.brillo || 16) * k)), transicion: 0, nombre: 'atenuando' }])); st.push([CEL - 500, 'oscuro']); }
-    let t0 = 200;
+    let t0 = AV_T0;
     AVISOS.forEach(a => { if (avSonido(a) === 'envolvente' && a.luz !== false) st.push([t0 + avSubida(a), 'flashSolo']); t0 += avDur(a); });
     CREDITS.forEach((c, i) => {
       const t = CRED_AT[i];

@@ -20,10 +20,10 @@ window.TRIVIA = {
     { estudio: 'Lautaro Entertainment', texto: 'presenta', monograma: 'LE', anillo: 'Lautaro Entertainment · MMXXVI' },
     { chico: 'una producción para', grande: 'Bioingeniería' },
     { chico: 'en asociación con', grande: 'Claude' },
-    { chico: 'con la colaboración involuntaria de', grande: 'GLPI y Metabase' },
+    { chico: 'con datos extraídos de', grande: 'GLPI y Metabase' },
     { chico: 'basada en', grande: 'Datos reales' },
-    { chico: 'filmada íntegramente en el', grande: 'Hospital Italiano' },
-    { chico: 'y un agradecimiento muy especial', grande: 'al enchufe' },
+    { chico: 'protagonizada por personal del', grande: 'Hospital Italiano' },
+    { chico: 'y un agradecimiento muy especial', grande: 'A cada servicio\nque abrió un ticket' },   // \n = dónde corta el renglón
     { chico: 'MMXXVI', grande: 'Segunda edición' },
   ],
   apertura: {
@@ -31,6 +31,7 @@ window.TRIVIA = {
     duracionCreditos: 64000,  // ms: los créditos duran lo mismo que la música (1:04) y se reparten solos
     estudioMs: 12000,       // la intro de estudio
     finalMs: 16000,         // el último ("Segunda edición"), más largo
+    silencio: 5,            // segundos de silencio (luz bajando, pantalla quieta) entre el final de la previa y el primer aviso
     climax: null,           // segundo de la música en que cae el golpe del final (null = 2 s después de que entra)
     golpes: 'extremos',     // golpe grave en los créditos: 'todos', 'extremos' (solo el último) o 'ninguno'
     graveEstudio: true,     // golpe grave cuando el emblema de la intro de estudio se asienta
@@ -97,7 +98,8 @@ window.TRIVIA = {
      Va después de los avisos de sala ("Bioingeniería Surround") y antes de la intro de estudio.
      A pantalla completa, sin controles; cuando termina sigue sola.
      inicio / fin: segundos para recortarlo (fin sirve para cortar antes de la pantalla final de YouTube) · volumen: 0 a 1 */
-  corto: { local: true, archivo: '', id: '', nombre: 'La historia de Bioingeniería', inicio: 0, fin: null, volumen: 1 },
+  corto: { local: true, archivo: '', id: '', nombre: 'La historia de Bioingeniería', inicio: 0, fin: null, volumen: 1,
+           presenta: { estudio: 'Bioingeniería Surround', texto: 'presenta' } },   // la productora chica (logo de neón) que presenta el corto · presenta: false = sin intro
   // local: true = el video se elige de los archivos de la compu de la tele (botón 🎞️ en su pantalla de inicio; en Chrome/Edge queda recordado)
   // archivo: mp4 subido al repositorio (si pesa menos de 100 MB) · id: un video de YouTube · todo vacío/false = sin corto
 
@@ -121,7 +123,9 @@ window.TRIVIA = {
     final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
-    anfitrionVoz: { id: 'q9C_euAFpW8', nombre: 'Voz: Ladies and gentlemen', inicio: 0, duracion: 21, fin: 19 },   // los últimos 2 s son silencio: en el 19 entra el tema
+    anfitrionVoz: { id: 'q9C_euAFpW8', nombre: 'Voz: Ladies and gentlemen', inicio: 0, duracion: 21, fin: 19, velocidad: 0.9, pausa: 5 },
+                  // velocidad: 0.9 = 10 % más lenta (los textos atados a voz: siguen en el segundo del video) · pausa: segundos en negro y en silencio entre la voz y el tema
+                  // fin: en el segundo 19 del video termina la voz (los últimos 2 s son silencio)
                   // opcionales: fin: segundo en que se corta la voz · solape: segundos que se pisan voz y tema (0.3)
     anfitrion:    { id: 'p3l7fgvrEKM', nombre: 'Freed from Desire (Gala)', inicio: 10 },   // tu entrada (antes: I Gotta Feeling Jt0qUO4pqWQ)
     redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
@@ -318,12 +322,12 @@ window.TRIVIA = {
       { texto: 'Esta noche', tema: 12, dura: 9 },
       { texto: 'Solo uno conoce todas las respuestas', tema: 21, dura: 11 },
       { texto: 'Él escribió las preguntas', tema: 33, dura: 6.5 },
-      { texto: 'Sabe quién dijo qué', tema: 40, dura: 6.5 },
-      { texto: 'Y no va a soplar ninguna', tema: 47, dura: 7 },
+      { texto: 'Él creó la trivia', tema: 40, dura: 6.5 },
+      { texto: 'Y hoy viene a buscar al que más sabe de Bioingeniería', tema: 47, dura: 7.5 },
       { texto: 'Con ustedes', tema: 55 },
     ],
     // Golpe de entrada automático: segundo del tema en que cae (con la apertura en automático). null = siempre a mano.
-    golpeTema: 61,
+    golpeTema: 59.8,
     // Qué aparece en el golpe: 'logo' (el logo de la trivia, como en la tele) o 'nombre' (tu nombre y foto)
     revelar: 'logo',
     logoArriba: 'Segunda edición',
