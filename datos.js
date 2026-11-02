@@ -77,7 +77,7 @@ window.TRIVIA = {
      Va después de los avisos de sala ("Bioingeniería Surround") y antes de la intro de estudio.
      A pantalla completa, sin controles; cuando termina sigue sola. Vacío el id = no hay corto.
      inicio / fin: segundos para recortarlo (fin sirve para cortar antes de la pantalla final de YouTube) · volumen: 0 a 1 */
-  corto: { id: 'QBx00CEmQeE', nombre: 'Cortometraje', inicio: 0, fin: null, volumen: 1 },
+  corto: { id: '', nombre: 'Cortometraje', inicio: 0, fin: null, volumen: 1 },   // desactivado
 
   /* ---------- Música (ID del video de YouTube / YouTube Music) ----------
      El ID es lo que va después de "watch?v=" en el link.
@@ -120,6 +120,9 @@ window.TRIVIA = {
   /* Cuánto dura el golpe de respuesta antes de pasar a la música de datos curiosos (ms) */
   respuestaMs: 4000,
 
+  /* Al salir de una pregunta, lo que venía sonando se desvanece en este tiempo (ms) mientras arranca lo siguiente */
+  desvanecerMs: 5000,
+
   /* Qué música suena en cada momento (nombres de la lista de arriba, o null = silencio) */
   momentos: {
     previa: 'previa',
@@ -130,7 +133,7 @@ window.TRIVIA = {
     contendientes: 'presentacion', // todos juntos al final de la presentación
     presentador: 'anfitrion',
     enjuego: 'enjuego',       // presentación de premios (si está vacío, sigue la que venía)
-    enjuegoTicket: 'ticket',  // cuando aparece el ticket dorado
+    enjuegoTicket: 'enjuego', // cuando aparece el ticket dorado sigue la misma (Piratas del Caribe)
     reglas: 'presentacion',
     ronda: null,              // a definir (Quiz Time queda afuera)
     pregunta: 'pregunta',     // cuando hacés la pregunta
@@ -325,9 +328,10 @@ window.TRIVIA = {
   /* ---------- Reglas ----------
      La primera línea (cuántas preguntas hay de cada tipo) la arma la app sola. */
   // Se muestran como tarjetas que se dan vuelta de a una (un toque por regla). La primera (rondas y preguntas) la arma la app.
-  // icono: 'marcador', 'estrella', 'diana', 'ticket', 'corona', 'reloj', 'silencio', 'celular', 'salida', 'sonido', 'rondas', 'regalo'
+  // icono: 'marcador', 'pizarra', 'estrella', 'diana', 'ticket', 'corona', 'reloj', 'silencio', 'celular', 'salida', 'sonido', 'rondas', 'regalo'
   reglas: [
     { icono: 'marcador', titulo: 'En la pizarra', texto: 'Cada uno escribe su respuesta. Nada de soplar.' },
+    { icono: 'pizarra',  titulo: 'Solo la respuesta', texto: 'En la pizarra no puede haber nada más escrito: ni cuentas, ni borradores, ni dibujos.' },
     { icono: 'estrella', titulo: 'Un punto', texto: 'En opción múltiple y ¿Quién dijo?, suma cada uno que acierte.' },
     { icono: 'diana',    titulo: 'El más cerca', texto: 'En aproximación gana el punto quien quede más cerca. Si empatan, suman todos.' },
     { icono: 'ticket',   titulo: 'Desempate', texto: 'Si al final hay empate, una pregunta más define quién se lleva el ticket dorado.' },

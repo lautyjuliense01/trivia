@@ -450,6 +450,11 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 
 #rev-toast{position:sticky;top:6px;z-index:30;margin-bottom:12px;padding:12px 14px;border-radius:16px;background:rgba(30,18,4,.96);border:2px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.6)}
 #rev-toast[hidden]{display:none}
+#link-modal{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px;background:rgba(10,3,2,.82);backdrop-filter:blur(4px)}
+#link-modal[hidden]{display:none}
+.lm-box{width:min(380px,100%);padding:26px 22px;border-radius:20px;text-align:center;background:linear-gradient(180deg,#2a0b07,#140403);border:2px solid #e05a48;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.lm-ico{font-size:46px;animation:lmPulse 1.4s ease-in-out infinite}@keyframes lmPulse{50%{opacity:.4}}
+.lm-t{font-weight:800;font-size:21px;margin:8px 0 6px;color:#ffb3a6}.lm-s{font-size:14.5px;color:#e9dcc6;margin-bottom:18px;line-height:1.4}
 #rev-bar{transition:width .2s linear}
 #seq-bar{transition:width .1s linear}
 
@@ -777,6 +782,17 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .rl-front .av-div{width:60%}
 .rl-front .av-div::after{background:#140503}
 .rl-x{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(17px,1.85vw,29px);line-height:1.22;color:#f1e2c2;text-align:center}
+.rl-side,.rl-main{display:contents}
+/* con 6 reglas o más: dos filas de tarjetas apaisadas (ícono a la izquierda, texto a la derecha) */
+.rl-row.dos{grid-template-columns:repeat(var(--c),1fr);row-gap:clamp(14px,2.6vh,28px)}
+.rl-row.dos .rl-card{aspect-ratio:auto;height:clamp(170px,30vh,300px)}
+.rl-row.dos .rl-face{flex-direction:row;justify-content:flex-start;align-items:center;gap:clamp(12px,1.5vw,24px);padding:clamp(14px,1.6vw,28px) clamp(16px,1.8vw,30px)}
+.rl-row.dos .rl-side{display:flex;flex-direction:column;align-items:center;gap:8px;flex:0 0 auto}
+.rl-row.dos .rl-main{display:flex;flex-direction:column;align-items:flex-start;gap:clamp(6px,1vh,10px);min-width:0}
+.rl-row.dos .rl-t{text-align:left;font-size:clamp(16px,1.75vw,29px);padding-left:0}
+.rl-row.dos .rl-x{text-align:left;font-size:clamp(16px,1.6vw,26px)}
+.rl-row.dos .av-div{width:70%;margin:0}
+.rl-row.dos .rl-back .rl-num{margin:auto}
 /* v31: misma estética que la apertura en todo el show */
 .pt-pre{font-family:'Cormorant Garamond',serif!important;font-style:italic;font-weight:600;font-size:clamp(30px,3.6vw,56px)!important;color:#ecdcbc!important}
 .v-pt .pt-main{font-family:'Cinzel',serif;font-weight:700;font-size:clamp(44px,6.4vw,108px);letter-spacing:.07em;line-height:1.12;
@@ -856,6 +872,11 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .now-title{font-size:20px;font-weight:800;margin:4px 0 8px;line-height:1.25}
 .answer{margin-top:10px;padding:10px 12px;border-radius:12px;background:linear-gradient(180deg,#ffe9a3,#f2c14e);color:#4a1200;font-weight:800;font-size:18px}
 .answer small{display:block;font-size:11px;letter-spacing:.15em;text-transform:uppercase;opacity:.7}
+.ans-op{display:flex;align-items:center;gap:12px;margin-top:4px}.ans-op+.ans-op{margin-top:8px}
+.ans-l{flex:0 0 auto;width:52px;height:52px;border-radius:12px;display:grid;place-items:center;background:#4a1200;color:#ffe9a3;font-size:34px;font-weight:900;line-height:1}
+.q-opts{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}
+.q-opts>div{display:flex;gap:10px;align-items:baseline;font-size:18px;color:#e9dcc6;line-height:1.3}
+.q-opts b{flex:0 0 22px;color:#cdb98f}.q-opts .ok{color:#9ff0b9;font-weight:800}.q-opts .ok b{color:#9ff0b9}
 .note{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);border-left:4px solid var(--gold);font-size:15px;line-height:1.4}
 .note small{display:block;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:2px}
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -960,6 +981,8 @@ body{background:
     <button class="chip" id="ctl-chip" style="border:0;cursor:pointer"><span class="dot" id="ctl-dot"></span><span id="ctl-status">Sin vincular</span> <span style="opacity:.8">🔄</span></button>
   </div>
   <p class="lead"><b class="ver" style="color:var(--gold)"></b></p>
+  <div id="link-modal" hidden><div class="lm-box"><div class="lm-ico">📺</div><div class="lm-t" id="lm-t">La pantalla no responde</div><div class="lm-s" id="lm-s"></div>
+    <button class="btn" id="lm-retry" style="width:100%;padding:16px 0;font-size:19px">🔄 Reconectar</button><button class="btn ghost small" id="lm-skip" style="margin-top:12px">Seguir sin pantalla (1 min)</button></div></div>
   <div id="rev-toast" hidden>
     <div id="rev-msg"></div>
     <div class="br-track" style="height:8px;margin:8px 0"><div class="br-fill" id="rev-bar" style="width:100%"></div></div>
@@ -1123,7 +1146,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v42 · 01/11 21:35';
+const VERSION = 'v43 · 01/11 22:03';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1390,11 +1413,36 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (!ready || !tracks[key] || current) return;
     try { player.cueVideoById({ videoId: tracks[key].id, startSeconds: tracks[key].start || 0 }); cued = key; } catch {}
   }
+  let xTimer = null;
+  // el reproductor viejo se desvanece por su cuenta (mientras el nuevo ya suena en el otro)
+  function fadeOut(p, ms) {
+    clearInterval(xTimer);
+    let from = lv(); try { from = p.getVolume(); } catch {}
+    const t0 = performance.now();
+    xTimer = setInterval(() => {
+      const k = Math.min(1, (performance.now() - t0) / ms);
+      try { p.setVolume(Math.round(from * Math.pow(1 - k, 1.6))); } catch {}
+      if (k >= 1) { clearInterval(xTimer); try { if (p !== player) { p.pauseVideo(); p.setVolume(0); } } catch {} }
+    }, 60);
+  }
   async function play(key, opts = {}) {
     if (!ready) { log('El reproductor todavía no está listo', 'e'); return; }
     const tr = tracks[key];
     if (!tr) return;
     if (current === key && player.getPlayerState() === S().PLAYING && !opts.restart) return;
+    if (opts.xfade > 0 && player.getPlayerState() === S().PLAYING) {
+      if (shadow && shadowReady && !swapFail) {
+        // cruce: el tema nuevo arranca en el reproductor de apoyo y el anterior se va apagando en xfade ms
+        swapStop();
+        const old = player; player = shadow; shadow = old;
+        clearInterval(fadeTimer); fadeOut(old, opts.xfade);
+        current = key; loopOn = !!tr.bucle; needsFadeIn = true; cued = null;
+        try { player.setVolume(0); player.setPlaybackRate(1); player.loadVideoById({ videoId: tr.id, startSeconds: opts.from != null ? opts.from : (tr.start || 0) }); } catch {}
+        onLabel && onLabel('Cargando: ' + tr.name);
+        return;
+      }
+      await fadeTo(0, opts.xfade);   // sin reproductor de apoyo: primero se apaga y después arranca
+    }
     if (player.getPlayerState() === S().PLAYING && !opts.instant) await fadeTo(0, 600);
     current = key; loopOn = !!tr.bucle; swapStop();
     needsFadeIn = !opts.instant;
@@ -1473,6 +1521,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     const conApoyo = shadow && shadowReady && !swapFail;
     if (conApoyo && !swap && t >= b[1] - 3.2 && t < b[1] - 0.5) {
       // prepara el reproductor de apoyo: arranca mudo en el punto de vuelta, con la misma distancia al salto
+      clearInterval(xTimer);
       swap = { at: now, rate: 1, diff: 9, fixAt: now };
       try { shadow.setVolume(0); shadow.setPlaybackRate(1); shadow.loadVideoById({ videoId: tracks[current].id, startSeconds: Math.max(0, b[0] - (b[1] - t) + 0.6) }); } catch { swap = null; swapFail = true; }
     }
@@ -1833,6 +1882,7 @@ const AV_ICONS = {
   shh: '<circle cx="24" cy="22.5" r="17"/><path d="M14.6 19q2.4 2 4.8 0M28.6 19q2.4 2 4.8 0"/><path d="M17 31q3.4-2.6 7-1.3 3.6-1.3 7 1.3-3.4 3-7 3t-7-3z"/><rect x="20.6" y="24.5" width="6.8" height="23.5" class="mask"/><path d="M21.2 47.5V27.6a2.8 2.8 0 0 1 5.6 0v19.9"/><path d="M22.8 28.7a1.2 1.2 0 0 1 2.4 0"/>',
   celular: '<rect x="15" y="5" width="18" height="38" rx="3.5"/><line x1="21" y1="38" x2="27" y2="38"/><line x1="8" y1="8" x2="40" y2="40" class="cut"/><line x1="8" y1="8" x2="40" y2="40"/>',
   silencio: '<path d="M9 11h30a3 3 0 0 1 3 3v15a3 3 0 0 1-3 3H22l-8 7v-7H9a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z"/><line x1="8" y1="8" x2="40" y2="40" class="cut"/><line x1="8" y1="8" x2="40" y2="40"/>',
+  pizarra: '<rect x="6" y="7" width="36" height="25" rx="2"/><path d="M15 39l4-7M33 39l-4-7M24 32v9"/><path d="M15.5 19.5l5.5 5.5 11.5-11.5"/>',
   marcador: '<path d="M31 7l10 10-19 19H12V26z"/><line x1="27" y1="11" x2="37" y2="21"/><path d="M12 36l-4 4"/><path d="M6 44h36"/>',
   salida: '<path d="M9 6h19v36H9z"/><circle cx="23.5" cy="25" r="1.4"/><path d="M31 24h12M38 19l5 5-5 5"/>',
   sonido: '<path d="M7 19h7l9-7v24l-9-7H7z"/><path d="M29 18a8 8 0 0 1 0 12M33 13a15 15 0 0 1 0 22M37 8a22 22 0 0 1 0 32"/>',
@@ -2566,7 +2616,9 @@ function createDirector(music, fx) {
   function apply(st) {
     const m = st.manual ? 'manual:' + st.manual : momentOf(st), key = musicKeyOf(st);
     if (m === lastMoment && key === lastKey && st.slide === lastSlide) return;
-    const nuevaQ = st.slide !== lastSlide; lastSlide = st.slide;
+    const nuevaQ = st.slide !== lastSlide, prevSlide = lastSlide; lastSlide = st.slide;
+    const desdeQ = nuevaQ && prevSlide != null && isQ(SCRIPT[prevSlide] || {});   // salimos de una pregunta: lo que suena se desvanece despacio
+    const XF = D.desvanecerMs == null ? 5000 : D.desvanecerMs;
     if (m !== lastMoment) {
       clearTimeout(afterT);
       if (vozT) { clearInterval(vozT); vozT = null; if (fx) fx.stop(250); }   // si se sigue antes de que termine la voz, se corta
@@ -2577,7 +2629,7 @@ function createDirector(music, fx) {
       if (m === 'redoble' || m === 'revelado') { if (m === 'redoble') music.release(); lastMoment = m; return; }
       if (m === 'pregunta' && lastMoment === 'redoble') { music.relock(); lastMoment = m; return; }   // se canceló el revelado: vuelve al bucle
     }
-    if (bk && nuevaQ && m === 'pregunta' && key === bk) { music.play(key, { restart: true }); lastKey = key; lastMoment = m; return; }   // pregunta nueva: el tema arranca de cero
+    if (bk && nuevaQ && m === 'pregunta' && key === bk) { music.play(key, { restart: true, xfade: desdeQ ? XF : 0 }); lastKey = key; lastMoment = m; return; }   // pregunta nueva: el tema arranca de cero y el anterior se desvanece
     // la voz de presentación queda cargada durante la intro, para que arranque al instante
     if (m === 'intro' && lastMoment !== 'intro' && fx && TRACKS.anfitrionVoz) setTimeout(() => fx.cue('anfitrionVoz'), 1500);
     // Entrada del presentador: primero la voz ("Damas y caballeros…") y el tema entra cuando la voz termina
@@ -2622,7 +2674,7 @@ function createDirector(music, fx) {
       } else if (after && TRACKS[after]) music.play(after);
     } else {
       if (fx && lastMoment === 'redoble') fx.stop(150);
-      key ? music.play(key, st.desde && st.desde.k === key ? { from: st.desde.t } : {}) : music.stop();
+      key ? music.play(key, { ...(st.desde && st.desde.k === key ? { from: st.desde.t } : {}), xfade: desdeQ ? XF : 0 }) : music.stop(desdeQ ? XF : 900);
     }
     lastKey = key; lastMoment = m;
   }
@@ -3424,9 +3476,9 @@ function initScreen() {
     } else if (sl.k === 'reglas') {
       const RC = rulesCards();
       h = `<div class="v v-rules2 enter"><div class="rl-eyebrow">Reglas del juego</div>
-        <div class="rl-row" style="--n:${RC.length}">${RC.map((r, i) => `<div class="rl-card" data-i="${i}" style="animation-delay:${0.3 + i * 0.12}s"><div class="rl-inner">
+        <div class="rl-row ${RC.length > 5 ? 'dos' : ''}" style="--n:${RC.length};--c:${Math.ceil(RC.length / 2)}">${RC.map((r, i) => `<div class="rl-card" data-i="${i}" style="animation-delay:${0.3 + i * 0.12}s"><div class="rl-inner">
           <div class="rl-face rl-back"><div class="rl-num">${ROMAN[i] || i + 1}</div></div>
-          <div class="rl-face rl-front"><div class="rl-num sm">${ROMAN[i] || i + 1}</div>${avIconHTML(r.icono || 'estrella')}${r.titulo ? `<div class="rl-t">${esc(r.titulo)}</div><div class="av-div"></div>` : ''}<div class="rl-x">${esc(r.texto || '')}</div></div>
+          <div class="rl-face rl-front"><div class="rl-side"><div class="rl-num sm">${ROMAN[i] || i + 1}</div>${avIconHTML(r.icono || 'estrella')}</div><div class="rl-main">${r.titulo ? `<div class="rl-t">${esc(r.titulo)}</div><div class="av-div"></div>` : ''}<div class="rl-x">${esc(r.texto || '')}</div></div></div>
         </div></div>`).join('')}</div></div>`;
     } else if (sl.k === 'ronda') {
       const r = D.rondas[sl.r];
@@ -3680,7 +3732,7 @@ function initControl() {
   $('#set-hideplayer').addEventListener('change', () => { S.hidePlayer = $('#set-hideplayer').checked; commit(false); });
 
   /* --- Vínculo --- */
-  let link = null, lastHello = 0;
+  let link = null, lastHello = 0, linkAt = 0;
   const codeInput = $('#ctl-code');
   codeInput.value = ENSAYO || store.get('ctl_code', '');
   if (ENSAYO) $('#link-card').hidden = true;   // en el ensayo ya está vinculado solo
@@ -3691,7 +3743,7 @@ function initControl() {
     if (!/^\d{4}$/.test(code)) { setLinkStatus('bad', 'Código de 4 dígitos'); return; }
     store.set('ctl_code', code);
     link && link.stop();
-    lastHello = 0;
+    lastHello = 0; linkAt = Date.now();
     link = createLink(code, 'control', msg => {
       if (msg.type === 'hello') lastHello = Date.now();
       if (msg.type === 'ping') { lastHello = Date.now(); sendState(); }
@@ -3724,20 +3776,31 @@ function initControl() {
     setTimeout(sendState, 300);
   }
   $('#ctl-link').addEventListener('click', doLink);
-  $('#ctl-chip').addEventListener('click', () => {
+  function reconectarAMano() {
     if (!link) { $('#link-card').open = true; return; }
     link.reconnect(); setLinkStatus('bad', 'Reconectando…'); log('🔄 Reconexión a mano');
     setTimeout(sendState, 400);
     setTimeout(() => { if (link) { link.send({ type: 'reconectar' }); sendState(); } }, 1800);   // la pantalla rehace lo que tenga caído
-  });
+  }
+  $('#ctl-chip').addEventListener('click', reconectarAMano);
+  // Sin pantalla, cualquier toque la desfasa: aviso grande en el medio hasta que vuelva la conexión
+  let lmSkip = 0;
+  $('#lm-retry').addEventListener('click', () => { reconectarAMano(); $('#lm-s').textContent = 'Reconectando… si en unos segundos no vuelve, revisá que la tele tenga la app abierta y conexión.'; });
+  $('#lm-skip').addEventListener('click', () => { lmSkip = Date.now() + 60000; $('#link-modal').hidden = true; log('Seguís sin pantalla por 1 minuto', 'e'); });
   if (codeInput.value) doLink();
   setInterval(() => {
-    if (!link) return;
+    if (!link) { $('#link-modal').hidden = true; return; }
     const ago = Date.now() - lastHello;
     if (lastHello && ago < 8000) setLinkStatus('ok', 'Pantalla ✓');
     else if (lastHello) {
       setLinkStatus('bad', `Pantalla sin señal (${Math.round(ago / 1000)} s) · tocá 🔄`);
     }
+    const sinSenal = (lastHello && ago >= 8000) || (!lastHello && Date.now() - linkAt > 15000);
+    const ver = sinSenal && Date.now() > lmSkip;
+    if (ver && $('#link-modal').hidden) $('#lm-s').textContent = 'No toques nada más hasta reconectar: lo que hagas sin pantalla después queda desfasado.';
+    if (ver) $('#lm-t').textContent = lastHello ? `La pantalla no responde (${Math.round(ago / 1000)} s)` : 'La pantalla todavía no respondió';
+    if (!ver && !$('#link-modal').hidden && !sinSenal) log('📺 Pantalla conectada de nuevo', 'o');
+    $('#link-modal').hidden = !ver;
   }, 1000);
 
   function sendState() { if (link) link.send({ type: 'state', state: S }); }
@@ -4627,11 +4690,14 @@ function initControl() {
       if (q.tipo === 'quien') txt = (q.mensajes || []).map(m => `“${esc(m.texto)}”`).join('<br>');
       else txt = esc(q.texto);
       let opts = '';
-      if (q.tipo === 'opciones' && q.opciones && q.opciones.length) opts = `<ol type="A" class="muted" style="margin:6px 0;padding-left:22px">${q.opciones.map((o, i) => `<li style="${(q.correctas || []).includes(i) ? 'color:#9ff0b9;font-weight:800' : ''}">${esc(o)}</li>`).join('')}</ol>`;
+      if (q.tipo === 'opciones' && q.opciones && q.opciones.length) opts = `<div class="q-opts">${q.opciones.map((o, i) => `<div class="${(q.correctas || []).includes(i) ? 'ok' : ''}"><b>${'ABCDEF'[i]}</b><span>${esc(o)}</span></div>`).join('')}</div>`;
       const ans = q.tipo === 'opciones' && q.opciones && q.opciones.length ? (q.correctas || []).map(i => q.opciones[i]).join(' / ') : (q.tipo === 'aprox' ? fmtNum(q.respuesta) : q.respuesta);
       let tieInfo = '';
       if (sl.k === 'desempate') { const t = standing(S.results).tied; tieInfo = `<p class="muted">Empatados: <b>${t.map(i => esc(P[i].nombre)).join(', ')}</b>. Gana el más cerca.</p>`; }
-      h = `<div class="now-title">${txt}</div>${opts}${tieInfo}<div class="answer"><small>Respuesta</small>${esc(ans)}</div>${q.nota ? `<div class="note"><small>Dato curioso</small>${esc(q.nota)}</div>` : ''}`;
+      const ansHTML = q.tipo === 'opciones' && q.opciones && q.opciones.length
+        ? (q.correctas || []).map(i => `<div class="ans-op"><span class="ans-l">${'ABCDEF'[i]}</span><span>${esc(q.opciones[i])}</span></div>`).join('')
+        : esc(ans);
+      h = `<div class="now-title">${txt}</div>${opts}${tieInfo}<div class="answer"><small>Respuesta</small>${ansHTML}</div>${q.nota ? `<div class="note"><small>Dato curioso</small>${esc(q.nota)}</div>` : ''}`;
       // Ajuste fino del bucle del tema (para que el salto no se note)
       const bk = bucleKeyOf(S);
       if (bk) {
