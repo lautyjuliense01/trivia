@@ -145,9 +145,11 @@ window.TRIVIA = {
   /* Volumen durante la presentación de premios: al entrar, y después de cada premio (el último vale para el ticket). Al salir vuelve al de antes. */
   enjuegoVolumen: [25, 35, 45, 60, 75, 100],
 
-  /* Bucle de la canción de las preguntas: false = un solo reproductor que salta (siempre igual, se puede afinar).
-     true = dos reproductores que se cruzan (sin silencio, pero YouTube no los sincroniza siempre igual). */
-  bucleApoyo: false,
+  /* Bucle de la canción de las preguntas: false = un solo reproductor que salta (con un mini silencio).
+     true = se pasan la canción entre los dos reproductores de la tele (el de música y el de la voz):
+     el segundo espera quieto en el punto de vuelta y arranca "bucleAnticipo" ms antes del salto. Se afina en el celu. */
+  bucleApoyo: true,
+  bucleAnticipo: 120,
 
   /* Al salir de una pregunta, lo que venía sonando se apaga en este tiempo (ms) y recién después arranca lo siguiente */
   desvanecerMs: 5000,

@@ -1168,7 +1168,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v50 · 02/11 17:45';
+const VERSION = 'v51 · 02/11 18:10';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1342,7 +1342,9 @@ let musicVol = VOLUME;
 function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApoyoBucle = false) {
   let rampOn = false, loopOn = false;
   // Bucle sin corte: un segundo reproductor (mudo) arranca unos segundos antes en el punto de vuelta, se sincroniza y en el salto se intercambian
-  let shadow = null, shadowReady = false, swap = null, swapFail = false;
+  // Bucle con dos reproductores: el segundo es el de efectos (el mismo que pasa la voz), prestado mientras suena la pregunta
+  let swap = null, swapFail = false, own = null, partnerApi = null, rateNow = 1, loopCfg = { dual: () => false, anticipo: () => 120 }, endPoll = false;
+  let reclaimFn = null;
   const raw = new WeakMap();
   const lv = () => Math.round(musicVol * ((current && tracks[current] && tracks[current].vol != null) ? tracks[current].vol : 1));   // volumen del show × el del tema
   let player = null, ready = false, current = null, fadeTimer = null, needsFadeIn = false, muteCheck = null;
@@ -1359,7 +1361,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
           log('Reproductor de YouTube listo', 'o');
         },
         onError: e => {
-          if (e.target && e.target !== player) { swapFail = true; swap = null; return; }   // falló el reproductor de apoyo: el bucle usa el salto común
+          if (e.target && e.target !== player) return;
           if (current && retried !== current && [2, 5].includes(e.data)) {   // a veces YouTube falla al primer intento: un reintento limpio
             const k = current; retried = k; cued = null;
             setTimeout(() => { if (current === k) try { player.loadVideoById({ videoId: tracks[k].id, startSeconds: tracks[k].start || 0 }); } catch {} }, 600);
@@ -1372,19 +1374,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
         onStateChange: e => stateHandler(e),
       },
     });
-    if (conApoyoBucle && D.bucleApoyo === true && Object.values(tracks).some(t => t.bucle)) {
-      const box = document.createElement('div'); box.className = 'yt-apoyo'; box.innerHTML = `<div id="${containerId}-b"></div>`;
-      document.body.appendChild(box);
-      shadow = new YT.Player(containerId + '-b', {
-        width: 240, height: 200,
-        playerVars: { playsinline: 1, controls: 0, rel: 0, fs: 0, iv_load_policy: 3 },
-        events: {
-          onReady: () => { shadowReady = true; try { shadow.unMute(); shadow.setVolume(0); } catch {} },
-          onError: e => { if (e.target === player) return; swapFail = true; swap = null; },
-          onStateChange: e => stateHandler(e),
-        },
-      });
-    }
+    own = player;
   }).catch(err => log(err.message, 'e'));
   // eventos del reproductor principal (después de un intercambio del bucle, puede ser cualquiera de los dos)
   function stateHandler(e) {
@@ -1457,6 +1447,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     const tr = tracks[key];
     if (!tr) return;
     playGen++; retried = null;
+    if (lentTo) { const f = lentTo; lentTo = null; try { f(); } catch {} }   // estaba prestado al bucle: lo recupera
     if (current === key && player.getPlayerState() === S().PLAYING && !opts.restart) return;
     if (opts.xfade > 0 && player.getPlayerState() === S().PLAYING) {
       // lo que suena se apaga despacio y recién después arranca el tema nuevo
@@ -1466,7 +1457,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
       opts = { ...opts, instant: false };
     }
     if (player.getPlayerState() === S().PLAYING && !opts.instant) await fadeTo(0, 600);
-    current = key; loopOn = !!tr.bucle; swapStop();
+    current = key; loopOn = !!tr.bucle; swapStop(); volverPropio();
     needsFadeIn = !opts.instant;
     if (opts.instant) { clearInterval(fadeTimer); try { player.unMute(); player.setVolume(lv()); } catch {} }
     if (cued === key && opts.from == null) { cued = null; try { player.playVideo(); } catch {} }
@@ -1489,7 +1480,6 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
   // Llamar SIEMPRE desde un toque del usuario: es lo que habilita el audio.
   function enableSound(playIfIdle = true) {
     if (!ready) return false;
-    try { if (shadow && shadowReady) { shadow.unMute(); shadow.setVolume(0); } } catch {}
     try {
       clearInterval(fadeTimer);
       player.unMute();
@@ -1524,60 +1514,76 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     return playing ? t + Math.min(0.6, (now - r.at) / 1000) : t;
   }
   function pos() { return ready && current ? posOf(player) : null; }
+  const partner = () => (partnerApi && partnerApi.raw && partnerApi.isReady() ? partnerApi.raw() : null);
+  const otro = () => { const pp = partner(); return player === own ? pp : own; };
   function swapStop() {
-    if (swap && shadow) { try { shadow.pauseVideo(); shadow.setVolume(0); shadow.setPlaybackRate(1); } catch {} }
+    if (swap) { const o = otro(); try { o && o.pauseVideo(); o && o.setVolume(0); } catch {} }
     swap = null;
   }
-  function doSwap() {
-    const old = player;
-    try { if (swap.rate !== 1) shadow.setPlaybackRate(1); shadow.setVolume(lv()); } catch {}
-    try { old.setVolume(0); } catch {}
-    player = shadow; shadow = old; swap = null;
-    setTimeout(() => { try { if (shadow === old) { old.pauseVideo(); old.setVolume(0); } } catch {} }, 200);
+  // devuelve el reproductor de efectos y vuelve al propio (antes de cargar otro tema)
+  function volverPropio() {
+    if (own && player !== own) { try { player.pauseVideo(); player.setVolume(0); } catch {} player = own; raw.delete(player); }
+    if (partnerApi && partnerApi.isLent()) partnerApi.lend(null);
+    endPoll = false;
   }
+  // el de efectos lo necesita (por ejemplo, la voz): se lo devuelve ya
+  reclaimFn = () => { swapStop(); if (own && player !== own) { try { player.pauseVideo(); player.setVolume(0); } catch {} player = own; } };
   setInterval(() => {
-    if (!loopOn || !ready || !current) return;
+    if (!ready || !current) return;
+    // si el tema terminó sonando en el de efectos, sus eventos no llegan acá: se avisa igual
+    if (own && player !== own && !endPoll) { let st = -1; try { st = player.getPlayerState(); } catch {} if (st === S().ENDED) { endPoll = true; stateHandler({ data: S().ENDED }); return; } }
+    if (!loopOn) return;
     const b = tracks[current].bucle;
     if (!b) return;
     const t = posOf(player);
     if (t == null) return;
-    const now = performance.now();
-    const conApoyo = shadow && shadowReady && !swapFail;
-    if (conApoyo && !swap && t >= b[1] - 3.2 && t < b[1] - 0.5) {
-      // prepara el reproductor de apoyo: arranca mudo en el punto de vuelta, con la misma distancia al salto
-      clearInterval(xTimer);
-      swap = { at: now, rate: 1, diff: 9, fixAt: now };
-      try { shadow.setVolume(0); shadow.setPlaybackRate(1); shadow.loadVideoById({ videoId: tracks[current].id, startSeconds: Math.max(0, b[0] - (b[1] - t) + 0.6) }); } catch { swap = null; swapFail = true; }
-    }
-    if (swap) {
-      let ps = -1; try { ps = shadow.getPlayerState(); } catch {}
-      if (ps === S().PLAYING) {
-        const ts = posOf(shadow), want = b[0] + (t - b[1]), diff = ts - want;   // > 0: el de apoyo va adelantado
-        swap.diff = diff;
-        const set = r => { if (swap.rate !== r) { try { shadow.setPlaybackRate(r); } catch {} swap.rate = r; } };
-        if (Math.abs(diff) > 1 && now - swap.fixAt > 900) { try { shadow.seekTo(want + 0.5, true); raw.delete(shadow); } catch {} swap.fixAt = now; set(1); }
-        else if (diff < -0.03) set(1.25);                 // atrasado: lo apura un poco (está mudo, no se nota)
-        else if (diff > 0.03) set(0.75);                  // adelantado: lo frena
-        else if (Math.abs(diff) <= 0.012) set(1);
+    const now = performance.now(), o = otro();
+    const dual = !!o && loopCfg.dual() && !swapFail;
+    if (dual) {
+      if (!swap && t >= b[1] - 4 && t < b[1] - 0.6) {
+        // prepara el otro: cargado, quieto y en el punto de vuelta
+        swap = { phase: 'prep', at: now };
+        if (partnerApi) partnerApi.lend(reclaimFn);
+        try {
+          o.setVolume(0); o.setPlaybackRate(rateNow);
+          const vd = o.getVideoData ? o.getVideoData() : null;
+          if (vd && vd.video_id === tracks[current].id) { o.seekTo(b[0], true); o.pauseVideo(); swap.phase = 'arm'; }
+          else o.loadVideoById({ videoId: tracks[current].id, startSeconds: b[0] });
+        } catch { swap = null; swapFail = true; }
       }
-      if (t >= b[1] - 0.012) {
-        if (ps === S().PLAYING && Math.abs(swap.diff) < 0.08) doSwap();
-        else { swapStop(); try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); raw.delete(player); } catch {} }   // no llegó a sincronizar: salto común
+      if (swap) {
+        let ps = -1; try { ps = o.getPlayerState(); } catch {}
+        if (swap.phase === 'prep' && ps === S().PLAYING) { try { o.pauseVideo(); o.seekTo(b[0], true); } catch {} swap.phase = 'arm'; }
+        const ant = Math.max(0, loopCfg.anticipo()) / 1000 * rateNow;
+        if (swap.phase === 'arm' && t >= b[1] - ant) { try { o.setVolume(lv()); o.playVideo(); } catch {} swap.phase = 'go'; }   // arranca el segundo un poco antes (lo que tarda en sonar)
+        if (swap.phase === 'go' && t >= b[1] - 0.004) {
+          const old = player;
+          try { old.setVolume(0); } catch {}
+          player = o; raw.delete(player); swap = null;
+          setTimeout(() => { try { if (player !== old) old.pauseVideo(); } catch {} }, 120);
+          return;
+        }
+        if (swap && swap.phase !== 'go' && t >= b[1] - 0.02) { swapStop(); try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); raw.delete(player); } catch {} }   // no llegó a prepararse: salto común
+        return;
       }
-      return;
     }
-    if (t >= b[1] - 0.02 && t < b[1] + 2) { try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); raw.delete(player); } catch {} }   // sin apoyo listo: salto común
-  }, 15);
+    if (t >= b[1] - 0.02 && t < b[1] + 2) { try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); raw.delete(player); } catch {} }
+  }, 8);
   function release() { loopOn = false; swapStop(); }
-  function rate(r) { if (!ready || !current) return; try { player.setPlaybackRate(r); } catch {} }
+  function rate(r) { rateNow = r; if (!ready || !current) return; try { player.setPlaybackRate(r); } catch {} }
   function toggle() { if (!ready || !current) return; try { if (player.getPlayerState() === S().PLAYING) player.pauseVideo(); else player.playVideo(); } catch {} }
   function relock() { if (!current || !tracks[current].bucle) return; loopOn = true; const t = pos(), b = tracks[current].bucle; if (t != null && t >= b[1]) seek(b[0]); }
   function seek(t) { if (!ready || !current) return; swapStop(); try { player.seekTo(t, true); raw.delete(player); } catch {} }
+  function setPartner(api) { partnerApi = api; }
+  function setLoopCfg(c) { loopCfg = { ...loopCfg, ...c }; }
+  // préstamo (lado del reproductor de efectos)
+  let lentTo = null;
+  function lend(fn) { lentTo = fn; if (fn) current = null; }
   function duck(k, ms) { if (!ready || !current) return; fadeTo(Math.round(lv() * k), 180).then(() => setTimeout(() => { if (current) fadeTo(lv(), 700); }, Math.max(200, ms - 180))); }
   function ramp(to, ms) { if (!ready) return; rampOn = true; musicVol = to; fadeTo(lv(), Math.max(300, ms)).then(() => { rampOn = false; }); }
   function cancelRamp() { if (!rampOn) return; clearInterval(fadeTimer); rampOn = false; try { musicVol = player.getVolume(); } catch {} }
   function setLevel(now) { if (!ready || !current) return; try { if (needsFadeIn) return; if (now) { clearInterval(fadeTimer); player.setVolume(lv()); } else fadeTo(lv(), 300); } catch {} }
-  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, pos, release, relock, seek, toggle, rate, looping: () => loopOn, isReady: () => ready, current: () => current };
+  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, pos, release, relock, seek, toggle, rate, setPartner, setLoopCfg, lend, raw: () => player, isLent: () => !!lentTo, looping: () => loopOn, isReady: () => ready, current: () => current };
 }
 
 
@@ -2755,6 +2761,11 @@ function initScreen() {
 
   const fxPlayer = Object.values(TRACKS).length && (TRACKS.redoble || TRACKS.anfitrionVoz || TRACKS.muletilla) ? createMusic('yt-fx', TRACKS, () => {}, () => {}) : null;
   const direct = createDirector(music, fxPlayer);
+  if (fxPlayer) music.setPartner(fxPlayer);
+  music.setLoopCfg({
+    dual: () => (cur && cur.bucleModo ? cur.bucleModo === 2 : D.bucleApoyo === true),
+    anticipo: () => (cur && cur.bucleAnt != null ? cur.bucleAnt : (D.bucleAnticipo != null ? D.bucleAnticipo : 120)),
+  });
   /* Cortometraje: reproductor propio a pantalla completa, sin controles ni nada encima, por arriba de todo.
      El iframe es más alto que la pantalla: el video queda entero y la barra de título de YouTube cae afuera. */
   let cortoP = null, cortoReady = false, cortoT = null, cortoOn = false, cortoSt = 0, cortoSlide = -1, cortoSent = 0;
@@ -3020,7 +3031,7 @@ function initScreen() {
     document.body.appendChild(o);
     const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700);
     // sonido: un fragmento de canción (en el segundo reproductor) o, si no hay, un brillo de campanas
-    if (fxPlayer && TRACKS.muletilla) { music.duck(0.3, dur); fxPlayer.play('muletilla', { instant: true }); setTimeout(() => fxPlayer.stop(400), Math.max(800, dur - 400)); }
+    if (fxPlayer && TRACKS.muletilla && !fxPlayer.isLent()) { music.duck(0.3, dur); fxPlayer.play('muletilla', { instant: true }); setTimeout(() => fxPlayer.stop(400), Math.max(800, dur - 400)); }
     else { music.duck(0.45, 1900); chimeDorado(); }
     setTimeout(() => o.classList.add('out'), dur - 700);
     setTimeout(() => { o.remove(); tkBusy = false; }, dur);
@@ -4756,7 +4767,7 @@ function initControl() {
     clearTimeout(resetArmed); resetArmed = null; b.textContent = 'Reiniciar partida';
     if (seq) abortSeq('Secuencia de previa cancelada');
     const ini = (PREVIA && PREVIA.inicio) || {};
-    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol, ritmo: S.ritmo, acentos: S.acentos, bucleAj: S.bucleAj, previaModo: ini.pantalla || 'apagado' };
+    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol, ritmo: S.ritmo, acentos: S.acentos, bucleAj: S.bucleAj, bucleModo: S.bucleModo, bucleAnt: S.bucleAnt, previaModo: ini.pantalla || 'apagado' };
     log('Partida reiniciada · luz de sala, lista para la previa', 'o');
     lastLightKey = null; lastLook = null;
     commit();
@@ -4872,6 +4883,10 @@ function initControl() {
         const fila = (i, t) => `<div class="bq-row"><div class="muted bq-l">${t}</div><div class="bq-btns">${[-0.1, -0.02].map(d => `<button class="pbtn small" data-bq="${i}" data-d="${d}">${String(d).replace('-', '−')}</button>`).join('')}<b class="bq-v">${b[i].toFixed(2)}</b>${[0.02, 0.1].map(d => `<button class="pbtn small" data-bq="${i}" data-d="${d}">+${d}</button>`).join('')}</div></div>`;
         h += `<details class="bq" ${bucleOpen ? 'open' : ''}><summary>🔁 Bucle del tema: del ${b[1].toFixed(2)} vuelve al ${b[0].toFixed(2)}${aj ? ' (ajustado en este celu)' : ''}</summary>
           ${fila(1, 'Salta en')}${fila(0, 'Vuelve a')}
+          ${(() => { const dos = S.bucleModo ? S.bucleModo === 2 : D.bucleApoyo === true, ant = S.bucleAnt != null ? S.bucleAnt : (D.bucleAnticipo != null ? D.bucleAnticipo : 120);
+            return `<div class="bq-btns" style="margin-top:10px"><span class="muted" style="flex:0 0 auto;font-size:13px">Reproductores</span><button class="pbtn small ${dos ? '' : 'on'}" data-bqm="1">1 (salta)</button><button class="pbtn small ${dos ? 'on' : ''}" data-bqm="2">2 (se pasan)</button></div>
+            ${dos ? `<div class="bq-row"><div class="muted bq-l">Anticipo del segundo (ms): cuánto antes del salto arranca</div><div class="bq-btns">${[-50, -10].map(d => `<button class="pbtn small" data-bqa="${d}">${String(d).replace('-', '−')}</button>`).join('')}<b class="bq-v">${ant}</b>${[10, 50].map(d => `<button class="pbtn small" data-bqa="${d}">+${d}</button>`).join('')}</div>
+              <p class="muted" style="margin-top:4px;font-size:12.5px">Si en el salto queda un <b>hueco</b>, subí el anticipo; si se <b>pisa o tartamudea</b>, bajalo. En datos.js: <code>bucleApoyo: true, bucleAnticipo: ${ant}</code></p></div>` : ''}`; })()}
           <div class="row" style="margin-top:10px"><button class="btn small ${S.bucleCal ? '' : 'ghost'}" id="bq-cal" style="flex:1">${S.bucleCal ? '⏹ Terminar la repetición' : '🔁 Repetir el salto sin parar'}</button></div>
           ${S.bucleCal ? `<div class="bq-btns" style="margin-top:8px"><span class="muted" style="flex:0 0 auto;font-size:13px">Velocidad</span>${[1, 0.75, 0.5].map(r => `<button class="pbtn small ${(S.bucleCal.rate || 1) === r ? 'on' : ''}" data-bqr="${r}">${r === 1 ? 'normal' : r + '×'}</button>`).join('')}</div>
             <p class="muted" style="margin-top:6px;font-size:12.5px">Suenan 3 s antes del salto y 3 s después, una y otra vez. Ajustá con los botones mientras escuchás; el cambio se aplica en la vuelta siguiente.</p>` : ''}
@@ -4900,6 +4915,8 @@ function initControl() {
       S.bucleAj = { ...(S.bucleAj || {}), [bk]: b }; commit();
       log(`🔁 Bucle: del ${b[1].toFixed(2)} vuelve al ${b[0].toFixed(2)}`, 'o');
     }));
+    body.querySelectorAll('[data-bqm]').forEach(b2 => b2.addEventListener('click', () => { S.bucleModo = +b2.dataset.bqm; commit(); log(`🔁 Bucle con ${S.bucleModo} reproductor${S.bucleModo > 1 ? 'es' : ''}`, 'o'); }));
+    body.querySelectorAll('[data-bqa]').forEach(b2 => b2.addEventListener('click', () => { const base = S.bucleAnt != null ? S.bucleAnt : (D.bucleAnticipo != null ? D.bucleAnticipo : 120); S.bucleAnt = Math.max(0, Math.min(1500, base + +b2.dataset.bqa)); commit(); }));
     const bqc = body.querySelector('#bq-cal'); if (bqc) bqc.addEventListener('click', () => { S.bucleCal = S.bucleCal ? null : { rate: 1 }; commit(); log(S.bucleCal ? '🔁 Repitiendo el salto: ajustá mientras escuchás' : '🔁 Repetición terminada', 'o'); });
     body.querySelectorAll('[data-bqr]').forEach(b2 => b2.addEventListener('click', () => { S.bucleCal = { ...(S.bucleCal || {}), rate: +b2.dataset.bqr }; commit(); }));
     const bqt = body.querySelector('#bq-test'); if (bqt) bqt.addEventListener('click', () => { if (link) link.send({ type: 'probarSalto', antes: 4 }); });
