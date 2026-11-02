@@ -142,6 +142,13 @@ window.TRIVIA = {
   /* Cuánto dura el golpe de respuesta antes de pasar a la música de datos curiosos (ms) */
   respuestaMs: 4000,
 
+  /* Volumen durante la presentación de premios: al entrar, y después de cada premio (el último vale para el ticket). Al salir vuelve al de antes. */
+  enjuegoVolumen: [25, 35, 45, 60, 75, 100],
+
+  /* Bucle de la canción de las preguntas: false = un solo reproductor que salta (siempre igual, se puede afinar).
+     true = dos reproductores que se cruzan (sin silencio, pero YouTube no los sincroniza siempre igual). */
+  bucleApoyo: false,
+
   /* Al salir de una pregunta, lo que venía sonando se apaga en este tiempo (ms) y recién después arranca lo siguiente */
   desvanecerMs: 5000,
 
@@ -312,7 +319,7 @@ window.TRIVIA = {
       { texto: 'Con ustedes', tema: 55 },
     ],
     // Golpe de entrada automático: segundo del tema en que cae (con la apertura en automático). null = siempre a mano.
-    golpeTema: 59,
+    golpeTema: 61,
     // Qué aparece en el golpe: 'logo' (el logo de la trivia, como en la tele) o 'nombre' (tu nombre y foto)
     revelar: 'logo',
     logoArriba: 'Segunda edición',
