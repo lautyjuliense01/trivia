@@ -435,6 +435,7 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .prueba-chk input{flex:0 0 auto;width:20px;height:20px;accent-color:#f0a43a}
 #seq-toast{position:sticky;top:6px;z-index:30;margin-bottom:12px;padding:12px 14px;border-radius:16px;background:rgba(40,8,8,.96);border:2px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.6)}
 #seq-msg,#rev-msg{font-weight:800;font-size:16px}
+.mus-ctl{gap:8px;margin-top:8px}.mus-ctl .pbtn{flex:1;padding:8px 0;font-size:15px}
 .warn-big{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:rgba(224,90,72,.15);border:1px solid #e05a48;color:#ffb3a6;font-weight:700;font-size:15px}
 .mk-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .bq{margin-top:12px;padding:8px 10px;border:1px solid rgba(232,211,166,.25);border-radius:12px}.bq summary{cursor:pointer;font-weight:700;font-size:14px}
@@ -1015,7 +1016,8 @@ body{background:
   </div>
   <div class="card" id="mus-card" style="padding:10px 14px">
     <div class="row" style="justify-content:space-between"><span id="mus-name" class="muted">♪ Sin música</span><b id="mus-left" style="color:var(--gold)"></b></div>
-    <div class="br-track" style="height:8px;margin-top:6px"><div class="br-fill" id="mus-bar" style="width:0;transition:width 1s linear"></div></div>
+    <div class="br-track" id="mus-track" style="height:14px;margin-top:8px;cursor:pointer;touch-action:manipulation"><div class="br-fill" id="mus-bar" style="width:0;transition:width 1s linear"></div></div>
+    <div class="row mus-ctl"><button class="pbtn" data-med="seek" data-v="-10">⏪ 10 s</button><button class="pbtn" data-med="toggle">⏯</button><button class="pbtn" data-med="seek" data-v="10">10 s ⏩</button></div>
     <div class="muted" id="mus-fx" style="margin-top:4px"></div>
   </div>
 
@@ -1166,7 +1168,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v48 · 02/11 17:20';
+const VERSION = 'v49 · 02/11 17:30';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1567,13 +1569,14 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (t >= b[1] - 0.02 && t < b[1] + 2) { try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); raw.delete(player); } catch {} }   // sin apoyo listo: salto común
   }, 15);
   function release() { loopOn = false; swapStop(); }
+  function toggle() { if (!ready || !current) return; try { if (player.getPlayerState() === S().PLAYING) player.pauseVideo(); else player.playVideo(); } catch {} }
   function relock() { if (!current || !tracks[current].bucle) return; loopOn = true; const t = pos(), b = tracks[current].bucle; if (t != null && t >= b[1]) seek(b[0]); }
   function seek(t) { if (!ready || !current) return; swapStop(); try { player.seekTo(t, true); raw.delete(player); } catch {} }
   function duck(k, ms) { if (!ready || !current) return; fadeTo(Math.round(lv() * k), 180).then(() => setTimeout(() => { if (current) fadeTo(lv(), 700); }, Math.max(200, ms - 180))); }
   function ramp(to, ms) { if (!ready) return; rampOn = true; musicVol = to; fadeTo(lv(), Math.max(300, ms)).then(() => { rampOn = false; }); }
   function cancelRamp() { if (!rampOn) return; clearInterval(fadeTimer); rampOn = false; try { musicVol = player.getVolume(); } catch {} }
   function setLevel(now) { if (!ready || !current) return; try { if (needsFadeIn) return; if (now) { clearInterval(fadeTimer); player.setVolume(lv()); } else fadeTo(lv(), 300); } catch {} }
-  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, pos, release, relock, seek, looping: () => loopOn, isReady: () => ready, current: () => current };
+  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, pos, release, relock, seek, toggle, looping: () => loopOn, isReady: () => ready, current: () => current };
 }
 
 
@@ -2864,7 +2867,25 @@ function initScreen() {
     if (link) link.send({ type: 'cortoFin', slide: cortoSlide, error: err || null });
   }
   function cortoStop() { if (!cortoOn) return; cortoOn = false; clearInterval(cortoT); $('#corto').classList.remove('on'); try { if (cortoV) cortoV.pause(); else cortoP.stopVideo(); } catch {} }
-  setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: fxPlayer ? fxPlayer.status() : null }); }, 1000);
+  function cortoPos() {
+    if (!cortoOn) return null;
+    try { if (cortoV) return { name: '🎞️ ' + (CORTO.nombre || 'Corto'), t: cortoV.currentTime || 0, d: CORTO.fin || cortoV.duration || 0 }; if (cortoP) return { name: '🎞️ ' + (CORTO.nombre || 'Corto'), t: cortoP.getCurrentTime() || 0, d: CORTO.fin || cortoP.getDuration() || 0 }; } catch {}
+    return null;
+  }
+  function medioCtl(act, v) {
+    if (cortoOn) {
+      try {
+        if (cortoV) { if (act === 'seek') cortoV.currentTime = Math.max(0, cortoV.currentTime + v); if (act === 'to') cortoV.currentTime = v; if (act === 'toggle') { if (cortoV.paused) cortoV.play(); else cortoV.pause(); } }
+        else if (cortoP) { const t = cortoP.getCurrentTime() || 0; if (act === 'seek') cortoP.seekTo(Math.max(0, t + v), true); if (act === 'to') cortoP.seekTo(v, true); if (act === 'toggle') { if (cortoP.getPlayerState() === 1) cortoP.pauseVideo(); else cortoP.playVideo(); } }
+      } catch {}
+      return;
+    }
+    if (act === 'toggle') return music.toggle();
+    const t = music.pos();
+    if (act === 'seek' && t != null) music.seek(Math.max(0, t + v));
+    if (act === 'to') music.seek(v);
+  }
+  setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: fxPlayer ? fxPlayer.status() : null, med: cortoPos() }); }, 1000);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
 
   let lastAjuste = null;
@@ -3327,6 +3348,7 @@ function initScreen() {
     if (msg.type === 'reconectar') { link.reconnectDown(); return; }
     if (msg.type === 'ticketShow') { ticketShow(); return; }
     if (msg.type === 'saltar') { revSaltar(msg.slide); return; }
+    if (msg.type === 'medio') { medioCtl(msg.act, msg.v); return; }
     if (msg.type === 'probarSalto') {
       const bk = bucleKeyOf(cur);
       if (bk && music.current() === bk && music.looping()) { music.seek(TRACKS[bk].bucle[1] - (msg.antes || 4)); link.send({ type: 'log', text: `🔁 Escuchá el salto: faltan ${msg.antes || 4} s`, kind: 'o' }); }
@@ -3862,7 +3884,7 @@ function initControl() {
       if (msg.type === 'hello') { lastHello = Date.now(); if (msg.corto !== undefined && msg.corto !== cortoTele) { cortoTele = msg.corto; renderControl(); } }
       if (msg.type === 'ping') { lastHello = Date.now(); sendState(); }
       if (msg.type === 'log') { lastHello = Date.now(); log('📺 ' + msg.text, msg.kind || ''); }
-      if (msg.type === 'musica') { lastHello = Date.now(); musNow = { a: msg.a, at: Date.now() }; showMusic(msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a); }
+      if (msg.type === 'musica') { lastHello = Date.now(); musNow = { a: msg.a, at: Date.now() }; medNow = msg.med || msg.a || null; showMusic(msg.med || msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a); }
       if (msg.type === 'revelaEn' && msg.slide === S.slide && S.step === 'redoble' && revPlan) revSchedule(msg.ms - 120, msg.ten - 120);
       if (msg.type === 'revelar' && msg.slide === S.slide && S.step === 'redoble') { revDone(); S.step = 'revelado'; commit(); }
       if (msg.type === 'cortoEstado') { cortoProg = { t: msg.t, d: msg.d }; const el = $('#corto-prog'); if (el) el.textContent = msg.d ? `${mmss(msg.t)} de ${mmss(msg.d)}` : 'cargando…'; }
@@ -3918,6 +3940,14 @@ function initControl() {
   }, 1000);
 
   function sendState() { if (link) link.send({ type: 'state', state: S }); }
+  // Control del medio que esté sonando en la tele (canción o corto): adelantar, volver, pausar o tocar la barra para ir a un punto
+  let medNow = null;
+  document.querySelectorAll('[data-med]').forEach(b => b.addEventListener('click', () => { if (link) link.send({ type: 'medio', act: b.dataset.med, v: +b.dataset.v || 0 }); }));
+  $('#mus-track').addEventListener('click', e => {
+    if (!medNow || !medNow.d || !link) return;
+    const r = $('#mus-track').getBoundingClientRect(), t = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * medNow.d;
+    link.send({ type: 'medio', act: 'to', v: t }); log(`⏩ Ir a ${mmss(t)}`, 'o');
+  });
   const mmss = x => { x = Math.max(0, Math.round(x)); return Math.floor(x / 60) + ':' + String(x % 60).padStart(2, '0'); };
   function showMusic(a, b) {
     if (!a || !a.d) { $('#mus-name').textContent = a ? '♪ ' + a.name + ' · cargando…' : '♪ Sin música'; $('#mus-left').textContent = ''; $('#mus-bar').style.width = '0'; }
