@@ -109,7 +109,9 @@ window.TRIVIA = {
     cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false, credito: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
-    pregunta:     { id: 'usLbaOEjqV4', archivo: 'pregunta.mp3', nombre: '100-1000 Questions', bucle: [8.1857, 36], revela: 49 },
+    pregunta:     { id: 'usLbaOEjqV4', archivo: 'pregunta.mp3', nombre: '100-1000 Questions', bucle: [8.1857, 36], revela: 49, salida: 18.5 },
+                  // salida: hasta este segundo, el tramo suena idéntico en la segunda pasada (36 a 46,3). Si pedís revelar
+                  //   mientras suena el 8,2–18,5, salta al mismo punto de la segunda pasada sin que se note y la respuesta llega antes.
                   // archivo: suena desde el MP3 del repositorio (bucle exacto, sin hueco). Si no lo encuentra, usa el video de YouTube (id).
                   // bucle analizado del audio: el tramo se repite cada 27,8143 s (el 36,0000 es idéntico al 8,1857)
                   // bucle: [desde, hasta] → al llegar a "hasta" vuelve a "desde", así la pregunta dura lo que haga falta (acepta decimales: 35.2).
@@ -147,9 +149,7 @@ window.TRIVIA = {
   /* Volumen durante la presentación de premios: al entrar, y después de cada premio (el último vale para el ticket). Al salir vuelve al de antes. */
   enjuegoVolumen: [25, 35, 45, 60, 75, 100],
 
-  /* Bucle de la canción de las preguntas: false = un solo reproductor que salta (con un mini silencio).
-     true = se pasan la canción entre los dos reproductores de la tele (el de música y el de la voz):
-     el segundo espera quieto en el punto de vuelta y arranca "bucleAnticipo" ms antes del salto. Se afina en el celu. */
+  /* Bucle con YouTube (solo si una canción con bucle no tiene archivo): true = se pasan la canción entre los dos reproductores */
   bucleApoyo: true,
   bucleAnticipo: 120,
 
@@ -293,11 +293,11 @@ window.TRIVIA = {
      guion: lo que vas a contar antes de decir el nombre; lo ves en el celu como ayuda (no sale en la tele).
      ⚠️ Edades FICTICIAS: reemplazar. */
   jugadores: [
-    { nombre: 'Paulina',  foto: '', genero: 'f', edad: 27, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '', apodo: '', guion: '' },
-    { nombre: 'Carolina', foto: '', genero: 'f', edad: 26, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '', apodo: '', guion: '' },
-    { nombre: 'Lucas',    foto: '', genero: 'm', edad: 29, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '', apodo: '', guion: '' },
-    { nombre: 'Tomás',    foto: '', genero: 'm', edad: 28, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '', apodo: '', guion: '' },
-    { nombre: 'Nicolás',  foto: '', genero: 'm', edad: 23, rol: 'Pasante',                      antiguedad: 'En Bioingeniería desde septiembre de 2026', frase: '', apodo: '', guion: '' },
+    { nombre: 'Paulina',  foto: '', genero: 'f', edad: 25, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '', apodo: 'Subcampeona 2025', guion: "Recibamos a ella, que llega desde San Luis, ingeniera biomédica, 25 años. Viene de salir segunda en la trivia 2025 tras perder el desempate. Este año tiene revancha e intentará ir por la victoria. Con ustedes, Paulina." },
+    { nombre: 'Carolina', foto: '', genero: 'f', edad: 26, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '', apodo: 'Campeona 2025', guion: "Ella es la vigente campeona de la edición 2025. ingeniera biomédica. Disfruta de la paz de su San Antonio querido, y aunque no quiere vernos la cara fuera del trabajo, hoy está acá para volver a llevarse la Victoria. Podrá repetir la hazaña? Con ustedes, Carolina." },
+    { nombre: 'Lucas',    foto: '', genero: 'm', edad: 29, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '', apodo: 'El más antiguo del equipo', guion: "Es el primer técnico de bioingeniería del servicio, el más antiguo del equipo. Con sus manos ha salvado cientos de dispositivos. Dice venir más preparado. ¿Le alcanzará esto para ganar? Con ustedes, Lucas." },
+    { nombre: 'Tomás',    foto: '', genero: 'm', edad: 28, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '', apodo: 'El coscoíno', guion: "Llega el turno del coscoíno. Con una moto, él se recorrería todas las clínicas en un día. La última vez llegó diciendo que en una semana levantaba el hospital y se fue de acá con tan solo una vela. ¿Será que este año puede mejorar su nivel? Con ustedes, Tomás." },
+    { nombre: 'Nicolás',  foto: '', genero: 'm', edad: 23, rol: 'Pasante',                      antiguedad: 'En Bioingeniería desde septiembre de 2026', frase: '', apodo: 'El ingreso más reciente', guion: "Por último, llega el turno del más reciente ingreso. Se perdió todo el año y hoy tiene que dar las mismas respuestas ¿Será capaz de suponer lo que no sabe? ¿Podrá competir a la altura de los más experimentados? Tiene la suerte de principiante de su lado, con ustedes, Nicolás." },
   ],
 
   /* Presentación de contendientes: contás sus datos y, al decir el nombre, tocás el botón.
