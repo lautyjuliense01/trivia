@@ -1168,7 +1168,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v51 · 02/11 18:10';
+const VERSION = 'v52 · 02/11 18:30';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1427,6 +1427,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
 
   let cued = null;
   function cue(key) {
+    if (fileTrack(key)) return;
     if (!ready || !tracks[key] || current) return;
     try { player.cueVideoById({ videoId: tracks[key].id, startSeconds: tracks[key].start || 0 }); cued = key; } catch {}
   }
@@ -1442,13 +1443,93 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
       if (k >= 1) { clearInterval(xTimer); try { if (p !== player) { p.pauseVideo(); p.setVolume(0); } } catch {} }
     }, 60);
   }
+  /* ===== Temas desde archivo (WebAudio): el bucle empalma al sample, sin hueco ===== */
+  const fileBufs = {};
+  let F = null;   // tema de archivo sonando: { key, src, g, buf, anchorCtx, anchorPos, loop, rate, paused, pausedPos }
+  const fileTrack = key => conApoyoBucle && tracks[key] && tracks[key].archivo;
+  function loadBuf(key) {
+    if (fileBufs[key]) return Promise.resolve(fileBufs[key]);
+    const ctx = audioCtx();
+    if (!ctx) return Promise.reject(new Error('sin audio'));
+    fileBufs[key] = fetch(tracks[key].archivo).then(r => { if (!r.ok) throw new Error('no lo encuentro (' + r.status + ')'); return r.arrayBuffer(); })
+      .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
+      .then(b => (fileBufs[key] = b))
+      .catch(e => { delete fileBufs[key]; log(`No pude cargar ${tracks[key].archivo}: ${e.message || e}. Uso YouTube.`, 'e'); throw e; });
+    return fileBufs[key];
+  }
+  setTimeout(() => Object.keys(tracks).forEach(k => { if (fileTrack(k)) loadBuf(k).catch(() => {}); }), 1500);
+  function fPos() {
+    if (!F) return null;
+    if (F.paused) return F.pausedPos;
+    let p = F.anchorPos + Math.max(0, audioCtx().currentTime - F.anchorCtx) * F.rate;
+    const b = tracks[F.key].bucle;
+    if (F.loop && b && p > b[1]) p = b[0] + ((p - b[0]) % (b[1] - b[0]));
+    return Math.min(p, F.buf.duration);
+  }
+  function fReanchor() { if (!F || F.paused) return; F.anchorPos = fPos(); F.anchorCtx = audioCtx().currentTime; }
+  function fKill(ms = 0) {
+    if (!F) return;
+    const f = F; F = null; f.killed = true;
+    const ctx = audioCtx(), t = ctx.currentTime;
+    try { f.g.gain.cancelScheduledValues(t); f.g.gain.setValueAtTime(f.g.gain.value, t); f.g.gain.linearRampToValueAtTime(0, t + ms / 1000); f.src.stop(t + ms / 1000 + 0.05); } catch {}
+  }
+  function fFade(to, ms) {
+    if (!F) return Promise.resolve();
+    const ctx = audioCtx(), t = ctx.currentTime, g = F.g.gain;
+    try { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(Math.max(0, to) / 100, t + Math.max(0.03, ms / 1000)); } catch {}
+    return new Promise(r => setTimeout(r, ms));
+  }
+  // arranca (o rearranca) el tema de archivo en "from"
+  function fStart(key, buf, from, fadeIn, loopOverride) {
+    const ctx = audioCtx(), prevLoop = loopOverride;
+    if (F) { F.killed = true; try { F.src.stop(); } catch {} }
+    const src = ctx.createBufferSource(), g = ctx.createGain(), b = tracks[key].bucle;
+    src.buffer = buf;
+    const loop = prevLoop != null ? prevLoop : !!b;
+    if (b) { src.loopStart = b[0]; src.loopEnd = b[1]; }
+    src.loop = !!(b && loop && from < b[1]);
+    src.playbackRate.value = rateNow;
+    src.connect(g); g.connect(ctx.destination);
+    const t0 = ctx.currentTime + 0.03, target = lv() / 100;
+    g.gain.setValueAtTime(fadeIn ? 0 : target, t0);
+    if (fadeIn) g.gain.linearRampToValueAtTime(target, t0 + 0.9);
+    src.start(t0, Math.max(0, Math.min(from, buf.duration - 0.05)));
+    const f = F = { key, src, g, buf, anchorCtx: t0, anchorPos: from, loop: src.loop, rate: rateNow, paused: false };
+    src.onended = () => {
+      if (f.killed || F !== f || f.paused) return;
+      F = null;
+      if (current === key) { current = null; onLabel && onLabel('Música: —'); if (onEnded) { try { onEnded(key); } catch {} } }
+    };
+  }
+  async function fPlay(key, opts) {
+    const buf = await loadBuf(key);
+    if (current !== key) return;
+    fStart(key, buf, opts.from != null ? opts.from : (tracks[key].start || 0), !opts.instant);
+    onLabel && onLabel('♪ ' + tracks[key].name + ' (archivo)');
+    if (window.__onTrackPlaying) { try { window.__onTrackPlaying(key); } catch {} }
+  }
+  function fSeek(t) { if (!F) return; const f = F; fStart(f.key, f.buf, t, false, f.loop || (tracks[f.key].bucle && loopOn)); }
   async function play(key, opts = {}) {
-    if (!ready) { log('El reproductor todavía no está listo', 'e'); return; }
     const tr = tracks[key];
     if (!tr) return;
+    if (!ready && !fileTrack(key)) { log('El reproductor todavía no está listo', 'e'); return; }
     playGen++; retried = null;
     if (lentTo) { const f = lentTo; lentTo = null; try { f(); } catch {} }   // estaba prestado al bucle: lo recupera
-    if (current === key && player.getPlayerState() === S().PLAYING && !opts.restart) return;
+    const gen0 = playGen;
+    if (current === key && !opts.restart && (F ? !F.paused : (ready && player.getPlayerState() === S().PLAYING))) return;
+    if (F) {   // venía sonando un tema de archivo
+      if (opts.xfade > 0) { await fFade(0, opts.xfade); if (gen0 !== playGen) return; opts = { ...opts, instant: false }; }
+      fKill(opts.instant ? 0 : 300);
+    }
+    if (fileTrack(key)) {
+      if (ready && player.getPlayerState() === S().PLAYING) {
+        if (opts.xfade > 0) { await fadeTo(0, opts.xfade); if (gen0 !== playGen) return; opts = { ...opts, instant: false }; }
+        try { player.pauseVideo(); } catch {}
+      }
+      current = key; loopOn = !!tr.bucle; swapStop(); volverPropio(); needsFadeIn = false;
+      try { await fPlay(key, opts); return; } catch { if (current !== key || !ready) return; }   // si el archivo falla, sigue con YouTube
+    }
+    if (!ready) return;
     if (opts.xfade > 0 && player.getPlayerState() === S().PLAYING) {
       // lo que suena se apaga despacio y recién después arranca el tema nuevo
       const gen = playGen; loopOn = false; swapStop();
@@ -1466,6 +1547,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
   }
 
   async function stop(ms = 900) {
+    if (F) { current = null; const gen = ++playGen; await fFade(0, ms); if (gen === playGen) fKill(0); onLabel && onLabel('Música: en pausa'); return; }
     if (!ready) return;
     needsFadeIn = false;
     current = null;
@@ -1498,6 +1580,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
   }
 
   function status() {
+    if (F && current === F.key) return { key: F.key, name: tracks[F.key].name, t: fPos(), d: F.buf.duration, loop: F.loop };
     if (!ready || !current) return null;
     let t = 0, d = 0;
     try { t = player.getCurrentTime() || 0; d = player.getDuration() || 0; } catch {}
@@ -1513,7 +1596,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (!r || r.t !== t) { raw.set(p, { t, at: now }); return t; }
     return playing ? t + Math.min(0.6, (now - r.at) / 1000) : t;
   }
-  function pos() { return ready && current ? posOf(player) : null; }
+  function pos() { if (F) return fPos(); return ready && current ? posOf(player) : null; }
   const partner = () => (partnerApi && partnerApi.raw && partnerApi.isReady() ? partnerApi.raw() : null);
   const otro = () => { const pp = partner(); return player === own ? pp : own; };
   function swapStop() {
@@ -1529,7 +1612,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
   // el de efectos lo necesita (por ejemplo, la voz): se lo devuelve ya
   reclaimFn = () => { swapStop(); if (own && player !== own) { try { player.pauseVideo(); player.setVolume(0); } catch {} player = own; } };
   setInterval(() => {
-    if (!ready || !current) return;
+    if (!ready || !current || F) return;
     // si el tema terminó sonando en el de efectos, sus eventos no llegan acá: se avisa igual
     if (own && player !== own && !endPoll) { let st = -1; try { st = player.getPlayerState(); } catch {} if (st === S().ENDED) { endPoll = true; stateHandler({ data: S().ENDED }); return; } }
     if (!loopOn) return;
@@ -1569,21 +1652,25 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     }
     if (t >= b[1] - 0.02 && t < b[1] + 2) { try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); raw.delete(player); } catch {} }
   }, 8);
-  function release() { loopOn = false; swapStop(); }
-  function rate(r) { rateNow = r; if (!ready || !current) return; try { player.setPlaybackRate(r); } catch {} }
-  function toggle() { if (!ready || !current) return; try { if (player.getPlayerState() === S().PLAYING) player.pauseVideo(); else player.playVideo(); } catch {} }
-  function relock() { if (!current || !tracks[current].bucle) return; loopOn = true; const t = pos(), b = tracks[current].bucle; if (t != null && t >= b[1]) seek(b[0]); }
-  function seek(t) { if (!ready || !current) return; swapStop(); try { player.seekTo(t, true); raw.delete(player); } catch {} }
+  function release() { loopOn = false; swapStop(); if (F) { fReanchor(); F.loop = false; try { F.src.loop = false; } catch {} } }
+  function rate(r) { if (F) { fReanchor(); F.rate = r; rateNow = r; try { F.src.playbackRate.value = r; } catch {} return; } rateNow = r; if (!ready || !current) return; try { player.setPlaybackRate(r); } catch {} }
+  function toggle() {
+    if (F) { if (F.paused) { const f = F; F.paused = false; fStart(f.key, f.buf, f.pausedPos, true, f.loop); } else { F.pausedPos = fPos(); F.paused = true; try { F.src.stop(); } catch {} } return; }
+    if (!ready || !current) return; try { if (player.getPlayerState() === S().PLAYING) player.pauseVideo(); else player.playVideo(); } catch {} }
+  function relock() {
+    if (F && tracks[F.key].bucle) { loopOn = true; const b = tracks[F.key].bucle, t = fPos(); if (t >= b[1]) fSeek(b[0]); else { fReanchor(); F.loop = true; try { F.src.loop = true; } catch {} } return; }
+    if (!current || !tracks[current].bucle) return; loopOn = true; const t = pos(), b = tracks[current].bucle; if (t != null && t >= b[1]) seek(b[0]); }
+  function seek(t) { if (F) return fSeek(t); if (!ready || !current) return; swapStop(); try { player.seekTo(t, true); raw.delete(player); } catch {} }
   function setPartner(api) { partnerApi = api; }
   function setLoopCfg(c) { loopCfg = { ...loopCfg, ...c }; }
   // préstamo (lado del reproductor de efectos)
   let lentTo = null;
   function lend(fn) { lentTo = fn; if (fn) current = null; }
-  function duck(k, ms) { if (!ready || !current) return; fadeTo(Math.round(lv() * k), 180).then(() => setTimeout(() => { if (current) fadeTo(lv(), 700); }, Math.max(200, ms - 180))); }
-  function ramp(to, ms) { if (!ready) return; rampOn = true; musicVol = to; fadeTo(lv(), Math.max(300, ms)).then(() => { rampOn = false; }); }
+  function duck(k, ms) { if (F) { fFade(lv() * k, 180).then(() => setTimeout(() => { if (F) fFade(lv(), 700); }, Math.max(200, ms - 180))); return; } if (!ready || !current) return; fadeTo(Math.round(lv() * k), 180).then(() => setTimeout(() => { if (current) fadeTo(lv(), 700); }, Math.max(200, ms - 180))); }
+  function ramp(to, ms) { if (F) { musicVol = to; fFade(lv(), Math.max(300, ms)); return; } if (!ready) return; rampOn = true; musicVol = to; fadeTo(lv(), Math.max(300, ms)).then(() => { rampOn = false; }); }
   function cancelRamp() { if (!rampOn) return; clearInterval(fadeTimer); rampOn = false; try { musicVol = player.getVolume(); } catch {} }
-  function setLevel(now) { if (!ready || !current) return; try { if (needsFadeIn) return; if (now) { clearInterval(fadeTimer); player.setVolume(lv()); } else fadeTo(lv(), 300); } catch {} }
-  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, pos, release, relock, seek, toggle, rate, setPartner, setLoopCfg, lend, raw: () => player, isLent: () => !!lentTo, looping: () => loopOn, isReady: () => ready, current: () => current };
+  function setLevel(now) { if (F) { fFade(lv(), now ? 30 : 300); return; } if (!ready || !current) return; try { if (needsFadeIn) return; if (now) { clearInterval(fadeTimer); player.setVolume(lv()); } else fadeTo(lv(), 300); } catch {} }
+  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, pos, release, relock, seek, toggle, rate, setPartner, setLoopCfg, lend, raw: () => player, isLent: () => !!lentTo, looping: () => (F ? F.loop : loopOn), isReady: () => ready, current: () => current };
 }
 
 
@@ -2123,7 +2210,7 @@ const TRACKS = {};
 Object.entries(D.musica || {}).forEach(([k, v]) => {
   const t = typeof v === 'string' ? { id: v } : (v || {});
   const bucle = Array.isArray(t.bucle) && t.bucle.length === 2 && t.bucle[1] > t.bucle[0] ? t.bucle.map(Number) : null;
-  if (t.id) TRACKS[k] = { id: t.id, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
+  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
     loop: t.repetir != null ? !!t.repetir : (bucle ? false : !['redoble', 'respuesta', 'anfitrionVoz'].includes(k)) };
 });
 
