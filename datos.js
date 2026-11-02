@@ -39,6 +39,21 @@ window.TRIVIA = {
     // Avisos de sala antes de los créditos. ms opcional; si no, se calcula por el largo del texto.
     // sonido (opcional): 'grave' (el de siempre), 'envolvente' (crece, gira por la sala y golpea), 'audio/archivo.mp3' o '' (silencio).
     // audio opcional: 'audio/archivo.mp3' subido al repositorio (por ejemplo, una voz en off grabada).
+    // Locución de sala: el audio (subido al repositorio) con una placa por frase. en = segundo del audio en que arranca esa frase.
+    // Si está, reemplaza a los avisos de abajo (menos "Bioingeniería Surround", que sigue después). Sin archivo = avisos mudos.
+    locucion: {
+      archivo: 'avisos.mp3', volumen: 1,
+      placas: [
+        { en: 0,    texto: 'La función está por comenzar' },
+        { en: 2.4,  icono: 'butaca',   texto: 'Tomá asiento' },
+        { en: 6.9,  icono: 'shh',      texto: 'Silencio en la sala' },
+        { en: 12.8, icono: 'celular',  texto: 'Apagá tu celular' },
+        { en: 17.6, icono: 'pantalla', texto: 'Sin dispositivos durante los desafíos' },
+        { en: 23.0, icono: 'medico',   texto: 'Personal médico en sala' },
+        { en: 27.7, estilo: 'legal',   texto: 'La organización no se responsabiliza por daños ocasionados a egos, reputaciones ni amistades como consecuencia de los resultados de esta competencia.' },
+        { en: 36.9, texto: 'Te deseamos una excelente función', hasta: 41 },
+      ],
+    },
     avisos: [
       // icono: 'shh', 'celular', 'silencio', 'marcador', 'salida', 'sonido', 'reloj' o 'estrella'
       { icono: 'shh',      texto: 'Silencio, por favor', sub: 'Se apagan las luces de la sala', sonido: '' },   // sin sonido
