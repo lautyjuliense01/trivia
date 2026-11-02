@@ -1155,7 +1155,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v46 · 02/11 01:15';
+const VERSION = 'v47 · 02/11 01:38';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1446,17 +1446,11 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     playGen++; retried = null;
     if (current === key && player.getPlayerState() === S().PLAYING && !opts.restart) return;
     if (opts.xfade > 0 && player.getPlayerState() === S().PLAYING) {
-      if (shadow && shadowReady && !swapFail) {
-        // cruce: el tema nuevo arranca en el reproductor de apoyo y el anterior se va apagando en xfade ms
-        swapStop();
-        const old = player; player = shadow; shadow = old;
-        clearInterval(fadeTimer); fadeOut(old, opts.xfade);
-        current = key; loopOn = !!tr.bucle; needsFadeIn = true; cued = null;
-        try { player.setVolume(0); player.setPlaybackRate(1); player.loadVideoById({ videoId: tr.id, startSeconds: opts.from != null ? opts.from : (tr.start || 0) }); } catch {}
-        onLabel && onLabel('Cargando: ' + tr.name);
-        return;
-      }
-      await fadeTo(0, opts.xfade);   // sin reproductor de apoyo: primero se apaga y después arranca
+      // lo que suena se apaga despacio y recién después arranca el tema nuevo
+      const gen = playGen; loopOn = false; swapStop();
+      await fadeTo(0, opts.xfade);
+      if (gen !== playGen) return;   // mientras tanto se pidió otra cosa
+      opts = { ...opts, instant: false };
     }
     if (player.getPlayerState() === S().PLAYING && !opts.instant) await fadeTo(0, 600);
     current = key; loopOn = !!tr.bucle; swapStop();
@@ -3675,8 +3669,10 @@ function initScreen() {
     showQuestion(null);
     if (ENTRADA <= 0) return;
     vq.classList.add('q-wait', 'q-wait-num'); qArmed = vq;
-    qNumFbT = setTimeout(() => { if (qArmed === vq) enterNumber(vq); }, ENTRADA_NUM + 1000);
-    qFallbackT = setTimeout(() => { if (qArmed === vq) enterQuestion(vq); }, ENTRADA + 1000); // si la música no arranca, entra igual
+    // si venía sonando algo de la pregunta anterior, primero se apaga: el respaldo espera ese tiempo de más
+    const extra = cur && cur.slide >= 0 && isQ(SCRIPT[cur.slide] || {}) && music.current() ? (D.desvanecerMs == null ? 5000 : D.desvanecerMs) : 0;
+    qNumFbT = setTimeout(() => { if (qArmed === vq) enterNumber(vq); }, ENTRADA_NUM + 1000 + extra);
+    qFallbackT = setTimeout(() => { if (qArmed === vq) enterQuestion(vq); }, ENTRADA + 1000 + extra); // si la música no arranca, entra igual
   }
   window.__onTrackPlaying = key => { if (key === musicKeyOf({ slide: cur.slide, step: 'pregunta' }) && qArmed) startEntryTimer(); };
 

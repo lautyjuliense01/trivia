@@ -44,7 +44,7 @@ window.TRIVIA = {
     locucion: {
       archivo: 'avisos.mp3', volumen: 1,
       placas: [
-        { en: 0,    texto: 'Te damos la bienvenida', sub: 'a nuestra sala' },
+        { en: 0,    texto: 'Te damos la bienvenida', sub: 'a esta sala' },
         { en: 2.45, texto: 'La función está por comenzar' },
         { en: 5.4,  icono: 'butaca',   texto: 'Tomá asiento' },
         { en: 10.25, icono: 'mudo',    texto: 'Silencio en la sala' },
@@ -142,7 +142,7 @@ window.TRIVIA = {
   /* Cuánto dura el golpe de respuesta antes de pasar a la música de datos curiosos (ms) */
   respuestaMs: 4000,
 
-  /* Al salir de una pregunta, lo que venía sonando se desvanece en este tiempo (ms) mientras arranca lo siguiente */
+  /* Al salir de una pregunta, lo que venía sonando se apaga en este tiempo (ms) y recién después arranca lo siguiente */
   desvanecerMs: 5000,
 
   /* Qué música suena en cada momento (nombres de la lista de arriba, o null = silencio) */
