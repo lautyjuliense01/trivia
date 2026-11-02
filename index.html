@@ -1168,7 +1168,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v49 · 02/11 17:30';
+const VERSION = 'v50 · 02/11 17:45';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1569,6 +1569,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (t >= b[1] - 0.02 && t < b[1] + 2) { try { player.seekTo(b[0] + Math.max(0, t - b[1]), true); raw.delete(player); } catch {} }   // sin apoyo listo: salto común
   }, 15);
   function release() { loopOn = false; swapStop(); }
+  function rate(r) { if (!ready || !current) return; try { player.setPlaybackRate(r); } catch {} }
   function toggle() { if (!ready || !current) return; try { if (player.getPlayerState() === S().PLAYING) player.pauseVideo(); else player.playVideo(); } catch {} }
   function relock() { if (!current || !tracks[current].bucle) return; loopOn = true; const t = pos(), b = tracks[current].bucle; if (t != null && t >= b[1]) seek(b[0]); }
   function seek(t) { if (!ready || !current) return; swapStop(); try { player.seekTo(t, true); raw.delete(player); } catch {} }
@@ -1576,7 +1577,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
   function ramp(to, ms) { if (!ready) return; rampOn = true; musicVol = to; fadeTo(lv(), Math.max(300, ms)).then(() => { rampOn = false; }); }
   function cancelRamp() { if (!rampOn) return; clearInterval(fadeTimer); rampOn = false; try { musicVol = player.getVolume(); } catch {} }
   function setLevel(now) { if (!ready || !current) return; try { if (needsFadeIn) return; if (now) { clearInterval(fadeTimer); player.setVolume(lv()); } else fadeTo(lv(), 300); } catch {} }
-  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, pos, release, relock, seek, toggle, looping: () => loopOn, isReady: () => ready, current: () => current };
+  return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, pos, release, relock, seek, toggle, rate, looping: () => loopOn, isReady: () => ready, current: () => current };
 }
 
 
@@ -2872,6 +2873,16 @@ function initScreen() {
     try { if (cortoV) return { name: '🎞️ ' + (CORTO.nombre || 'Corto'), t: cortoV.currentTime || 0, d: CORTO.fin || cortoV.duration || 0 }; if (cortoP) return { name: '🎞️ ' + (CORTO.nombre || 'Corto'), t: cortoP.getCurrentTime() || 0, d: CORTO.fin || cortoP.getDuration() || 0 }; } catch {}
     return null;
   }
+  /* Calibración del bucle: repite una y otra vez los segundos alrededor del salto (y puede ir más despacio) */
+  let calRate = 1;
+  setInterval(() => {
+    const c = cur && cur.bucleCal, bk = c && bucleKeyOf(cur);
+    const r = bk ? (c.rate || 1) : 1;
+    if (r !== calRate && music.current()) { music.rate(r); calRate = r; }
+    if (!bk || music.current() !== bk || !music.looping()) return;
+    const b = TRACKS[bk].bucle, t = music.pos(), A = c.antes || 3, Dsp = c.despues || 3;
+    if (t != null && t > b[0] + Dsp && t < b[1] - A) music.seek(b[1] - A);
+  }, 50);
   function medioCtl(act, v) {
     if (cortoOn) {
       try {
@@ -4592,7 +4603,7 @@ function initControl() {
     else if (SCRIPT[i].k !== 'enjuego' && S.volBase != null) { volA(S.volBase, 2500); S.volBase = null; }
     if (!auto && typeof seq !== 'undefined' && seq && SCRIPT[i].k !== 'previa') abortSeq('✋ Pasaste a manual');
     if (revPlan) revDone();
-    S.slide = i; S.overlay = null; S.sub = 0; S.manual = null; S.desde = null; S.calib = false; S.marcar = false;
+    S.slide = i; S.overlay = null; S.sub = 0; S.manual = null; S.desde = null; S.calib = false; S.marcar = false; S.bucleCal = null;
     if (typeof seq !== 'undefined' && seq) seq.slideAt = Date.now();
     S.autoGolpe = (typeof seq !== 'undefined' && seq && seq.phase === 'apertura' && SCRIPT[i].k === 'presentador' && GOLPE_TEMA != null) ? GOLPE_TEMA : null;
     S.step = isQ(SCRIPT[i]) ? 'pregunta' : (SCRIPT[i].k === 'presentador' ? 'espera' : null);
@@ -4651,6 +4662,7 @@ function initControl() {
   function reveal() {
     if (S.step === 'redoble' || S.step === 'revelado') return;
     const fest = +($('#st-fest-ms') ? $('#st-fest-ms').value : 6000);
+    S.bucleCal = null;
     const bk = bucleKeyOf(S), b = bk && TRACKS[bk], a = musNow && musNow.a;
     if (b && a && a.key === bk && a.d > 0 && Date.now() - musNow.at < 5000) {
       // estimación con el último dato de la tele (cada 1 s); la tele la corrige apenas recibe la orden
@@ -4860,7 +4872,10 @@ function initControl() {
         const fila = (i, t) => `<div class="bq-row"><div class="muted bq-l">${t}</div><div class="bq-btns">${[-0.1, -0.02].map(d => `<button class="pbtn small" data-bq="${i}" data-d="${d}">${String(d).replace('-', '−')}</button>`).join('')}<b class="bq-v">${b[i].toFixed(2)}</b>${[0.02, 0.1].map(d => `<button class="pbtn small" data-bq="${i}" data-d="${d}">+${d}</button>`).join('')}</div></div>`;
         h += `<details class="bq" ${bucleOpen ? 'open' : ''}><summary>🔁 Bucle del tema: del ${b[1].toFixed(2)} vuelve al ${b[0].toFixed(2)}${aj ? ' (ajustado en este celu)' : ''}</summary>
           ${fila(1, 'Salta en')}${fila(0, 'Vuelve a')}
-          <div class="row" style="margin-top:8px"><button class="btn small" id="bq-test" style="flex:1">▶ Escuchar el salto (4 s antes)</button>${aj ? '<button class="btn ghost small" id="bq-reset">↩ Los de datos.js</button>' : ''}</div>
+          <div class="row" style="margin-top:10px"><button class="btn small ${S.bucleCal ? '' : 'ghost'}" id="bq-cal" style="flex:1">${S.bucleCal ? '⏹ Terminar la repetición' : '🔁 Repetir el salto sin parar'}</button></div>
+          ${S.bucleCal ? `<div class="bq-btns" style="margin-top:8px"><span class="muted" style="flex:0 0 auto;font-size:13px">Velocidad</span>${[1, 0.75, 0.5].map(r => `<button class="pbtn small ${(S.bucleCal.rate || 1) === r ? 'on' : ''}" data-bqr="${r}">${r === 1 ? 'normal' : r + '×'}</button>`).join('')}</div>
+            <p class="muted" style="margin-top:6px;font-size:12.5px">Suenan 3 s antes del salto y 3 s después, una y otra vez. Ajustá con los botones mientras escuchás; el cambio se aplica en la vuelta siguiente.</p>` : ''}
+          <div class="row" style="margin-top:8px"><button class="btn ghost small" id="bq-test" style="flex:1">▶ Escuchar una vez (4 s antes)</button>${aj ? '<button class="btn ghost small" id="bq-reset">↩ Los de datos.js</button>' : ''}</div>
           <p class="muted" style="margin-top:8px;font-size:12.5px">Si se <b>repite</b> un pedacito, subí "vuelve a" o bajá "salta en"; si se <b>saltea</b> un pedacito, al revés. Cuando quede bien, en datos.js: <code>bucle: [${b[0].toFixed(2)}, ${b[1].toFixed(2)}]</code>${b0 && (b0[0] !== b[0] || b0[1] !== b[1]) ? ` (hoy dice ${b0[0]}, ${b0[1]})` : ''}</p></details>`;
       }
     } else if (sl.k === 'marcador' || sl.k === 'ganador') {
@@ -4885,6 +4900,8 @@ function initControl() {
       S.bucleAj = { ...(S.bucleAj || {}), [bk]: b }; commit();
       log(`🔁 Bucle: del ${b[1].toFixed(2)} vuelve al ${b[0].toFixed(2)}`, 'o');
     }));
+    const bqc = body.querySelector('#bq-cal'); if (bqc) bqc.addEventListener('click', () => { S.bucleCal = S.bucleCal ? null : { rate: 1 }; commit(); log(S.bucleCal ? '🔁 Repitiendo el salto: ajustá mientras escuchás' : '🔁 Repetición terminada', 'o'); });
+    body.querySelectorAll('[data-bqr]').forEach(b2 => b2.addEventListener('click', () => { S.bucleCal = { ...(S.bucleCal || {}), rate: +b2.dataset.bqr }; commit(); }));
     const bqt = body.querySelector('#bq-test'); if (bqt) bqt.addEventListener('click', () => { if (link) link.send({ type: 'probarSalto', antes: 4 }); });
     const bqr = body.querySelector('#bq-reset'); if (bqr) bqr.addEventListener('click', () => { const bk = bucleKeyOf(S); if (S.bucleAj) { const n = { ...S.bucleAj }; delete n[bk]; S.bucleAj = n; } commit(); });
     const pp = body.querySelector('#prueba-previa'); if (pp) pp.addEventListener('change', () => { try { localStorage.setItem(STORE_PFX + 'pruebaPrevia', pp.checked ? '1' : '0'); } catch {} log(pp.checked ? `🧪 Prueba: la previa arranca en ${mmss(PRUEBA_DESDE)}` : '🧪 Prueba desactivada: la previa arranca desde el principio', 'o'); renderControl(); });
