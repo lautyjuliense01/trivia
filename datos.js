@@ -381,6 +381,26 @@ window.TRIVIA = {
 
   ticketDorado: {},   // el diseño del ticket (sin beneficios ni número)
 
+  /* ---------- Puntajes ----------
+     comun: opción múltiple y ¿Quién dijo? · aprox: el más cerca en aproximación · exacto: si alguno acierta exacto en aproximación
+     ajuste: de a cuánto suman o restan los botones de puntos a mano en el celu.
+     Cada pregunta puede tener su propio valor: puntos: 150 (y en aproximación también exacto: 400). */
+  puntos: { comun: 100, aprox: 200, exacto: 300, ajuste: 100 },
+
+  /* ---------- Presentación del programa ----------
+     Va después de tu golpe de entrada, antes de "Presentamos a los contendientes". Cada toque del celu saca la frase siguiente. */
+  programa: {
+    frases: [
+      'Un programa que premia el conocimiento',
+      'La memoria',
+      'El sentido común',
+      'Y el criterio',
+      'Un programa lleno de emociones',
+      'Lleno de premios',
+      'Y con un solo ticket dorado en juego',
+    ],
+  },
+
   /* ---------- Reglas ----------
      La primera línea (cuántas preguntas hay de cada tipo) la arma la app sola. */
   // Se muestran como tarjetas que se dan vuelta de a una (un toque por regla). La primera (rondas y preguntas) la arma la app.
@@ -388,9 +408,9 @@ window.TRIVIA = {
   reglas: [
     { icono: 'marcador', titulo: 'En la pizarra', texto: 'Cada uno escribe su respuesta. Nada de soplar.' },
     { icono: 'pizarra',  titulo: 'Solo la respuesta', texto: 'En la pizarra no puede haber nada más escrito: ni cuentas, ni borradores, ni dibujos.' },
-    { icono: 'estrella', titulo: 'Un punto', texto: 'En opción múltiple y ¿Quién dijo?, suma cada uno que acierte.' },
-    { icono: 'diana',    titulo: 'El más cerca', texto: 'En aproximación gana el punto quien quede más cerca. Si empatan, suman todos.' },
-    { icono: 'ticket',   titulo: 'Desempate', texto: 'Si al final hay empate, una pregunta más define quién se lleva el ticket dorado.' },
+    { icono: 'estrella', titulo: '100 puntos', texto: 'En opción múltiple y ¿Quién dijo?, suma 100 cada uno que acierte.' },
+    { icono: 'diana',    titulo: 'El más cerca', texto: 'En aproximación, 200 para quien quede más cerca y 300 si la clava exacta. Si empatan, suman todos.' },
+    { icono: 'ticket',   titulo: 'Desempate', texto: 'Si hay empate en cualquier puesto, una pregunta más define el orden: así se eligen los premios.' },
   ],
 
   /* ---------- Rondas y preguntas ----------
@@ -447,7 +467,15 @@ window.TRIVIA = {
     },
   ],
 
-  /* Pregunta de desempate (aproximación). Solo aparece si hay empate al final. */
-  desempate: { texto: '¿Cuántos kilómetros recorrió el equipo de Bioingeniería entre sedes en 2025?', respuesta: 1500,
-               nota: '⚠️ Pregunta de ejemplo: reemplazar.' },
+  /* ---------- Desempates (aproximación) ----------
+     Hay desempate en CUALQUIER puesto empatado, porque el puesto define el orden para elegir premios.
+     Se juegan del empate más bajo al más alto: el primero de la lista se usa para el primer desempate que se juegue.
+     Si el 1° no está empatado, primero se anuncia al ganador y después vienen los desempates; si el 1° está empatado,
+     su desempate es el último y el ganador sale después. Los que no hacen falta se saltean solos. */
+  desempates: [
+    { texto: '¿Cuántos kilómetros recorrió el equipo de Bioingeniería entre sedes en 2025?', respuesta: 1500,
+      nota: '⚠️ Pregunta de ejemplo: reemplazar.' },
+    { texto: '¿Cuántas horas de mantenimiento preventivo se cargaron en GLPI en 2025?', respuesta: 800,
+      nota: '⚠️ Pregunta de ejemplo: reemplazar.' },
+  ],
 };

@@ -524,6 +524,8 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .hw.tr .hw-burst{background:radial-gradient(ellipse at center,rgba(255,226,170,.42),rgba(255,170,60,.14) 38%,transparent 70%)}
 .hw.tr.on .hw-burst{animation:hwBurst 2.4s .3s cubic-bezier(.2,.8,.2,1) both}
 .host-reveal{display:none}
+.cd-row.tie.shown .cd-pos::after{content:'⚔️';font-size:.55em;margin-left:.25em;vertical-align:middle}
+.v-prog .host-wait{height:46vh}
 /* v31: cuenta regresiva (líder de película dorado) */
 .cr-txt{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center}
 @property --crA{syntax:'<angle>';inherits:false;initial-value:0deg}
@@ -1249,7 +1251,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v56 · 02/11 22:00';
+const VERSION = 'v57 · 03/11 11:00';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1934,7 +1936,7 @@ const fmtNum = n => (typeof n === 'number' ? n.toLocaleString('es-AR') : esc(n))
 const TIPO_LABEL = { opciones: 'Opción múltiple', quien: '¿Quién dijo?', aprox: 'Aproximación' };
 const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
-D.momentos = Object.assign({ gracias: 'gracias', enjuego: 'enjuego', enjuegoTicket: 'ticket', presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
+D.momentos = Object.assign({ programa: 'anfitrion', gracias: 'gracias', enjuego: 'enjuego', enjuegoTicket: 'ticket', presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
 D.luces = Object.assign({ contendientes: 'festejo', cuenta: 'tension' }, D.luces || {});
 /* Lámparas Tuya: nombre → ID (tienen que estar también en TUYA_DEVICE del intermediario) */
 const LAMP_CFG = {};
@@ -2530,6 +2532,7 @@ const cuentaGuion = () => {
 };
 const GUION = Object.assign({
   cuentaReg: cuentaGuion(),
+  programa: 'calido',
   logo: 'salaInicio',
   previa: 'salaInicio',
   presentamos: [[0, 'oscuro'], [1700, 'escenario']],
@@ -2557,12 +2560,24 @@ Object.entries(D.musica || {}).forEach(([k, v]) => {
     loop: t.repetir != null ? !!t.repetir : (bucle ? false : !['redoble', 'respuesta', 'anfitrionVoz'].includes(k)) };
 });
 
+/* ---------- Puntajes ----------
+   Cada pregunta vale lo que diga su "puntos" (si no, el valor por tipo de abajo). En aproximación, el más cerca se lleva "aprox"
+   y si alguno acierta exacto se lleva "exacto" (también configurable por pregunta). ajuste = de a cuánto suman los botones a mano. */
+const PTS = Object.assign({ comun: 100, aprox: 200, exacto: 300, ajuste: 100 }, D.puntos || {});
+const fmtPts = n => Math.round(n || 0).toLocaleString('es-AR');
+const ptsTxt = n => fmtPts(n) + (Math.abs(n) === 1 ? ' punto' : ' puntos');
+const ptsOf = q => q.puntos != null ? +q.puntos : (q.tipo === 'aprox' ? PTS.aprox : PTS.comun);
+const exactoOf = q => q.exacto != null ? +q.exacto : Math.max(PTS.exacto, ptsOf(q));
+/* Desempates: preguntas de aproximación (datos.js: desempates: [ ... ]; también vale el viejo "desempate" suelto) */
+const DESEMPATES = (Array.isArray(D.desempates) ? D.desempates : (D.desempate ? [D.desempate] : [])).filter(Boolean).map(q => ({ ...q, tipo: 'aprox' }));
+const PROGRAMA = ((D.programa && D.programa.frases) || []).filter(Boolean);
 function buildScript() {
   const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }];
   if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, ...(CUENTA ? [{ k: 'cuentaReg', label: '⏳ Cuenta regresiva (voz)' }] : []), { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
   else s.push({ k: 'cine', label: 'Apertura de cine: celulares y créditos' });
   s.push({ k: 'intro', label: 'Intro de película (fanfarria)' });
   if (D.presentador) s.push({ k: 'presentador', label: 'Entrada del presentador: ' + D.presentador.nombre });
+  if (PROGRAMA.length) s.push({ k: 'programa', label: 'Presentación del programa (una frase por toque)' });
   s.push({ k: 'presentamos', label: 'Título: presentamos a los contendientes' });
   P.forEach((p, i) => s.push({ k: 'presentacion', p: i, label: 'Presentación: ' + p.nombre }));
   s.push({ k: 'contendientes', label: 'Todos los contendientes' });
@@ -2575,8 +2590,14 @@ function buildScript() {
     if (ri < D.rondas.length - 1) s.push({ k: 'marcador', r: ri, label: `Marcador tras ronda ${ri + 1}` });
   });
   s.push({ k: 'cuenta', label: 'Cuenta final (del último al segundo)' });
-  if (D.desempate) s.push({ k: 'desempate', id: 'desempate', label: 'Desempate (solo si hay empate)' });
-  s.push({ k: 'ganador', label: 'Ganador' });
+  // Desempates en cualquier puesto (definen el orden para elegir premios). Si el 1° no está empatado, primero el ganador
+  // y después los desempates; si el 1° está empatado, los desempates van antes y el ganador queda para el final.
+  // Siempre del desempate más bajo al más alto. Los que no hacen falta se saltean solos.
+  if (DESEMPATES.length) {
+    s.push({ k: 'ganador', cuando: 'antes', label: 'Ganador (si el 1° no está empatado)' });
+    DESEMPATES.forEach((q, i) => s.push({ k: 'desempate', s: i, id: 'des' + i, label: `Desempate ${i + 1} (solo si hace falta)` }));
+    s.push({ k: 'ganador', cuando: 'despues', label: 'Ganador (después del desempate)' });
+  } else s.push({ k: 'ganador', label: 'Ganador' });
   s.push({ k: 'premios', label: 'Entrega de premios' });
   if (D.gracias !== false) s.push({ k: 'gracias', label: 'Palabras de cierre (agradecimiento)' });
   s.push({ k: 'cierre', label: 'Cierre: créditos finales' });
@@ -2586,7 +2607,7 @@ const SCRIPT = buildScript();
 const TOTAL_Q = SCRIPT.filter(s => s.k === 'pregunta').length;
 
 function qOf(sl) {
-  if (sl.k === 'desempate') return { ...D.desempate, tipo: 'aprox' };
+  if (sl.k === 'desempate') return { ...DESEMPATES[sl.s || 0], tipo: 'aprox', ronda: 'Desempate' };
   const r = D.rondas[sl.r];
   return { ...r.preguntas[sl.q], tipo: r.tipo, ronda: r.titulo };
 }
@@ -2613,54 +2634,66 @@ function closest(q, guesses, onlyPlayers) {
   });
   return who;
 }
-function pointsFor(q, res) {
+/* Quién suma y cuánto en una pregunta: [{ p, pts, exacto }] */
+function awardsFor(q, res) {
   if (!res) return [];
-  if (q.tipo === 'aprox') return closest(q, res.g);
-  return (res.ok || []).slice();
+  if (q.tipo === 'aprox') {
+    const who = closest(q, res.g);
+    if (!who.length) return [];
+    const ex = Math.abs(parseNum(res.g[who[0]]) - q.respuesta) < 1e-9;
+    return who.map(p => ({ p, pts: ex ? exactoOf(q) : ptsOf(q), exacto: ex }));
+  }
+  return (res.ok || []).map(p => ({ p, pts: ptsOf(q), exacto: false }));
 }
+function pointsFor(q, res) { return awardsFor(q, res).map(a => a.p); }
 function computeScores(results) {
   const sc = P.map(() => 0);
-  SCRIPT.forEach(sl => { if (sl.k === 'pregunta') pointsFor(qOf(sl), results[sl.id]).forEach(p => { if (sc[p] !== undefined) sc[p]++; }); });
+  SCRIPT.forEach(sl => { if (sl.k === 'pregunta') awardsFor(qOf(sl), results[sl.id]).forEach(a => { if (sc[a.p] !== undefined) sc[a.p] += a.pts; }); });
   Object.entries((results && results._ajuste) || {}).forEach(([p, v]) => { if (sc[p] !== undefined) sc[p] += v; });   // puntos a mano
   return sc;
 }
-function standing(results) {
-  const sc = computeScores(results);
-  const max = Math.max(0, ...sc);
-  const tied = sc.map((v, i) => (v === max ? i : -1)).filter(i => i >= 0);
-  let top = tied, byTie = false;
-  if (tied.length > 1 && D.desempate && results.desempate) {
-    const w = closest({ ...D.desempate, tipo: 'aprox' }, results.desempate.g, tied);
-    if (w.length) { top = w; byTie = true; }
-  }
-  return { sc, max, tied, top, byTie, decided: top.length === 1 };
-}
-/* Grupos por puntaje, de mayor a menor, con puesto (1, 1, 3…) */
+/* Grupos por puntaje (sin desempates), de mayor a menor, con puesto (1, 1, 3…) */
 function rankGroups(results) {
-  const { sc } = standing(results);
+  const sc = computeScores(results || {});
   const scores = [...new Set(sc)].sort((a, b) => b - a);
   let pos = 1;
   return scores.map(v => { const players = sc.map((x, i) => (x === v ? i : -1)).filter(i => i >= 0); const g = { score: v, players, pos }; pos += players.length; return g; });
 }
-/* Lo que se revela en la cuenta final: todos menos el grupo de arriba, del último hacia arriba */
+/* Los empates que hay que desempatar, en el orden en que se juegan: del puesto más bajo al más alto.
+   El desempate i (slide "des" + i) es el del grupo i de esta lista */
+function tieSlots(results) { return rankGroups(results).filter(g => g.players.length > 1).sort((a, b) => b.pos - a.pos); }
+function tieSlot(sl, results) { return sl && sl.k === 'desempate' ? (tieSlots(results)[sl.s || 0] || null) : null; }
+function tiedFor(sl, results) { const g = tieSlot(sl, results); return g ? g.players : null; }
+const posTxt = g => g.pos === 1 ? 'el primer puesto' : (g.players.length === 2 ? `el ${g.pos}° y ${g.pos + 1}° puesto` : `del ${g.pos}° al ${g.pos + g.players.length - 1}° puesto`);
+/* Ordena un grupo empatado con su desempate: el más cerca primero; iguales de cerca siguen empatados */
+function resolveGroup(g, s, results) {
+  const q = DESEMPATES[s], r = q && results && results['des' + s];
+  if (!q || !r || !r.g) return [{ ...g }];
+  const d = p => { const n = parseNum(r.g[p]); return n === null ? Infinity : Math.abs(n - q.respuesta); };
+  const ord = g.players.slice().sort((a, b) => d(a) - d(b));
+  if (ord.every(p => d(p) === Infinity)) return [{ ...g }];
+  const out = []; let pos = g.pos;
+  ord.forEach(p => { const last = out[out.length - 1]; if (last && Math.abs(d(last.players[0]) - d(p)) < 1e-9) last.players.push(p); else out.push({ pos, players: [p], score: g.score, byTie: true }); pos++; });
+  let k = g.pos; out.forEach(o => { o.pos = k; k += o.players.length; });
+  return out;
+}
+/* Posiciones finales, con los desempates que ya se jugaron */
+function finalRanking(results) {
+  const slots = tieSlots(results || {});
+  return rankGroups(results || {}).flatMap(g => g.players.length > 1 ? resolveGroup(g, slots.indexOf(slots.find(x => x.pos === g.pos)), results) : [g]);
+}
+function standing(results) {
+  results = results || {};
+  const sc = computeScores(results), max = Math.max(0, ...sc);
+  const tied = sc.map((v, i) => (v === max ? i : -1)).filter(i => i >= 0);
+  const fr = finalRanking(results), top = fr[0] ? fr[0].players : tied;
+  return { sc, max, tied, top, byTie: tied.length > 1 && top.length === 1, decided: top.length === 1 };
+}
+/* Lo que se revela en la cuenta final: todos menos los de arriba, del último hacia arriba */
 function countdownGroups(results) {
   // Se revela del último hacia arriba, dejando ocultos los dos mejores puestos (el ganador se anuncia aparte, nunca "por descarte")
   const g = rankGroups(results);
   return g.slice(g[0] && g[0].players.length > 1 ? 1 : 2).reverse();
-}
-/* Posiciones finales, teniendo en cuenta el desempate */
-function finalRanking(results) {
-  const s = standing(results);
-  const groups = rankGroups(results);
-  const out = [];
-  if (s.decided) {
-    out.push({ pos: 1, players: s.top, score: s.max });
-    const restTop = s.tied.filter(i => !s.top.includes(i));
-    if (restTop.length) out.push({ pos: 2, players: restTop, score: s.max });
-    let pos = 1 + s.tied.length;
-    groups.slice(1).forEach(g => { out.push({ pos, players: g.players, score: g.score }); pos += g.players.length; });
-  } else groups.forEach(g => out.push(g));
-  return out;
 }
 
 function momentOf(st) {
@@ -2804,7 +2837,7 @@ function scoreRowsHTML(results) {
     return `<div class="bar-row ${o.v === max && max > 0 ? 'lead' : ''}" style="animation-delay:${k * 0.12}s">
       <span class="br-pos">${pos}</span><span class="br-av">${photoHTML(P[o.i])}</span>
       <span class="br-name">${esc(P[o.i].nombre)}</span>
-      <div class="br-track"><div class="br-fill" data-w="${w}"></div></div><span class="br-pts">${o.v}</span></div>`;
+      <div class="br-track"><div class="br-fill" data-w="${w}"></div></div><span class="br-pts">${fmtPts(o.v)}</span></div>`;
   }).join('');
 }
 function growBars(root) {
@@ -3842,7 +3875,7 @@ function initScreen() {
         beams.setup('top3');
         const cg = countdownGroups(st.results || {}), k = st.sub || 0;
         if (k === 0) { beams.clearPools(); beams.level(.55); beams.play('calm'); if (!cg.length) later(1500, () => scanLock(() => sqa('.cd-row.hid'), 600)); break; }
-        scanLock(() => sqa(`.cd-row[data-g="${cg[k - 1].pos}"]`), 450);
+        if (cg[k - 1]) scanLock(() => sqa(`.cd-row[data-g="${cg[k - 1].pos}"]`), 450);
         if (k >= cg.length) later(1900, () => scanLock(() => sqa('.cd-row.hid'), 600));
         break;
       }
@@ -3961,7 +3994,7 @@ function initScreen() {
     if (st.ajusteMsg && st.ajusteMsg.id !== lastAjuste && P[st.ajusteMsg.p] && !['cuenta', 'desempate', 'ganador'].includes(sl.k)) {
       lastAjuste = st.ajusteMsg.id;
       const t = document.createElement('div'); t.className = 'aj-toast ' + (st.ajusteMsg.d > 0 ? 'mas' : 'menos');
-      t.innerHTML = `<b>${st.ajusteMsg.d > 0 ? '+1' : '−1'}</b><span>${esc(P[st.ajusteMsg.p].nombre)}</span>`;
+      t.innerHTML = `<b>${st.ajusteMsg.d > 0 ? '+' : '−'}${fmtPts(Math.abs(st.ajusteMsg.d))}</b><span>${esc(P[st.ajusteMsg.p].nombre)}</span>`;
       document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
       if (st.ajusteMsg.d > 0) boomGrave(0.4);
     } else if (st.ajusteMsg) lastAjuste = st.ajusteMsg.id;
@@ -4025,6 +4058,10 @@ function initScreen() {
         : '<div class="hypno"></div><div class="hypno h2"></div><div class="hypno-core"></div><div class="hring"></div><div class="hring r2"></div><div class="hring r3"></div>';
       h = `<div class="previa">${fondo}
            <div class="previa-code" id="previa-code" ${curRev ? 'hidden' : ''}>Código para el control <b>${code}</b></div></div>`;
+    } else if (sl.k === 'programa') {
+      // presentación del programa: vos hablás y cada toque saca la frase siguiente, con placa de tráiler
+      h = `<div class="v v-host v-prog"><div class="host-wait">${PROGRAMA.map(x => { const t = String(x), len = Math.max(8, t.length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2);
+          return `<div class="hw tr ${two ? 'two' : ''}" style="--fs:${fs}vw"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div><span>${esc(t)}</span></div>`; }).join('')}</div></div>`;
     } else if (sl.k === 'presentamos') {
       h = `<div class="v v-pt"><div class="pt-pre">Y ahora…</div><div class="pt-main">Presentamos a<br>los contendientes</div><div class="pt-line"></div></div>`;
     } else if (sl.k === 'cine') {
@@ -4158,7 +4195,7 @@ function initScreen() {
       const hidden = P.length - shownPlayers.size;
       const rows = [];
       for (let k = 0; k < hidden; k++) rows.push(`<div class="cd-row hid"><span class="cd-pos">?</span><span class="cd-av"><span class="ini q">?</span></span><span class="cd-name">???</span><span class="cd-pts">${avIconHTML('ticket')}</span></div>`);
-      [...cg].reverse().forEach(g => g.players.forEach(pi => rows.push(`<div class="cd-row" data-g="${g.pos}"><span class="cd-pos">${g.pos}°</span><span class="cd-av">${photoHTML(P[pi])}</span><span class="cd-name">${esc(P[pi].nombre)}</span><span class="cd-pts">${g.score} ${g.score === 1 ? 'pt' : 'pts'}</span></div>`)));
+      [...cg].reverse().forEach(g => g.players.forEach(pi => rows.push(`<div class="cd-row" data-g="${g.pos}"><span class="cd-pos">${g.pos}°</span><span class="cd-av">${photoHTML(P[pi])}</span><span class="cd-name">${esc(P[pi].nombre)}</span><span class="cd-pts">${fmtPts(g.score)} pts</span></div>`)));
       h = `<div class="v v-cd enter"><h2 class="script">La cuenta final</h2><div class="round-sub" style="margin-top:4px">Del último al primero</div><div class="cd-banner" id="cd-banner"></div><div class="cd-list">${rows.join('')}</div></div>`;
     } else if (sl.k === 'enjuego') {
       const PR = ENJ();
@@ -4184,16 +4221,14 @@ function initScreen() {
       h = `<div class="v v-round enter"><div class="round-num">Ronda ${sl.r + 1}</div><div class="marquee"><h2 class="script">${esc(r.titulo)}</h2></div>
            <div class="round-sub">${r.preguntas.length} preguntas</div></div>`;
     } else if (isQ(sl)) {
-      h = questionHTML(sl);
+      h = questionHTML(sl, st);
     } else if (sl.k === 'marcador') {
       const final = sl.r === D.rondas.length - 1;
       h = `<div class="v v-score enter"><h2 class="script">${final ? 'Marcador final' : 'Marcador'}</h2>
            <div class="round-sub" style="margin-top:6px">${final ? '¿Quién se lleva ' + esc(PREMIO) + '?' : 'Después de la ronda ' + (sl.r + 1)}</div>
            <div class="bars">${scoreRowsHTML(st.results || {})}</div></div>`;
     } else if (sl.k === 'premios') {
-      const groups = rankGroups(st.results || {});
-      const s0 = standing(st.results || {});
-      const order = [...s0.top, ...groups.flatMap(g => g.players).filter(i => !s0.top.includes(i))];
+      const order = finalRanking(st.results || {}).flatMap(g => g.players);   // con los desempates: el orden en que eligen
       h = `<div class="v v-premios enter"><div class="marquee" style="display:inline-block"><h2 class="script">Entrega de premios</h2></div>
         <div class="round-sub" style="margin-top:22px">Eligen en este orden</div>
         <div class="pz-list">${order.map((i, k) => `<div class="pz" style="animation-delay:${0.5 + k * 0.25}s"><span class="pz-n">${k + 1}</span><span class="br-av">${photoHTML(P[i])}</span><span>${esc(P[i].nombre)}</span></div>`).join('')}</div>
@@ -4283,9 +4318,9 @@ function initScreen() {
   }
   window.__onTrackPlaying = key => { if (key === musicKeyOf({ slide: cur.slide, step: 'pregunta' }) && qArmed) startEntryTimer(); };
 
-  function questionHTML(sl) {
+  function questionHTML(sl, st = {}) {
     const q = qOf(sl);
-    const title = sl.k === 'desempate' ? 'Desempate' : q.ronda;
+    const tg = tieSlot(sl, st.results || {}), title = sl.k === 'desempate' ? (tg ? 'Desempate por ' + posTxt(tg) : 'Desempate') : q.ronda;
     const num = sl.k === 'desempate' ? '★' : sl.n;
     const hasOpts = q.tipo === 'opciones' && Array.isArray(q.opciones) && q.opciones.length;
     let body = '';
@@ -4314,25 +4349,26 @@ function initScreen() {
     const q = qOf(sl), res = (st.results || {})[sl.id];
     if (!res) return '';
     if (q.tipo === 'aprox') {
-      const onlyTied = sl.k === 'desempate' ? standing(st.results || {}).tied : null;
-      const win = closest(q, res.g, onlyTied);
+      const onlyTied = tiedFor(sl, st.results || {});
+      const win = closest(q, res.g, onlyTied), aw = sl.k === 'desempate' ? [] : awardsFor(q, res);
       const rows = Object.entries(res.g || {}).map(([p, v]) => ({ p: +p, n: parseNum(v) }))
         .filter(r => r.n !== null && (!onlyTied || onlyTied.includes(r.p)))
         .sort((a, b) => Math.abs(a.n - q.respuesta) - Math.abs(b.n - q.respuesta));
       return rows.map(r => {
         const w = win.includes(r.p), d = Math.abs(r.n - q.respuesta);
-        return `<div class="res ${w ? 'win' : ''}"><span>${w ? '<i class="res-star">★</i>' : ''}${esc(P[r.p].nombre)}</span><span class="rv">${fmtNum(r.n)}</span><span class="rd">${d === 0 ? '¡exacto!' : '±' + fmtNum(Math.round(d * 100) / 100)}</span></div>`;
+        const a = aw.find(x => x.p === r.p);
+        return `<div class="res ${w ? 'win' : ''}"><span>${w ? '<i class="res-star">★</i>' : ''}${esc(P[r.p].nombre)}</span><span class="rv">${fmtNum(r.n)}</span><span class="rd">${d === 0 ? '¡exacto!' : '±' + fmtNum(Math.round(d * 100) / 100)}${a ? ` · +${fmtPts(a.pts)}` : ''}</span></div>`;
       }).join('');
     }
-    return (res.ok || []).map(p => `<div class="res win"><span>${esc(P[p].nombre)}</span><span class="rd">+1</span></div>`).join('');
+    return (res.ok || []).map(p => `<div class="res win"><span>${esc(P[p].nombre)}</span><span class="rd">+${fmtPts(ptsOf(q))}</span></div>`).join('');
   }
 
   function winnerHTML(st) {
     const s = standing(st.results || {});
     const names = s.top.map(i => `<div class="win-card">${s.decided ? `<div class="win-crown">${avIconHTML('ticket')}</div>` : ''}<div class="pl-photo">${photoHTML(P[i])}</div><h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
-    const extra = s.decided ? `${s.max} ${s.max === 1 ? 'punto' : 'puntos'}${s.byTie ? ' · ganó el desempate' : ''}` : `${s.max} ${s.max === 1 ? 'punto' : 'puntos'} cada uno · ¡Vamos al desempate!`;
+    const extra = s.decided ? `${ptsTxt(s.max)}${s.byTie ? ' · ganó el desempate' : ''}` : `${ptsTxt(s.max)} cada uno · ¡Vamos al desempate!`;
     const medal = { 2: '🥈', 3: '🥉' };
-    const rest = s.decided ? finalRanking(st.results || {}).filter(g => g.pos > 1).flatMap(g => g.players.map(i => `<span class="${g.pos <= 3 ? 'pod' : ''}">${medal[g.pos] || ''} ${g.pos}° ${esc(P[i].nombre)} · ${g.score} ${g.score === 1 ? 'pt' : 'pts'}</span>`)).join('') : '';
+    const rest = s.decided ? finalRanking(st.results || {}).filter(g => g.pos > 1).flatMap(g => g.players.map(i => `<span class="${g.pos <= 3 ? 'pod' : ''}">${g.players.length > 1 ? '⚔️' : (medal[g.pos] || '')} ${g.players.length > 1 ? g.pos + '°–' + (g.pos + g.players.length - 1) + '°' : g.pos + '°'} ${esc(P[i].nombre)} · ${fmtPts(g.score)} pts</span>`)).join('') : '';
     const sub = s.decided ? `<div class="win-sub">${P[s.top[0]].genero === 'f' ? 'Ganadora' : 'Ganador'} ${esc(deTitulo())} · ${esc((D.edicion.match(/\d{4}/) || [''])[0])}</div>` : '';
     return `<div class="v"><div class="win-pre">${winnerWord(s.top)}</div><div class="win-names ${s.top.length > 1 ? 'multi' : ''}">${names}</div>${sub}<div class="win-pts">${extra}</div>${rest ? `<div class="win-rest">${rest}</div>` : ''}</div>`;
   }
@@ -4366,6 +4402,9 @@ function initScreen() {
       const all = (st.sub || 0) >= cg.length, tied = standing(st.results || {}).tied.length;
       const bn = $('#cd-banner');
       if (bn) { bn.textContent = !all ? '' : (tied > 1 ? (tied === 2 ? '¡Empate en el primer puesto!' : `¡Empate ${tied === 3 ? 'triple' : 'de ' + tied} en el primer puesto!`) : 'Quedan los dos mejores…'); bn.classList.toggle('on', all); }
+      // empates más abajo: se marcan con ⚔️ (se definen después, con su desempate)
+      const tg = new Set(tieSlots(st.results || {}).map(g => g.pos));
+      stage.querySelectorAll('.cd-row[data-g]').forEach(row => row.classList.toggle('tie', tg.has(+row.dataset.g)));
     } else if (sl.k === 'ganador') {
       const box = $('#win-box');
       if (!box) return;
@@ -4393,6 +4432,13 @@ function initScreen() {
         if (tk && !was && !changed) { boomGrave(1); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
         else if (fresh && !changed) boomGrave(0.45);
       }
+    } else if (sl.k === 'programa') {
+      const k = st.sub || 0, els = [...stage.querySelectorAll('.v-prog .hw')];
+      els.forEach((e, i) => {
+        const on = i === k - 1;
+        if (on && !e.classList.contains('on')) { e.classList.remove('off'); void e.offsetWidth; e.classList.add('on'); if (!changed) { whoosh(); setTimeout(() => boomGrave(i === els.length - 1 ? 0.7 : 0.4), 330); } }
+        else if (!on && e.classList.contains('on')) { e.classList.remove('on'); e.classList.add('off'); }
+      });
     } else if (sl.k === 'reglas') {
       const k = st.sub || 0;
       let fresh = false;
@@ -5202,10 +5248,17 @@ function initControl() {
     S.step = 'redoble'; commit();
     revealT = setTimeout(() => { S.step = 'revelado'; commit(); }, wait);
   }
-  function tieNow() { return standing(S.results).tied.length > 1; }
+  function tieNow() { return tieSlots(S.results).length > 0; }
+  // qué partes del final hacen falta según cómo quedó el marcador
+  function hace(sl) {
+    if (!sl) return false;
+    if (sl.k === 'desempate') return tieSlots(S.results).length > (sl.s || 0);
+    if (sl.k === 'ganador' && sl.cuando) { const g = rankGroups(S.results)[0]; const top1 = !g || g.players.length === 1; return sl.cuando === 'antes' ? top1 : !top1; }
+    return true;
+  }
   function nextIndex(from, dir) {
     let i = from + dir;
-    while (SCRIPT[i] && SCRIPT[i].k === 'desempate' && !tieNow()) i += dir;
+    while (SCRIPT[i] && !hace(SCRIPT[i])) i += dir;
     return i;
   }
 
@@ -5283,6 +5336,11 @@ function initControl() {
       else runSteps([[0, 'pulso'], [1300, base]]);
       return;
     }
+    if (sl.k === 'programa' && (S.sub || 0) < PROGRAMA.length) {
+      S.sub = (S.sub || 0) + 1; commit();
+      runSteps([[0, 'pulso'], [1300, typeof GUION.programa === 'string' ? GUION.programa : 'calido']]);   // un pulso de luz con cada frase
+      return;
+    }
     if (sl.k === 'reglas' && (S.sub || 0) < rulesCards().length) {
       S.sub = (S.sub || 0) + 1; commit();
       const base = typeof GUION.reglas === 'string' ? GUION.reglas : 'calido';
@@ -5305,12 +5363,13 @@ function initControl() {
     if (S.overlay) { S.overlay = null; commit(); return; }
     if (SCRIPT[S.slide].k === 'cuenta' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
     if (SCRIPT[S.slide].k === 'reglas' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
+    if (SCRIPT[S.slide].k === 'programa' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
     if (SCRIPT[S.slide].k === 'enjuego' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
     const i = nextIndex(S.slide, -1);
     if (i < 0) return;
     S.slide = i; S.overlay = null; S.manual = null; S.desde = null;
     S.step = isQ(SCRIPT[i]) || SCRIPT[i].k === 'ganador' ? 'revelado' : null;
-    S.sub = SCRIPT[i].k === 'cuenta' ? countdownGroups(S.results).length : SCRIPT[i].k === 'reglas' ? rulesCards().length : SCRIPT[i].k === 'enjuego' ? ENJ().length + (D.ticketDorado ? 1 : 0) : 0;
+    S.sub = SCRIPT[i].k === 'cuenta' ? countdownGroups(S.results).length : SCRIPT[i].k === 'reglas' ? rulesCards().length : SCRIPT[i].k === 'programa' ? PROGRAMA.length : SCRIPT[i].k === 'enjuego' ? ENJ().length + (D.ticketDorado ? 1 : 0) : 0;
     clearTimeout(revealT);
     commit();
   }
@@ -5359,11 +5418,13 @@ function initControl() {
     if (sl.k === 'cuenta') {
       const cg = countdownGroups(S.results), k = S.sub || 0;
       if (k < cg.length) return `Revelar ${cg[k].pos}° puesto ▶`;
-      return tieNow() ? '⚔️ Desempate ▶' : '👑 ¡Anunciar al ganador! ▶';
+      const nx = SCRIPT[nextIndex(S.slide, 1)] || {};
+      return nx.k === 'desempate' ? '⚔️ Desempate ▶' : '👑 ¡Anunciar al ganador! ▶';
     }
     if (sl.k === 'ganador' && S.step === 'redoble') return '🥁 …';
     if (sl.k === 'presentador' && S.step !== 'golpe') return '💥 ¡Golpe de entrada!';
     if (sl.k === 'reglas' && (S.sub || 0) < rulesCards().length) return `📜 Regla ${ROMAN[S.sub || 0] || (S.sub || 0) + 1} ▶`;
+    if (sl.k === 'programa' && (S.sub || 0) < PROGRAMA.length) return `📣 Frase ${(S.sub || 0) + 1} de ${PROGRAMA.length} ▶`;
     if (sl.k === 'enjuego' && (S.sub || 0) < ENJ().length) return `🎁 Premio ${(S.sub || 0) + 1} ▶`;
     if (sl.k === 'enjuego' && D.ticketDorado && (S.sub || 0) === ENJ().length) return '🎫 El ticket dorado ▶';
     const n = SCRIPT[nextIndex(S.slide, 1)];
@@ -5388,6 +5449,7 @@ function initControl() {
         : `<button class="btn" id="seq-start" style="width:100%;margin-top:10px;font-size:17px">${pruebaPrevia() ? `▶ Comenzar previa · 🧪 desde ${mmss(PRUEBA_DESDE)}` : '▶ Comenzar previa automática'}</button><p class="muted" style="margin-top:6px">${esc((D.previa.resumen) || '')}</p>
           ${PRUEBA_DESDE ? `<label class="prueba-chk${pruebaPrevia() ? ' on' : ''}"><input type="checkbox" id="prueba-previa" ${pruebaPrevia() ? 'checked' : ''}><span>🧪 Prueba: la canción arranca en ${mmss(PRUEBA_DESDE)}${pruebaPrevia() ? ' · <b>destildalo la noche del show</b>' : ''}</span></label>` : ''}`) : ''}`;
 
+    else if (sl.k === 'programa') h = `<div class="now-title">📣 Presentación del programa</div><p class="muted">Cada toque saca la frase siguiente en la tele. Decila vos y tocá.</p><ol class="muted" style="margin:8px 0 0 18px">${PROGRAMA.map((f, i) => `<li style="${i < (S.sub || 0) ? 'opacity:.45' : i === (S.sub || 0) ? 'color:var(--gold);font-weight:700' : ''}">${esc(f)}</li>`).join('')}</ol>`;
     else if (sl.k === 'cuentaReg') h = `<div class="now-title">⏳ Cuenta regresiva</div><p class="muted">La voz en inglés con sus frases en pantalla y los números del 10 al 1 en un líder de película. Cierra en el 1 y larga sola la intro de estudio (${Math.round(CUENTA_MS / 1000)} s).</p>`;
     else if (sl.k === 'corto') h = `${CORTO.local && cortoTele === false ? '<p class="warn-big">⚠️ La tele no tiene elegido el video: si llega acá, se saltea.</p>' : ''}<div class="now-title">🎞️ ${esc(CORTO.nombre || 'Cortometraje')}</div><p class="muted">A pantalla completa, sin controles. Cuando termina sigue sola con la intro de estudio y los créditos.</p><p style="margin:6px 0">⏱ <b id="corto-prog">${cortoProg && cortoProg.d ? `${mmss(cortoProg.t)} de ${mmss(cortoProg.d)}` : 'arrancando…'}</b></p>`;
     else if (sl.k === 'cine' && sl.parte === 'avisos') h = `<div class="now-title">Apertura de cine: avisos</div><p class="muted">Los avisos de sala mientras la luz baja hasta negro. Pasa sola al cortometraje en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
@@ -5444,7 +5506,8 @@ function initControl() {
       if (q.tipo === 'opciones' && q.opciones && q.opciones.length) opts = `<div class="q-opts">${q.opciones.map((o, i) => `<div class="${(q.correctas || []).includes(i) ? 'ok' : ''}"><b>${'ABCDEF'[i]}</b><span>${esc(o)}</span></div>`).join('')}</div>`;
       const ans = q.tipo === 'opciones' && q.opciones && q.opciones.length ? (q.correctas || []).map(i => q.opciones[i]).join(' / ') : (q.tipo === 'aprox' ? fmtNum(q.respuesta) : q.respuesta);
       let tieInfo = '';
-      if (sl.k === 'desempate') { const t = standing(S.results).tied; tieInfo = `<p class="muted">Empatados: <b>${t.map(i => esc(P[i].nombre)).join(', ')}</b>. Gana el más cerca.</p>`; }
+      if (sl.k === 'desempate') { const g = tieSlot(sl, S.results), t = g ? g.players : []; tieInfo = `<p class="muted">Desempate por <b>${g ? posTxt(g) : '?'}</b> (${g ? fmtPts(g.score) : '?'} pts). Empatados: <b>${t.map(i => esc(P[i].nombre)).join(', ')}</b>. El más cerca queda adelante; si dos quedan igual de cerca, cambiá sus números (pediles otro) y se recalcula.</p>`; }
+      else if (isQ(sl)) tieInfo = `<p class="muted">Vale <b>${fmtPts(ptsOf(q))}</b>${q.tipo === 'aprox' ? ` al más cerca · <b>${fmtPts(exactoOf(q))}</b> si es exacto` : ''}.</p>`;
       const ansHTML = q.tipo === 'opciones' && q.opciones && q.opciones.length
         ? (q.correctas || []).map(i => `<div class="ans-op"><span class="ans-l">${'ABCDEF'[i]}</span><span>${esc(q.opciones[i])}</span></div>`).join('')
         : esc(ans);
@@ -5469,7 +5532,8 @@ function initControl() {
     } else if (sl.k === 'marcador' || sl.k === 'ganador') {
       const s = standing(S.results);
       h = `<div class="now-title">${sl.k === 'ganador' ? winnerWord(s.top) + ' ' + s.top.map(i => P[i].nombre).join(', ') : 'Marcador'}</div>`;
-      if (sl.k === 'ganador' && !s.decided) h += `<p class="muted">Hay empate. Volvé con ◀ al desempate y cargá las respuestas.</p>`;
+      if (sl.k === 'ganador' && !s.decided) h += `<p class="muted">Hay empate en el primer puesto. Volvé con ◀ al desempate y cargá las respuestas.</p>`;
+      if (sl.k === 'ganador') { const ts = tieSlots(S.results).filter(g => g.pos > 1); if (ts.length && sl.cuando === 'antes') h += `<p class="muted">Después vienen ${ts.length === 1 ? 'el desempate' : 'los ' + ts.length + ' desempates'}: ${ts.map(g => posTxt(g)).join(' y después ')}.</p>`; }
     }
     const enApertura = ['cine', 'corto', 'intro'].includes(sl.k) || (sl.k === 'presentador' && S.step !== 'golpe');
     if (seq && seq.phase === 'apertura') h = `<div class="auto-banner">🤖 <b>Automático hasta el golpe de entrada</b>${GOLPE_TEMA != null ? ` (segundo ${GOLPE_TEMA} del tema)` : ''}<button class="btn ghost small" id="auto-off">✋ Pasar a manual</button></div>` + h;
@@ -5537,7 +5601,7 @@ function initControl() {
     const box = $('#score-body');
     if (q.tipo === 'aprox') {
       $('#score-title').textContent = 'Respuestas de las pizarras';
-      const onlyTied = sl.k === 'desempate' ? standing(S.results).tied : null;
+      const onlyTied = tiedFor(sl, S.results);
       if (scoringFor !== sl.id) {
         box.innerHTML = P.map((p, i) => `<div class="guess" data-p="${i}"><b>${esc(p.nombre)}</b><input type="text" inputmode="decimal" placeholder="—" ${onlyTied && !onlyTied.includes(i) ? 'disabled' : ''}><span class="gd"></span></div>`).join('');
         box.querySelectorAll('.guess').forEach(row => {
@@ -5571,17 +5635,20 @@ function initControl() {
   function updateGuessInfo(sl) {
     const q = qOf(sl);
     const res = S.results[sl.id] || {};
-    const onlyTied = sl.k === 'desempate' ? standing(S.results).tied : null;
-    const win = closest(q, res.g, onlyTied);
+    const onlyTied = tiedFor(sl, S.results);
+    const win = closest(q, res.g, onlyTied), aw = sl.k === 'desempate' ? [] : awardsFor(q, res);
+    const g = tieSlot(sl, S.results), orden = g ? resolveGroup(g, sl.s || 0, S.results) : null;
     $('#score-body').querySelectorAll('.guess').forEach(row => {
-      const i = +row.dataset.p, n = parseNum((res.g || {})[i]);
+      const i = +row.dataset.p, n = parseNum((res.g || {})[i]), a = aw.find(x => x.p === i);
       row.classList.toggle('win', win.includes(i));
-      row.querySelector('.gd').textContent = n === null ? '' : (win.includes(i) ? '★ más cerca' : '±' + fmtNum(Math.round(Math.abs(n - q.respuesta) * 100) / 100));
+      const dtx = n === null ? '' : '±' + fmtNum(Math.round(Math.abs(n - q.respuesta) * 100) / 100);
+      if (orden) { const o = orden.find(x => x.players.includes(i)); row.querySelector('.gd').textContent = n === null ? '' : `${o ? o.pos + '°' : ''}${o && o.players.length > 1 ? ' (siguen empatados)' : ''} · ${dtx}`; }
+      else row.querySelector('.gd').textContent = n === null ? '' : (a ? `★ +${fmtPts(a.pts)}${a.exacto ? ' ¡exacto!' : ''}` : dtx);
     });
   }
   function renderMini() {
     const s = standing(S.results);
-    $('#mini-score').innerHTML = s.sc.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v).map(o => `<span>${esc(P[o.i].nombre)}</span><b>${o.v}</b>`).join('');
+    $('#mini-score').innerHTML = s.sc.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v).map(o => `<span>${esc(P[o.i].nombre)}</span><b>${fmtPts(o.v)}</b>`).join('');
   }
   function renderIndex() {
     const box = $('#idx-list');
@@ -5745,15 +5812,15 @@ function initControl() {
   function renderAjustes() {
     const aj = (S.results && S.results._ajuste) || {}, sc = computeScores(S.results || {});
     $('#ajuste-list').innerHTML = P.map((p, i) => `<div class="row" style="justify-content:space-between;margin:6px 0">
-      <span><b>${esc(p.nombre)}</b> <span class="muted">· ${sc[i]} pts${aj[i] ? ` (a mano ${aj[i] > 0 ? '+' : ''}${aj[i]})` : ''}</span></span>
-      <span class="row" style="gap:6px"><button class="btn ghost small" data-aj="${i}" data-d="-1" style="min-width:52px">−1</button><button class="btn small" data-aj="${i}" data-d="1" style="min-width:52px">+1</button></span></div>`).join('');
+      <span><b>${esc(p.nombre)}</b> <span class="muted">· ${fmtPts(sc[i])} pts${aj[i] ? ` (a mano ${aj[i] > 0 ? '+' : ''}${fmtPts(aj[i])})` : ''}</span></span>
+      <span class="row" style="gap:6px"><button class="btn ghost small" data-aj="${i}" data-d="${-PTS.ajuste}" style="min-width:58px">−${fmtPts(PTS.ajuste)}</button><button class="btn small" data-aj="${i}" data-d="${PTS.ajuste}" style="min-width:58px">+${fmtPts(PTS.ajuste)}</button></span></div>`).join('');
     $('#ajuste-list').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
       const i = +b.dataset.aj, d = +b.dataset.d;
       S.results = S.results || {}; S.results._ajuste = { ...(S.results._ajuste || {}) };
       S.results._ajuste[i] = (S.results._ajuste[i] || 0) + d;
       if (!S.results._ajuste[i]) delete S.results._ajuste[i];
       S.ajusteMsg = $('#ajuste-tele').checked ? { p: i, d, id: Date.now() } : null;
-      log(`± ${d > 0 ? '+1' : '−1'} a mano para ${P[i].nombre}`, 'o');
+      log(`± ${d > 0 ? '+' : '−'}${fmtPts(Math.abs(d))} a mano para ${P[i].nombre}`, 'o');
       commit();
     }));
   }
