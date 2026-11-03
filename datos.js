@@ -123,7 +123,8 @@ window.TRIVIA = {
     final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
-    anfitrionVoz: { id: 'q9C_euAFpW8', nombre: 'Voz: Ladies and gentlemen', inicio: 0, duracion: 21, fin: 19, velocidad: 0.9, pausa: 5 },
+    anfitrionVoz: { id: 'q9C_euAFpW8', archivo: 'voz-presentacion.mp3', nombre: 'Voz: Ladies and gentlemen', inicio: 0, duracion: 21, fin: 19, velocidad: 0.9, pausa: 5 },
+                  // archivo: el mp3 subido al repositorio (velocidad exacta, sin YouTube). Si no lo encuentra, usa el video (id). tono: 'grave' = más lenta y más grave
                   // velocidad: 0.9 = 10 % más lenta (los textos atados a voz: siguen en el segundo del video) · pausa: segundos en negro y en silencio entre la voz y el tema
                   // fin: en el segundo 19 del video termina la voz (los últimos 2 s son silencio)
                   // opcionales: fin: segundo en que se corta la voz · solape: segundos que se pisan voz y tema (0.3)
@@ -316,14 +317,16 @@ window.TRIVIA = {
     // dura: segundos que queda si el siguiente tarda (6 por defecto). El último queda hasta el golpe.
     // En el celu, arriba, ves el segundo de la voz y del tema mientras suenan: así lo ajustás fino.
     textos: [
-      { texto: '¿Están listos?', voz: 2 },
+      // voz: segundos medidos en voz-presentacion.mp3 (donde arranca cada frase; el texto entra una décima antes)
+      { texto: '¿Están listos?', voz: 2.8 },
       { texto: 'Damas y caballeros', voz: 7 },
-      { texto: 'Bienvenidos', voz: 10 },
-      { texto: 'Esta noche', tema: 12, dura: 9 },
-      { texto: 'Solo uno conoce todas las respuestas', tema: 21, dura: 11 },
-      { texto: 'Él escribió las preguntas', tema: 33, dura: 6.5 },
-      { texto: 'Él creó la trivia', tema: 40, dura: 6.5 },
-      { texto: 'Y hoy viene a buscar al que más sabe de Bioingeniería', tema: 47, dura: 7.5 },
+      { texto: 'Bienvenidos', voz: 11.5 },
+      { texto: 'Llegó como pasante en 2021', tema: 12, dura: 6.5 },
+      { texto: 'Hoy lidera un equipo de nueve personas', tema: 19, dura: 6.5 },
+      { texto: 'Conoce cada equipo del inventario', tema: 26, dura: 6 },
+      { texto: 'Cada marca. Cada modelo.', tema: 32.5, dura: 5.5 },
+      { texto: 'Esta noche, solo él sabe todas las respuestas', tema: 38.5, dura: 7.5 },
+      { texto: 'Y viene a encontrar al que más sabe de Bioingeniería', tema: 46.5, dura: 8 },
       { texto: 'Con ustedes', tema: 55 },
     ],
     // Golpe de entrada automático: segundo del tema en que cae (con la apertura en automático). null = siempre a mano.

@@ -495,6 +495,34 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 @keyframes hwTrack{from{letter-spacing:.55em;padding-left:.55em}to{letter-spacing:.14em;padding-left:.14em}}
 .hw.on .hw-flare{animation:hwFlare 1.6s cubic-bezier(.2,.7,.3,1) both}
 @keyframes hwFlare{0%{opacity:0;transform:scaleX(.1)}20%{opacity:1}100%{opacity:0;transform:scaleX(1)}}
+.hw-ring,.hw-smoke,.hw-embers{position:absolute;pointer-events:none;z-index:0;opacity:0}
+/* v31: frases del tema como placas de tráiler: se arman de golpe entre humo, onda expansiva, brasas y un empuje lento de cámara */
+.hw.tr.on{animation:hwTrIn .25s ease-out both,hwPush 10s .9s cubic-bezier(.3,0,.7,1) both}
+@keyframes hwTrIn{from{opacity:0}to{opacity:1}}
+@keyframes hwPush{from{transform:scale(1)}to{transform:scale(1.07)}}
+.hw.tr.on span{animation:hwSlam 1.15s cubic-bezier(.18,.9,.22,1) both,hwShine 1.9s cubic-bezier(.3,.1,.3,1) .6s both}
+.hw.tr:not(.two).on span{animation:hwSlam 1.15s cubic-bezier(.18,.9,.22,1) both,hwTrack 1.5s cubic-bezier(.16,1,.3,1) both,hwShine 1.9s cubic-bezier(.3,.1,.3,1) .6s both}
+@keyframes hwSlam{
+  0%{opacity:0;transform:scale(1.75);filter:blur(18px) drop-shadow(0 0 0 rgba(255,215,140,0)) drop-shadow(0 0 0 rgba(255,170,60,0))}
+  30%{opacity:1;transform:scale(.97);filter:blur(0) drop-shadow(0 0 34px rgba(255,236,190,.95)) drop-shadow(0 0 90px rgba(255,180,70,.6))}
+  55%{transform:scale(1.01)}
+  100%{opacity:1;transform:scale(1);filter:blur(0) drop-shadow(0 0 22px rgba(255,205,120,.55)) drop-shadow(0 0 60px rgba(255,170,60,.25))}}
+.hw.tr.off{animation:hwTrOut 1s cubic-bezier(.5,0,.8,.4) forwards}
+@keyframes hwTrOut{from{opacity:1;transform:scale(1.07);filter:blur(0)}to{opacity:0;transform:scale(1.2);filter:blur(14px)}}
+.hw-ring{left:50%;top:50%;width:46vmin;height:46vmin;margin:-23vmin 0 0 -23vmin;border-radius:50%;
+  border:2px solid rgba(255,226,170,.85);box-shadow:0 0 34px rgba(255,190,90,.55),inset 0 0 30px rgba(255,190,90,.35)}
+.hw.tr.on .hw-ring{animation:hwRing 1.5s .33s cubic-bezier(.08,.7,.2,1) both}
+@keyframes hwRing{0%{opacity:.95;transform:scale(.12)}100%{opacity:0;transform:scale(3.4)}}
+.hw-smoke{left:50%;top:50%;width:130vw;height:80vh;margin:-40vh 0 0 -65vw;filter:blur(14px);
+  background:radial-gradient(ellipse 26% 38% at 32% 55%,rgba(255,222,186,.13),transparent 70%),radial-gradient(ellipse 30% 32% at 66% 45%,rgba(255,204,150,.11),transparent 70%),radial-gradient(ellipse 48% 26% at 50% 64%,rgba(255,184,120,.09),transparent 70%)}
+.hw.tr.on .hw-smoke{animation:hwSmoke 10s .25s ease-out both}
+@keyframes hwSmoke{0%{opacity:0;transform:scale(.75) translateX(-4vw)}14%{opacity:1}100%{opacity:.55;transform:scale(1.3) translateX(4vw)}}
+.hw-embers{inset:-10vh 0;opacity:1}
+.hw-embers i{position:absolute;bottom:20%;width:3px;height:3px;border-radius:50%;background:#ffd590;box-shadow:0 0 6px 2px rgba(255,170,70,.75);opacity:0}
+.hw.tr.on .hw-embers i{animation-name:hwEmber;animation-timing-function:cubic-bezier(.2,.6,.4,1);animation-fill-mode:both}
+@keyframes hwEmber{0%{opacity:0;transform:translate(0,0) scale(.6)}12%{opacity:1}100%{opacity:0;transform:translate(var(--dx),-55vh) scale(.2)}}
+.hw.tr .hw-burst{background:radial-gradient(ellipse at center,rgba(255,226,170,.42),rgba(255,170,60,.14) 38%,transparent 70%)}
+.hw.tr.on .hw-burst{animation:hwBurst 2.4s .3s cubic-bezier(.2,.8,.2,1) both}
 .host-reveal{display:none}
 .v-host.golpe .host-wait{display:none}
 .v-host.golpe .host-reveal{display:block}
@@ -1020,7 +1048,7 @@ body{background:
   <div id="unlock" style="z-index:30">
     <div class="script" id="unlock-title"></div>
     <button class="btn" id="unlock-btn" style="font-size:20px;padding:16px 28px">Tocá para activar la pantalla</button>
-    <div id="corto-pick" hidden><button class="btn ghost" id="corto-pick-btn">🎞️ Elegir el video del corto</button><div class="corto-pick-s" id="corto-pick-s"></div><input type="file" id="corto-file" accept="video/*" hidden></div>
+    <div id="corto-pick" hidden><button class="btn ghost" id="corto-pick-btn">🎞️ Elegir el video del corto</button><button class="btn ghost" id="corto-otro" hidden style="font-size:13px;padding:6px 12px">Elegir otro video</button><div class="corto-pick-s" id="corto-pick-s"></div><input type="file" id="corto-file" accept="video/*" hidden></div>
     <p>El navegador no deja reproducir sonido hasta que alguien toca la página una vez. Este toque también pone pantalla completa y evita que se apague.</p>
   </div>
 </section>
@@ -1042,7 +1070,9 @@ body{background:
   <div id="seq-toast" hidden>
     <div id="seq-msg"></div>
     <div class="br-track" style="height:8px;margin:8px 0"><div class="br-fill" id="seq-bar" style="width:100%"></div></div>
-    <div class="row"><button class="btn" id="seq-undo" style="flex:1;background:linear-gradient(180deg,#ff8a7a,#c0392b);color:#fff;box-shadow:none">✋ Deshacer y frenar todo</button><button class="btn ghost small" id="seq-now">Ya</button></div>
+    <div class="row" id="seq-run"><button class="btn" id="seq-hold" style="flex:1;background:linear-gradient(180deg,#ff8a7a,#c0392b);color:#fff;box-shadow:none">✋ Frenar acá</button><button class="btn ghost small" id="seq-now">Ya</button></div>
+    <div class="row" id="seq-held" hidden><button class="btn" id="seq-go" style="flex:1;font-size:20px;padding:16px 0">▶ Seguir</button></div>
+    <button class="btn ghost small" id="seq-undo" style="width:100%;margin-top:8px;font-size:13px">Pasar todo a manual</button>
   </div>
   <div class="card" id="mus-card" style="padding:10px 14px">
     <div class="row" style="justify-content:space-between"><span id="mus-name" class="muted">♪ Sin música</span><b id="mus-left" style="color:var(--gold)"></b></div>
@@ -1198,7 +1228,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v54 · 02/11 21:00';
+const VERSION = 'v55 · 02/11 21:30';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2387,6 +2417,38 @@ const LOOKS = Object.assign({
    est = cuándo se estima que aparece (para las luces y por si YouTube no responde). */
 const VOZ_VEL = () => { const v = D.musica && D.musica.anfitrionVoz; return (v && +v.velocidad > 0) ? +v.velocidad : 1; };
 const VOZ_PAUSA = () => { const v = D.musica && D.musica.anfitrionVoz; return v && v.id && +v.pausa > 0 ? Math.round(v.pausa * 1000) : 0; };   // negro y silencio entre la voz y el tema
+/* La voz de presentación desde un mp3 del repositorio (musica.anfitrionVoz.archivo): velocidad exacta y sin depender de YouTube.
+   Si el archivo no está, usa el video de YouTube (id). tono: 'grave' = al bajar la velocidad también baja el tono. */
+let VOZF = null;
+function vozArchivo() {
+  const v = D.musica && D.musica.anfitrionVoz;
+  if (!v || !v.archivo) return null;
+  if (VOZF) return VOZF.fail ? null : VOZF;
+  const a = new Audio(); a.preload = 'auto'; a.src = v.archivo;
+  try { a.preservesPitch = v.tono !== 'grave'; a.mozPreservesPitch = a.webkitPreservesPitch = v.tono !== 'grave'; } catch {}
+  let fadeT = null, on = false;
+  const nivel = () => Math.min(1, (v.volumen || 1) * Math.max(0.2, musicVol / 70));
+  VOZF = {
+    fail: false,
+    cue() { try { a.load(); } catch {} },
+    play() {
+      clearInterval(fadeT); on = true;
+      try { a.pause(); a.currentTime = v.inicio || 0; a.defaultPlaybackRate = a.playbackRate = VOZ_VEL(); a.volume = nivel(); } catch {}
+      a.play().catch(e => log('No se pudo reproducir la voz (' + v.archivo + '): ' + e.message, 'e'));
+    },
+    stop(ms = 300) {
+      clearInterval(fadeT); if (!on) return; on = false;
+      const v0 = a.volume, t0 = performance.now();
+      fadeT = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / Math.max(30, ms)); try { a.volume = v0 * (1 - k); } catch {} if (k >= 1) { clearInterval(fadeT); a.pause(); } }, 30);
+    },
+    status() { return on && !a.paused ? { key: 'anfitrionVoz', name: v.nombre || 'Voz', t: a.currentTime, d: a.duration || 0 } : (on ? { key: 'anfitrionVoz', name: v.nombre || 'Voz', t: a.currentTime, d: a.duration || 0 } : null); },
+  };
+  a.addEventListener('error', () => { VOZF.fail = true; log('No encuentro la voz ' + v.archivo + ' en el repositorio: uso la de YouTube', 'e'); });
+  a.addEventListener('ended', () => { on = false; });
+  return VOZF;
+}
+const vozPlayer = fx => vozArchivo() || fx;   // el que esté disponible: archivo primero
+let TEMA_ESPERA = false;   // la tele está esperando para arrancar tu tema (los textos del tema no avanzan solos)
 const VOZ_MS = () => { const v = D.musica && D.musica.anfitrionVoz; return v && v.id ? Math.round((v.fin || v.duracion || 21) * 1000 / VOZ_VEL()) + VOZ_PAUSA() : 0; };
 function hostTexts() {
   const p = D.presentador || {}, temaIni = (D.musica && D.musica.anfitrion && D.musica.anfitrion.inicio) || 0;
@@ -2905,6 +2967,18 @@ function wideOut(ctx, node, bus, gain) {   // contrafase: L = +x, R = −x
   node.connect(gl); node.connect(gr); gl.connect(m, 0, 0); gr.connect(m, 0, 1); m.connect(bus.master);
 }
 /* Golpe grave de cine: sub que cae, impacto corto y retumbo que se abre a los costados */
+/* Zumbido de aire que sube (antes de cada frase del tráiler) */
+function whoosh(ms = 380) {
+  const ctx = audioCtx();
+  if (!ctx) return;
+  try {
+    const bus = sfxOut(ctx), t0 = ctx.currentTime + 0.02, d = ms / 1000;
+    const n = ctx.createBufferSource(); n.buffer = noise(ctx); n.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4; bp.frequency.setValueAtTime(260, t0); bp.frequency.exponentialRampToValueAtTime(3200, t0 + d);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.32, t0 + d * 0.85); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.08);
+    n.connect(bp); bp.connect(g); g.connect(bus.master); g.connect(bus.rev); n.start(t0); n.stop(t0 + d + 0.12);
+  } catch {}
+}
 function boomGrave(size = 1, when = 0) {
   const ctx = audioCtx();
   if (!ctx) return;
@@ -2994,16 +3068,22 @@ function playFile(src) { try { const au = new Audio(src); au.play().catch(() => 
 /* Director de música: aplica el estado a un reproductor */
 function createDirector(music, fx) {
   let lastKey, lastMoment, lastSlide, afterT = null, vozT = null;
+  let temaSt = null, temaEsperando = null;   // tu tema después de la voz: 'hold' = espera el toque del celu · 'go' = ya
   const RESP_MS = D.respuestaMs == null ? 4000 : D.respuestaMs;
   function apply(st) {
     const m = st.manual ? 'manual:' + st.manual : momentOf(st), key = musicKeyOf(st);
+    temaSt = st.tema || null; TEMA_ESPERA = temaSt === 'hold' || !!temaEsperando;
+    if (temaEsperando && temaSt === 'go' && m === 'presentador' && st.slide === lastSlide) {   // estaba esperando (o en la pausa en negro): arranca ya
+      const k = temaEsperando; temaEsperando = null; TEMA_ESPERA = false; clearTimeout(afterT); music.play(k, { instant: true });
+    }
     if (m === lastMoment && key === lastKey && st.slide === lastSlide) return;
     const nuevaQ = st.slide !== lastSlide, prevSlide = lastSlide; lastSlide = st.slide;
     const desdeQ = nuevaQ && prevSlide != null && isQ(SCRIPT[prevSlide] || {});   // salimos de una pregunta: lo que suena se desvanece despacio
     const XF = D.desvanecerMs == null ? 5000 : D.desvanecerMs;
     if (m !== lastMoment) {
       clearTimeout(afterT);
-      if (vozT) { clearInterval(vozT); vozT = null; if (fx) fx.stop(250); }   // si se sigue antes de que termine la voz, se corta
+      if (vozT) { clearInterval(vozT); vozT = null; if (fx) vozPlayer(fx).stop(250); }   // si se sigue antes de que termine la voz, se corta
+      temaEsperando = null; TEMA_ESPERA = temaSt === 'hold';
     }
     // Pregunta con tema en bucle: al revelar NO se corta ni cambia la música; solo sale del bucle y sigue hasta el final
     const bk = bucleKeyOf(st);
@@ -3013,15 +3093,16 @@ function createDirector(music, fx) {
     }
     if (bk && nuevaQ && m === 'pregunta' && key === bk) { music.play(key, { restart: true, xfade: desdeQ ? XF : 0 }); lastKey = key; lastMoment = m; return; }   // pregunta nueva: el tema arranca de cero y el anterior se desvanece
     // la voz de presentación queda cargada durante la intro, para que arranque al instante
-    if (m === 'intro' && lastMoment !== 'intro' && fx && TRACKS.anfitrionVoz) setTimeout(() => fx.cue('anfitrionVoz'), 1500);
+    if (m === 'intro' && lastMoment !== 'intro' && fx && TRACKS.anfitrionVoz) setTimeout(() => vozPlayer(fx).cue('anfitrionVoz'), 1500);
     // Entrada del presentador: primero la voz ("Damas y caballeros…") y el tema entra cuando la voz termina
     if (m === 'presentador' && lastMoment !== 'presentador' && fx && TRACKS.anfitrionVoz && key) {
       const v = (D.musica && D.musica.anfitrionVoz) || {}, solape = v.solape != null ? v.solape : 0.3, t0 = Date.now();
       music.stop(300);
       setTimeout(() => music.cue(key), 380);
-      fx.play('anfitrionVoz', { instant: true });
+      const vp = vozPlayer(fx);
+      vp.play('anfitrionVoz', { instant: true });
       vozT = setInterval(() => {
-        const s = fx.status(), el = Date.now() - t0;
+        const s = vp.status(), el = Date.now() - t0;
         const fin = s && s.key === 'anfitrionVoz' && s.d > 0 ? (v.fin || s.d) : null;
         const ya = (fin != null && s.t >= fin - solape)   // llegó al final (o al segundo "fin")
           || (!s && el > 1200)                               // terminó y se descargó
@@ -3029,11 +3110,16 @@ function createDirector(music, fx) {
           || el > (v.max || ((v.duracion || 21) * 1000 / VOZ_VEL() + 5000));   // red de seguridad: nunca queda colgado
         if (!ya) return;
         clearInterval(vozT); vozT = null;
-        fx.stop(v.fin ? 400 : 250);
-        // unos segundos en negro y en silencio antes de que arranque el tema (anfitrionVoz.pausa)
+        vp.stop(v.fin ? 400 : 250);
+        // unos segundos en negro y en silencio antes de que arranque el tema (anfitrionVoz.pausa); desde el celu se puede frenar o adelantar
+        const arrancar = () => {
+          if (lastMoment !== 'presentador') return;
+          if (temaSt === 'hold') { temaEsperando = key; TEMA_ESPERA = true; log('⏸ El tema espera el toque del celu', 'o'); return; }
+          temaEsperando = null; TEMA_ESPERA = false; music.play(key, { instant: true });
+        };
         const pausa = VOZ_PAUSA();
-        if (pausa) afterT = setTimeout(() => { if (lastMoment === 'presentador') music.play(key, { instant: true }); }, pausa);
-        else music.play(key, { instant: true });
+        if (pausa && temaSt !== 'go') { temaEsperando = key; afterT = setTimeout(arrancar, pausa); }
+        else arrancar();
       }, 100);
       lastKey = key; lastMoment = m; return;
     }
@@ -3144,23 +3230,42 @@ function initScreen() {
     cortoURL = URL.createObjectURL(file); cortoNombre = file.name;
     if (cortoV) cortoV.src = cortoURL;
     const s = $('#corto-pick-s'); s.textContent = `✔ Listo: ${file.name} (${Math.round(file.size / 1048576)} MB)`; s.className = 'corto-pick-s ok';
+    $('#corto-pick-btn').textContent = '🎞️ Cambiar el video del corto'; $('#corto-otro').hidden = true;
     if (link) link.send({ type: 'log', text: `🎞️ Corto listo en la tele: ${file.name}`, kind: 'o' });
   }
-  async function cortoLocalRecuperar() {
-    if (!CORTO || !CORTO.local || cortoURL) return;
-    const h = await cortoLeer();
-    if (!h || !h.getFile) return;
-    try { if ((await h.queryPermission({ mode: 'read' })) !== 'granted' && (await h.requestPermission({ mode: 'read' })) !== 'granted') return; cortoUsar(await h.getFile()); } catch {}
+  /* El video recordado: el navegador guarda la referencia, pero el permiso de lectura se vuelve a pedir en cada visita
+     (salvo que se haya elegido "Permitir siempre"). Antes se pedía después de esperar a la base de datos y junto con la
+     pantalla completa: la pantalla completa se "gastaba" el toque y el permiso nunca llegaba a pedirse. Ahora la referencia
+     se lee al abrir la página y el permiso se pide al instante del toque, antes que nada. */
+  let cortoH = null;
+  const cortoMsg = (t, k) => { const e = $('#corto-pick-s'); e.textContent = t; e.className = 'corto-pick-s ' + (k || ''); };
+  async function cortoDesdeH(h) {
+    try { cortoUsar(await h.getFile()); return true; }
+    catch (e) { cortoMsg(`No pude abrir ${h.name} (¿se movió o se renombró?). Elegilo de nuevo.`, 'no'); if (link) link.send({ type: 'log', text: `🎞️ La tele no pudo abrir ${h.name}: hay que elegirlo de nuevo`, kind: 'e' }); return false; }
+  }
+  // pedir el permiso tiene que ser lo PRIMERO que pasa en el toque (sin esperas antes)
+  function cortoPermiso() {
+    if (!cortoH || cortoURL || !cortoH.requestPermission) return Promise.resolve(!!cortoURL);
+    return cortoH.requestPermission({ mode: 'read' }).then(p => p === 'granted' ? cortoDesdeH(cortoH) : (cortoMsg(`Sin permiso para leer ${cortoH.name}. Tocá el botón del video para darlo.`, 'no'), false)).catch(() => false);
   }
   if (CORTO && CORTO.local) {
     $('#corto-pick').hidden = false;
-    $('#corto-pick-s').textContent = 'Falta elegir el video (se elige una sola vez en esta compu)'; $('#corto-pick-s').className = 'corto-pick-s no';
-    cortoLeer().then(h => { if (h && !cortoURL) { $('#corto-pick-s').textContent = `Recordado: ${h.name}. Al tocar "activar" se carga (puede pedir permiso).`; $('#corto-pick-s').className = 'corto-pick-s'; } });
-    $('#corto-pick-btn').addEventListener('click', async () => {
-      if (window.showOpenFilePicker) {
-        try { const [h] = await showOpenFilePicker({ types: [{ description: 'Video', accept: { 'video/*': ['.mp4', '.mov', '.webm', '.mkv', '.m4v'] } }] }); cortoUsar(await h.getFile()); cortoGuardar(h); } catch {}
-      } else $('#corto-file').click();
+    cortoMsg('Falta elegir el video (se elige una sola vez en esta compu)', 'no');
+    cortoLeer().then(async h => {
+      if (!h || !h.getFile || cortoURL) return;
+      cortoH = h;
+      let p = 'prompt'; try { p = await h.queryPermission({ mode: 'read' }); } catch {}
+      if (p === 'granted') { cortoDesdeH(h); return; }   // con "Permitir siempre" se carga solo, sin tocar nada
+      $('#corto-pick-btn').textContent = `🎞️ Cargar ${h.name}`; $('#corto-otro').hidden = false;
+      cortoMsg('Recordado. Tocá «Cargar» (o «activar la pantalla») y aceptá el permiso de lectura. Si te ofrece «Permitir siempre», elegilo.');
     });
+    const elegir = async () => {
+      if (window.showOpenFilePicker) {
+        try { const [h] = await showOpenFilePicker({ types: [{ description: 'Video', accept: { 'video/*': ['.mp4', '.mov', '.webm', '.mkv', '.m4v'] } }] }); cortoH = h; if (await cortoDesdeH(h)) { cortoGuardar(h); $('#corto-pick-btn').textContent = '🎞️ Cambiar el video del corto'; $('#corto-otro').hidden = true; } } catch {}
+      } else $('#corto-file').click();
+    };
+    $('#corto-pick-btn').addEventListener('click', () => { if (cortoH && !cortoURL) cortoPermiso(); else elegir(); });
+    $('#corto-otro').addEventListener('click', elegir);
     $('#corto-file').addEventListener('change', e => { const f = e.target.files[0]; if (f) cortoUsar(f); });
   }
   cortoInit();
@@ -3236,7 +3341,7 @@ function initScreen() {
     if (act === 'seek' && t != null) music.seek(Math.max(0, t + v));
     if (act === 'to') music.seek(v);
   }
-  setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: fxPlayer ? fxPlayer.status() : null, med: cortoPos() }); }, 1000);
+  setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: (VOZF && VOZF.status()) || (fxPlayer ? fxPlayer.status() : null), med: cortoPos() }); }, 1000);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
 
   let lastAjuste = null;
@@ -3302,12 +3407,12 @@ function initScreen() {
         if (temaSuena) return true;
         return now >= e.est + 1500;   // la voz no respondió: sigue por tiempo
       }
-      if (e.clock === 'tema') return temaSuena ? mS.t >= e.t : now >= e.est + 3000;
+      if (e.clock === 'tema') return temaSuena ? mS.t >= e.t : (!TEMA_ESPERA && now >= e.est + 3000);
       return now >= e.est;
     };
     hostTxtT = setInterval(() => {
       if (!vh.isConnected || vh.classList.contains('golpe-pre')) return hostTextsStop();
-      const now = performance.now() - t0, fxS = fxPlayer ? fxPlayer.status() : null, mS = music.status();
+      const now = performance.now() - t0, fxS = (VOZF && VOZF.status()) || (fxPlayer ? fxPlayer.status() : null), mS = music.status();
       let idx = -1;
       tx.forEach((e, i) => { if (passed(e, now, fxS, mS)) idx = i; });
       if (!temaOn && mS && mS.key === 'anfitrion' && mS.t > 0) { temaOn = true; beams.level(.65); preBeat(vh); }
@@ -3322,6 +3427,7 @@ function initScreen() {
           const sp = els[idx].querySelector('span');
           setTimeout(() => { if (sp && sp.isConnected) { beams.aimEls([sp], { ms: 420, spread: true }); } }, 650);
         }
+        if (tx[idx].clock === 'tema') { whoosh(); setTimeout(() => boomGrave(idx === tx.length - 1 ? 0.8 : 0.42), 330); }   // tráiler: el aire que se corta y el golpe cuando la frase se arma
         if (idx === tx.length - 1) { beams.setup('top5'); beams.level(.85); beams.play('scan'); }
       } else if (active >= 0 && active < tx.length - 1 && !fadedOut && now - shownAt > tx[active].dur) {
         els[active].classList.remove('on'); els[active].classList.add('off'); fadedOut = true;   // si el siguiente tarda, se va solo
@@ -3723,9 +3829,9 @@ function initScreen() {
   window.__logSink = (text, kind) => link.send({ type: 'log', text, kind });
 
   $('#unlock-btn').addEventListener('click', async () => {
+    const perm = cortoPermiso();   // primero el permiso del video recordado: si va después de la pantalla completa, el navegador lo rechaza
     $('#unlock').hidden = true;
-    cortoLocalRecuperar();   // si el video ya se eligió antes, con este mismo toque pide permiso y lo carga
-    if (!ENSAYO) { try { await document.documentElement.requestFullscreen(); } catch {} }
+    if (!ENSAYO) { try { await perm; } catch {} try { await document.documentElement.requestFullscreen(); } catch {} }
     keepAwake(); audioCtx();
     music.enableSound(false);
     if (fxPlayer) fxPlayer.enableSound(false);
@@ -3929,7 +4035,8 @@ function initScreen() {
       const t = hostTexts();
       h = `<div class="v v-host" id="vhost">
           <div class="host-wait">${t.map((x, i) => { const len = Math.max(8, x.texto.length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2), last = i === t.length - 1;
-            return `<div class="hw ${last ? 'last' : ''} ${two ? 'two' : ''} ${x.clock === 'voz' ? 'ep' : ''}" style="--fs:${fs}vw"><div class="hw-burst"></div><div class="hw-flare"></div><span>${esc(x.texto)}</span></div>`; }).join('')}</div>
+            const tr = x.clock === 'tema', brasas = tr ? `<div class="hw-embers">${Array.from({ length: 22 }, () => `<i style="left:${(8 + Math.random() * 84).toFixed(1)}%;animation-delay:${(0.35 + Math.random() * 1.6).toFixed(2)}s;animation-duration:${(3.5 + Math.random() * 3.5).toFixed(2)}s;--dx:${((Math.random() - 0.5) * 12).toFixed(1)}vw"></i>`).join('')}</div>` : '';
+            return `<div class="hw ${last ? 'last' : ''} ${two ? 'two' : ''} ${x.clock === 'voz' ? 'ep' : ''} ${tr ? 'tr' : ''}" style="--fs:${fs}vw"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div>${brasas}<span>${esc(x.texto)}</span></div>`; }).join('')}</div>
           ${(p.revelar || 'logo') === 'logo' ? `<div class="host-reveal">${showLogoHTML(p.logoArriba || 'Segunda edición', 'host')}</div>` : `<div class="host-reveal">
             <div class="host-tag">Su anfitrión</div>
             <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo host">${photoHTML(p)}</div></div>
@@ -4242,13 +4349,18 @@ function initControl() {
       if (msg.type === 'hello') { lastHello = Date.now(); if (msg.corto !== undefined && msg.corto !== cortoTele) { cortoTele = msg.corto; renderControl(); } }
       if (msg.type === 'ping') { lastHello = Date.now(); sendState(); }
       if (msg.type === 'log') { lastHello = Date.now(); log('📺 ' + msg.text, msg.kind || ''); }
-      if (msg.type === 'musica') { lastHello = Date.now(); musNow = { a: msg.a, at: Date.now() }; medNow = msg.med || msg.a || null; showMusic(msg.med || msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a); }
+      if (msg.type === 'musica') { lastHello = Date.now(); musNow = { a: msg.a, at: Date.now() }; medNow = msg.med || msg.a || null; showMusic(msg.med || msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a, msg.b); }
       if (msg.type === 'revelaEn' && msg.slide === S.slide && S.step === 'redoble' && revPlan) revSchedule(msg.ms - 120, msg.ten - 120);
       if (msg.type === 'revelar' && msg.slide === S.slide && S.step === 'redoble') { revDone(); S.step = 'revelado'; commit(); }
-      if (msg.type === 'cortoEstado') { cortoProg = { t: msg.t, d: msg.d }; const el = $('#corto-prog'); if (el) el.textContent = msg.d ? `${mmss(msg.t)} de ${mmss(msg.d)}` : 'cargando…'; }
+      if (msg.type === 'cortoEstado') { cortoProg = { t: msg.t, d: msg.d };
+        { const sq = seqAhora(), av = (PREVIA && PREVIA.avisoSeg) || 8;
+          if (sq && sq.phase === 'apertura' && !sq.pending && SCRIPT[S.slide].k === 'corto' && msg.d > 0 && msg.t > 1) { const left = (CORTO.fin || msg.d) - msg.t; if (left <= av) armAuto(proximoNombre(S.slide), left, () => goSlide(S.slide + 1, true)); } } const el = $('#corto-prog'); if (el) el.textContent = msg.d ? `${mmss(msg.t)} de ${mmss(msg.d)}` : 'cargando…'; }
       if (msg.type === 'cortoFin' && SCRIPT[S.slide].k === 'corto' && msg.slide === S.slide) {
         if (msg.error) log('🎞️ ' + msg.error + ' — sigo con la apertura', 'e'); else log('🎞️ Terminó el corto', 'o');
-        goSlide(S.slide + 1, true);
+        const sq = seqAhora();
+        if (sq && sq.held) log('⏸ Queda en negro hasta que toques ▶ Seguir', 'o');
+        else if (sq && sq.pending && sq.fire) sq.fire();
+        else goSlide(S.slide + 1, true);
       }
       if (msg.type === 'marcas' && Array.isArray(msg.t)) {
         S.acentos = { id: msg.vid, t: msg.t }; commit(true);
@@ -4921,6 +5033,8 @@ function initControl() {
 
   /* --- Cambios de estado --- */
   let commitT = null, autoT = null, autoKey = null;
+  const seqAhora = () => { try { return seq; } catch { return null; } };
+  const proximoNombre = i => { const n = SCRIPT[i + 1] || {}; return n.k === 'corto' ? '🎞️ El cortometraje' : n.k === 'cine' ? '🎬 Estudio y créditos' : n.k === 'intro' ? '🎺 La fanfarria' : n.k === 'presentador' ? '🎤 Tu entrada' : (n.label || 'Lo que sigue'); };
   function commit(soft = false) {
     S.rev = Date.now() + Math.random();
     aplicarBucleAj(S);
@@ -4928,7 +5042,15 @@ function initControl() {
     const m = momentOf(S);
     lightsFor(m);
     // La apertura de cine avanza sola a la fanfarria cuando terminan los créditos
-    if (SCRIPT[S.slide].k === 'cine') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); const k0 = S.slide; autoT = setTimeout(() => { if (S.slide === k0) goSlide(S.slide + 1, true); }, cineFin(SCRIPT[S.slide]) + 300); } }
+    if (SCRIPT[S.slide].k === 'cine') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); const k0 = S.slide, fin = cineFin(SCRIPT[S.slide]) + 300;
+      const sq = seqAhora(), av = ((PREVIA && PREVIA.avisoSeg) || 8) * 1000;
+      if (sq && sq.phase === 'apertura') autoT = setTimeout(() => {   // con la apertura en automático: aviso con cuenta regresiva y freno
+        if (S.slide !== k0) return;
+        const s2 = seqAhora();
+        if (s2 && s2.phase === 'apertura' && !s2.pending) armAuto(proximoNombre(k0), Math.min(av, fin) / 1000, () => goSlide(k0 + 1, true));
+        else if (!s2) goSlide(k0 + 1, true);
+      }, Math.max(0, fin - av));
+      else autoT = setTimeout(() => { if (S.slide === k0) goSlide(S.slide + 1, true); }, fin); } }
     else { autoKey = null; clearTimeout(autoT); }
     const k = SCRIPT[S.slide].k;
     if (soft) { clearTimeout(commitT); commitT = setTimeout(sendState, 250); }
@@ -4950,7 +5072,12 @@ function initControl() {
     else if (SCRIPT[i].k !== 'enjuego' && S.volBase != null) { volA(S.volBase, 2500); S.volBase = null; }
     if (!auto && typeof seq !== 'undefined' && seq && SCRIPT[i].k !== 'previa') abortSeq('✋ Pasaste a manual');
     if (revPlan) revDone();
-    S.slide = i; S.overlay = null; S.sub = 0; S.manual = null; S.desde = null; S.calib = false; S.marcar = false; S.bucleCal = null;
+    S.slide = i; S.overlay = null; S.sub = 0; S.manual = null; S.desde = null; S.calib = false; S.marcar = false; S.bucleCal = null; S.tema = null;
+    // La apertura (desde el primer aviso de cine hasta tu golpe) va siempre en automático, con freno en cada paso,
+    // aunque se haya arrancado a mano (antes, empezando a mano, después de la fanfarria no pasaba sola a tu entrada)
+    if (SCRIPT[i].k === 'cine' && i === SCRIPT.findIndex(x => x.k === 'cine') && !seq && !(PREVIA && PREVIA.hastaGolpe === false)) {
+      seq = { phase: 'apertura', pending: false }; log('🤖 Apertura en automático hasta tu golpe. Cada paso avisa antes y se puede frenar', 'o');
+    }
     if (typeof seq !== 'undefined' && seq) seq.slideAt = Date.now();
     S.autoGolpe = (typeof seq !== 'undefined' && seq && seq.phase === 'apertura' && SCRIPT[i].k === 'presentador' && GOLPE_TEMA != null) ? GOLPE_TEMA : null;
     S.step = isQ(SCRIPT[i]) ? 'pregunta' : (SCRIPT[i].k === 'presentador' ? 'espera' : null);
@@ -5171,6 +5298,9 @@ function initControl() {
       h = S.step === 'golpe'
         ? `<div class="now-title">🎤 ¡${esc(D.presentador.nombre)}!</div><p class="muted">Un compás de estrobo, el logo de la trivia en el segundo y después fiesta al ritmo del tema. Cuando quieras, seguís con los contendientes.</p>`
         : `<div class="now-title">🎤 Tu entrada</div><p class="muted">Sala a oscuras${TRACKS.anfitrionVoz ? ', la voz de presentación y después tu tema' : ', suena tu tema'}, aparecen los textos y la luz late cada vez más rápido. Entrá y, cuando estés en tu lugar (idealmente en un golpe fuerte del tema), tocá <b>💥 ¡Golpe de entrada!</b>.${D.presentador.golpeAuto > 0 ? ` Si no lo tocás, sale solo a los ${Math.round(D.presentador.golpeAuto / 1000)} s.` : ''}</p>`;
+      if (S.step !== 'golpe' && TRACKS.anfitrionVoz) h += S.tema === 'hold'
+        ? `<button class="btn" id="tema-go" style="width:100%;margin:10px 0 4px;padding:18px 0;font-size:20px">🎵 Arrancar tu tema</button><p class="muted" style="font-size:12.5px">La tele está en negro y en silencio esperando este toque.</p>`
+        : S.tema === 'go' ? '' : `<button class="btn ghost" id="tema-hold" style="width:100%;margin:10px 0 4px">✋ Que el tema espere mi toque</button><p class="muted" style="font-size:12.5px">Si no lo tocás, el tema arranca solo ${Math.round(VOZ_PAUSA() / 1000)} s después de la voz.</p>`;
       const rd = D.presentador.ritmo || {}, rit = ritmoValido(S.ritmo) ? S.ritmo : (rd.fase != null ? rd : null);
       const ritTxt = rit ? `${rit.bpm || HOST_BPM} bpm · fase ${(+rit.fase).toFixed(3)} s${rit.ajuste ? ` · ajuste ${rit.ajuste > 0 ? '+' : ''}${rit.ajuste} ms` : ''}` : 'sin calibrar: el compás arranca cuando tocás el golpe';
       h += `<p class="muted" style="margin:12px 0 6px">🥁 Ritmo de la tele: <b>${ritTxt}</b></p>
@@ -5260,6 +5390,8 @@ function initControl() {
     const pp = body.querySelector('#prueba-previa'); if (pp) pp.addEventListener('change', () => { try { localStorage.setItem(STORE_PFX + 'pruebaPrevia', pp.checked ? '1' : '0'); } catch {} log(pp.checked ? `🧪 Prueba: la previa arranca en ${mmss(PRUEBA_DESDE)}` : '🧪 Prueba desactivada: la previa arranca desde el principio', 'o'); renderControl(); });
     const sa = body.querySelector('#seq-abort'); if (sa) sa.addEventListener('click', () => abortSeq());
     const ct = body.querySelector('#cal-tog'); if (ct) ct.addEventListener('click', () => { S.calib = !S.calib; if (S.calib) S.marcar = false; commit(); });
+    const tg = body.querySelector('#tema-go'); if (tg) tg.addEventListener('click', () => { const sq = seqAhora(); if (sq && sq.held && sq.fire) sq.fire(); else temaArrancar(); });
+    const th = body.querySelector('#tema-hold'); if (th) th.addEventListener('click', () => { const sq = seqAhora(); if (sq && sq.pending && !sq.held && $('#seq-msg').textContent.includes('Tu tema')) $('#seq-hold').click(); else temaFrenar(); });
     const mt = body.querySelector('#mk-tog'); if (mt) mt.addEventListener('click', () => { S.marcar = !S.marcar; if (S.marcar) S.calib = false; commit(); log(S.marcar ? '🎯 Marcando efectos: tocá «Acá va uno» en cada golpe fuerte' : '🎯 Marcas listas', 'o'); });
     const mk = body.querySelector('#mk-tap'); if (mk) mk.addEventListener('pointerdown', e => { e.preventDefault(); if (link) link.send({ type: 'marca' }); mk.classList.add('hit'); setTimeout(() => mk.classList.remove('hit'), 140); if (navigator.vibrate) navigator.vibrate(25); });
     const setAc = t => { S.acentos = { id: TRACKS.anfitrion ? TRACKS.anfitrion.id : '', t }; commit(); };
@@ -5408,21 +5540,51 @@ function initControl() {
     commit();
   }
   function armStep(step, secs) { armAuto(seqDescribe(step), secs, () => { seq.i++; execStep(step); }); }
-  // Aviso arriba con cuenta regresiva; "Deshacer" frena todo y seguís a mano
-  function armAuto(label, secs, fn) {
-    seq.pending = true;
+  // Aviso arriba con cuenta regresiva. "Frenar acá" deja la producción esperando en este punto (▶ Seguir lo dispara y la
+  // secuencia sigue sola); "Pasar todo a manual" corta la secuencia. opts.onHold: qué hacer al frenar (ej.: avisarle a la tele)
+  // opts.resume: qué hacer al seguir después de frenar (si no, lo mismo que al vencer la cuenta)
+  function armAuto(label, secs, fn, opts = {}) {
+    seq.pending = true; seq.held = false;
     const total = Math.max(1, secs), t0 = Date.now();
     $('#seq-msg').textContent = `⏱ ${label} en ${Math.ceil(total)} s`;
-    $('#seq-toast').hidden = false;
+    $('#seq-toast').hidden = false; $('#seq-run').hidden = false; $('#seq-held').hidden = true; $('#seq-bar').parentNode.hidden = false;
     clearInterval(seqTick);
-    const fire = () => { clearInterval(seqTick); $('#seq-toast').hidden = true; if (!seq) return; seq.pending = false; fn(); };
+    let frenado = false;
+    const fire = () => { clearInterval(seqTick); $('#seq-toast').hidden = true; if (!seq) return; seq.pending = false; seq.held = false; seq.fire = null; (frenado && opts.resume ? opts.resume : fn)(); };
+    seq.fire = fire;
     $('#seq-now').onclick = fire;
+    $('#seq-go').onclick = () => { log('▶ Seguís: ' + label, 'o'); fire(); };
+    $('#seq-hold').onclick = () => {
+      if (!seq) return;
+      clearInterval(seqTick); frenado = true; seq.held = true;
+      $('#seq-msg').textContent = `⏸ Frenado antes de: ${label}`;
+      $('#seq-run').hidden = true; $('#seq-held').hidden = false; $('#seq-bar').parentNode.hidden = true;
+      log('⏸ Frenado antes de: ' + label + '. Tocá ▶ Seguir cuando quieras', 'o');
+      if (opts.onHold) opts.onHold();
+    };
     seqTick = setInterval(() => {
       const left = total - (Date.now() - t0) / 1000;
       $('#seq-bar').style.width = Math.max(0, 100 * left / total) + '%';
       $('#seq-msg').textContent = `⏱ ${label} en ${Math.max(0, Math.ceil(left))} s`;
       if (left <= 0) fire();
     }, 100);
+  }
+  /* Tu tema después de la voz: la tele lo arranca sola salvo que se lo frene (S.tema = 'hold'); 'go' lo arranca ya */
+  const temaSuena = () => !!(lastMus && lastMus.key === 'anfitrion');
+  function temaFrenar(por) {
+    if (SCRIPT[S.slide].k !== 'presentador' || S.step === 'golpe') return;
+    if (temaSuena()) { log('El tema ya está sonando: no se puede frenar', 'e'); return; }
+    S.tema = 'hold'; commit();
+    clearLights(); fireLook('oscuro', true);   // la luz no empieza a latir hasta que arranque el tema
+    log('⏸ El tema espera tu toque' + (por ? ` (${por})` : ''), 'o');
+  }
+  function temaArrancar() {
+    if (SCRIPT[S.slide].k !== 'presentador' || S.step === 'golpe') return;
+    const estaba = S.tema === 'hold';
+    S.tema = 'go'; commit();
+    const g = GUION.presentador, t0 = VOZ_MS();
+    if (estaba && Array.isArray(g) && t0) { clearLights(); runSteps(g.filter(([t]) => t >= t0).map(([t, l]) => [Math.max(0, t - t0 + 300), l])); }   // las luces retoman desde que entra el tema
+    if (estaba) log('🎵 Arranca tu tema', 'o');
   }
   const GOLPE_TEMA = D.presentador && D.presentador.golpeTema != null ? D.presentador.golpeTema : null;
   let golpeFallbackT = null;
@@ -5437,8 +5599,12 @@ function initControl() {
     if (SCRIPT[S.slide].k === 'presentador' && GOLPE_TEMA != null && S.step !== 'golpe') { S.autoGolpe = GOLPE_TEMA; commit(); }
     log('🤖 Automático hasta el golpe de entrada', 'o'); renderControl();
   }
-  $('#seq-undo').addEventListener('click', () => abortSeq());
-  window.__onMusicStatus = a => {
+  $('#seq-undo').addEventListener('click', () => {
+    const enVoz = SCRIPT[S.slide].k === 'presentador' && S.step !== 'golpe' && !S.tema && !temaSuena();
+    abortSeq();
+    if (enVoz) temaFrenar('pasaste a manual');   // en manual, el tema espera tu toque
+  });
+  window.__onMusicStatus = (a, b) => {
     lastMus = a;
     if (seq && seq.phase === 'apertura' && !seq.pending) {
       const k = SCRIPT[S.slide].k, aviso = (PREVIA && PREVIA.avisoSeg) || 8;
@@ -5448,9 +5614,16 @@ function initControl() {
         const sinMusica = (!a || a.key !== 'intro') && Date.now() - (seq.slideAt || Date.now()) > 30000;
         if ((at != null && a.t >= at - Math.min(aviso, 5)) || sinMusica) armAuto('Tu entrada', at != null ? Math.max(1, at - a.t) : 5, () => goSlide(SCRIPT.findIndex(x => x.k === 'presentador'), true));
       }
+      // la voz termina, unos segundos en negro y arranca tu tema: también se puede frenar
+      if (k === 'presentador' && S.step !== 'golpe' && !S.tema && seq.temaSlide !== S.slide && b && b.key === 'anfitrionVoz' && b.d > 0) {
+        const v = (D.musica && D.musica.anfitrionVoz) || {}, pausa = VOZ_PAUSA() / 1000;
+        const left = Math.max(0, ((v.fin || b.d) - b.t) / VOZ_VEL()) + pausa;
+        if (left <= aviso + pausa) { seq.temaSlide = S.slide; armAuto('🎵 Tu tema', left, () => temaArrancar(), { onHold: () => temaFrenar() }); }
+      }
       if (k === 'presentador' && S.step !== 'golpe' && GOLPE_TEMA != null && a && a.key === 'anfitrion' && a.t >= GOLPE_TEMA - aviso) {
         // la tele dispara el golpe justo en su segundo (es la que sabe exacto dónde va el tema); el celu lo hace igual si no llega el aviso
-        armAuto('💥 Golpe de entrada', Math.max(1, GOLPE_TEMA - a.t), () => { golpeFallbackT = setTimeout(() => golpeAuto('por tiempo'), 700); });
+        armAuto('💥 Golpe de entrada', Math.max(1, GOLPE_TEMA - a.t), () => { golpeFallbackT = setTimeout(() => golpeAuto('por tiempo'), 700); },
+          { onHold: () => { if (S.autoGolpe != null) { S.autoGolpe = null; commit(); } }, resume: () => golpeAuto('tocaste Seguir') });
       }
       return;
     }
