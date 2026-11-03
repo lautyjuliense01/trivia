@@ -524,6 +524,27 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .hw.tr .hw-burst{background:radial-gradient(ellipse at center,rgba(255,226,170,.42),rgba(255,170,60,.14) 38%,transparent 70%)}
 .hw.tr.on .hw-burst{animation:hwBurst 2.4s .3s cubic-bezier(.2,.8,.2,1) both}
 .host-reveal{display:none}
+/* v31: cuenta regresiva (líder de película dorado) */
+.cr-txt{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center}
+@property --crA{syntax:'<angle>';inherits:false;initial-value:0deg}
+.cr-leader{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .35s;background:radial-gradient(ellipse at center,#1a1206 0%,#0a0703 55%,#000 100%)}
+.cr-leader.on{opacity:1;animation:crlFlick .11s steps(2) infinite}
+@keyframes crlFlick{0%{filter:brightness(1)}50%{filter:brightness(.93)}}
+.crl-cross{position:absolute;inset:0;background:linear-gradient(rgba(233,196,106,.32),rgba(233,196,106,.32)) center/100% 2px no-repeat,linear-gradient(rgba(233,196,106,.32),rgba(233,196,106,.32)) center/2px 100% no-repeat}
+.crl-ring,.crl-sweep{position:absolute;width:66vmin;height:66vmin;border-radius:50%}
+.crl-ring{border:3px solid rgba(240,206,128,.85);box-shadow:0 0 50px rgba(255,190,90,.22),inset 0 0 0 1.6vmin transparent}
+.crl-ring::after{content:'';position:absolute;inset:3.2vmin;border-radius:50%;border:2px solid rgba(240,206,128,.45)}
+.crl-sweep{background:conic-gradient(from 0deg,rgba(255,214,140,.30) 0deg,rgba(255,214,140,.30) var(--crA),transparent var(--crA));-webkit-mask:radial-gradient(circle,#000 0 70%,transparent 70.5%);mask:radial-gradient(circle,#000 0 70%,transparent 70.5%)}
+.cr-leader.go .crl-sweep{animation:crlSweep var(--per,1.55s) linear both}
+@keyframes crlSweep{from{--crA:0deg}to{--crA:360deg}}
+.crl-num{position:relative;font-family:'Cinzel',serif;font-weight:900;font-size:42vmin;line-height:1;margin-top:-.06em;
+  background:linear-gradient(180deg,#fff6d8 0%,#f3d282 40%,#b98a2e 70%,#f6dc93 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 30px rgba(255,200,110,.45))}
+.cr-leader.go .crl-num{animation:crlPop .55s cubic-bezier(.16,1.3,.3,1) both}
+@keyframes crlPop{0%{opacity:0;transform:scale(1.45);filter:blur(10px) drop-shadow(0 0 60px rgba(255,220,150,.9))}100%{opacity:1;transform:scale(1);filter:blur(0) drop-shadow(0 0 30px rgba(255,200,110,.45))}}
+.crl-grain{position:absolute;inset:0;pointer-events:none;opacity:.16;mix-blend-mode:screen;
+  background:repeating-radial-gradient(circle at 37% 61%,rgba(255,255,255,.5) 0 1px,transparent 1px 3px),repeating-radial-gradient(circle at 71% 23%,rgba(255,255,255,.4) 0 1px,transparent 1px 4px);animation:crlGrain .2s steps(3) infinite}
+@keyframes crlGrain{0%{background-position:0 0,0 0}33%{background-position:7px -5px,-9px 4px}66%{background-position:-6px 8px,5px -7px}}
 .v-host.golpe .host-wait{display:none}
 .v-host.golpe .host-reveal{display:block}
 .v-host .host-tag{font-family:'Cinzel',serif;letter-spacing:.5em;font-size:clamp(14px,1.6vw,24px);margin-bottom:22px;opacity:0;animation:fadeIn .8s .5s forwards}
@@ -1228,7 +1249,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v55 · 02/11 21:30';
+const VERSION = 'v56 · 02/11 22:00';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1996,7 +2017,10 @@ const CRED_AT = [];
 let CRED_END = CEL;
 CREDITS.forEach((c, i) => { CRED_AT.push(CRED_END); CRED_END += credDur(c, i); });
 /* Cortometraje antes de la película (como en el cine): parte la apertura en dos, avisos → corto → estudio y créditos */
-const CORTO = D.corto && (D.corto.local || D.corto.archivo || D.corto.id) ? D.corto : null;   // local: el video se elige de los archivos de la compu de la tele
+const CORTO = D.corto && (D.corto.local || D.corto.archivo || D.corto.id) ? D.corto : null;
+/* Cuenta regresiva con voz entre el corto y los créditos (apertura.cuenta): frases con placa y los números 10…1 */
+const CUENTA = AP.cuenta && AP.cuenta.archivo ? AP.cuenta : null;
+const CUENTA_MS = CUENTA ? Math.round(((CUENTA.hasta || 55) - (CUENTA.desde || 0)) * 1000) + 300 : 0;   // local: el video se elige de los archivos de la compu de la tele
 const cineOff = sl => (sl && sl.parte === 'creditos' ? CEL - 1200 : 0);                     // en la parte de créditos todo arranca a los 0,8 s
 const cineFin = sl => (sl && sl.parte === 'avisos' ? CEL + 700 : CRED_END - cineOff(sl));   // ms hasta que pasa sola a lo siguiente
 /* Telón de terciopelo dibujado una sola vez: pliegues irregulares, brillo de terciopelo, cenefa con flecos dorados */
@@ -2498,7 +2522,14 @@ function hostGuion() {
   return temaAt && temaAt < last ? [[0, 'oscuro'], [temaAt, 'latido'], [last, 'latidoRapido']] : [[0, 'oscuro'], [last, 'latidoRapido']];
 }
 /* Guion: qué look va en cada momento. Un nombre, o una secuencia [[ms, look], ...] donde ms = cuándo se tiene que VER */
+const cuentaGuion = () => {
+  if (!CUENTA) return 'oscuro';
+  const n = CUENTA.numeros || [], d0 = CUENTA.desde || 0, st = [[0, 'oscuro']];
+  n.slice(-3).forEach(t => { const ms = Math.round((t - d0) * 1000) + 300; st.push([ms, 'pulso']); st.push([ms + 650, 'oscuro']); });
+  return st;
+};
 const GUION = Object.assign({
+  cuentaReg: cuentaGuion(),
   logo: 'salaInicio',
   previa: 'salaInicio',
   presentamos: [[0, 'oscuro'], [1700, 'escenario']],
@@ -2528,7 +2559,7 @@ Object.entries(D.musica || {}).forEach(([k, v]) => {
 
 function buildScript() {
   const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }];
-  if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
+  if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, ...(CUENTA ? [{ k: 'cuentaReg', label: '⏳ Cuenta regresiva (voz)' }] : []), { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
   else s.push({ k: 'cine', label: 'Apertura de cine: celulares y créditos' });
   s.push({ k: 'intro', label: 'Intro de película (fanfarria)' });
   if (D.presentador) s.push({ k: 'presentador', label: 'Entrada del presentador: ' + D.presentador.nombre });
@@ -3269,6 +3300,66 @@ function initScreen() {
     $('#corto-file').addEventListener('change', e => { const f = e.target.files[0]; if (f) cortoUsar(f); });
   }
   cortoInit();
+  /* Cuenta regresiva: suena el mp3 (desde/hasta), cada frase tiene su placa y los números 10…1 salen en un líder de película
+     clavados al segundo del audio. Termina en el 1 (sin el "go") y la tele avisa al celu para largar con la intro de estudio. */
+  // el audio se decodifica entero en memoria: así arranca exacto en "desde" (sin depender de que el servidor deje adelantar el mp3)
+  let cuentaA = null, cuentaSrc = null;
+  function cuentaAudio() {
+    if (cuentaA) return cuentaA;
+    cuentaA = fetch(CUENTA.archivo).then(r => { if (!r.ok) throw new Error('no lo encuentro (' + r.status + ')'); return r.arrayBuffer(); })
+      .then(b => new Promise((res, rej) => audioCtx().decodeAudioData(b, res, rej)))
+      .catch(e => { log('Cuenta regresiva (' + CUENTA.archivo + '): ' + (e && e.message || e) + '. Sigue igual, sin sonido', 'e'); return null; });
+    return cuentaA;
+  }
+  function cuentaStop(ms = 90) {
+    const c = cuentaSrc; cuentaSrc = null; if (!c) return;
+    try { const t = c.ctx.currentTime; c.g.gain.cancelScheduledValues(t); c.g.gain.setValueAtTime(c.g.gain.value, t); c.g.gain.linearRampToValueAtTime(0, t + ms / 1000); c.src.stop(t + ms / 1000 + 0.02); } catch {}
+  }
+  function cuentaStart(slide) {
+    const d0 = CUENTA.desde || 0, d1 = CUENTA.hasta || 55, pl = CUENTA.placas || [], nums = CUENTA.numeros || [];
+    const els = [...document.querySelectorAll('.cr-txt .hw')], lead = $('#cr-leader'), num = $('#crl-num');
+    let t0 = performance.now(), activo = -1, nAct = -1, fin = false, sonando = null, esperando = true;
+    cuentaStop(0);
+    cuentaAudio().then(buf => {
+      esperando = false;
+      if (!buf || fin || !lead.isConnected) { t0 = performance.now(); return; }
+      const ctx = audioCtx(), src = ctx.createBufferSource(), g = ctx.createGain();
+      src.buffer = buf; g.gain.value = Math.min(1.5, (CUENTA.volumen || 1) * Math.max(0.2, musicVol / 70));
+      src.connect(g); g.connect(ctx.destination);
+      const at = ctx.currentTime + 0.05; src.start(at, d0);
+      cuentaSrc = { src, g, ctx }; sonando = { ctx, at };
+      if (ctx.state !== 'running') log('El sonido de la tele está bloqueado (falta tocar «activar»): la cuenta sigue por reloj', 'e');
+    });
+    // el reloj es el del audio; si no hay audio, el de la compu (y mientras carga, espera)
+    const reloj = () => sonando && sonando.ctx.state === 'running' ? d0 + Math.max(0, sonando.ctx.currentTime - sonando.at) : (esperando && performance.now() - t0 < 4000 ? d0 - 1 : d0 + (performance.now() - t0) / 1000);
+    const tick = setInterval(() => {
+      if (fin || !lead || !lead.isConnected) { clearInterval(tick); return; }
+      const t = reloj();
+      // placas: hasta que empiezan los números
+      let i = -1; pl.forEach((p, k) => { if (t >= p.en - 0.05) i = k; });
+      if (nums.length && t >= nums[0] - 0.05) i = -2;
+      if (i !== activo) {
+        if (activo >= 0 && els[activo]) { els[activo].classList.remove('on'); els[activo].classList.add('off'); }
+        if (i >= 0 && els[i]) { els[i].classList.remove('off'); void els[i].offsetWidth; els[i].classList.add('on'); }
+        activo = i;
+      } else if (i >= 0 && els[i] && els[i].classList.contains('on') && t > pl[i].en + (pl[i].dura || 6)) { els[i].classList.remove('on'); els[i].classList.add('off'); }
+      // números
+      let n = -1; nums.forEach((x, k) => { if (t >= x - 0.04) n = k; });
+      if (n !== nAct && n >= 0) {
+        nAct = n; lead.classList.add('on');
+        const per = ((nums[n + 1] || (nums[n] + (nums[1] - nums[0] || 1.55))) - nums[n]);
+        num.textContent = String(nums.length - n);
+        lead.style.setProperty('--per', per.toFixed(2) + 's');
+        lead.classList.remove('go'); void lead.offsetWidth; lead.classList.add('go');
+      }
+      if (t >= d1) {   // cierra en el 1: corte seco a negro y arranca la intro de estudio
+        fin = true; clearInterval(tick); cuentaStop(90);
+        lead.classList.remove('on'); lead.style.transition = 'none'; lead.style.opacity = '0';
+        if (link) link.send({ type: 'cuentaFin', slide });
+      }
+    }, 30);
+    cineHits.push(tick);
+  }
   function cortoStart(slide) {
     if (!CORTO) return;
     cortoOn = true; cortoSt = Date.now(); cortoSlide = slide;
@@ -3922,6 +4013,8 @@ function initScreen() {
     if (sl.k !== 'corto') cortoStop();
     clearInterval(confettiLoop); clearTimeout(introTimer); clearTimeout(contPhase);
     cineHits.forEach(h => { clearTimeout(h); clearInterval(h); }); cineHits = []; if (window.__neonStop) window.__neonStop();
+    if (sl.k !== 'cuentaReg') cuentaStop(200);
+    if (CUENTA && (sl.k === 'corto' || sl.k === 'cine')) cuentaAudio();   // queda cargada para que arranque al instante
     let h = '';
     if (sl.k === 'logo') {
       h = `<div class="v enter"><div class="marquee" style="display:inline-block"><div class="edition">${esc(D.edicion)}</div><h1 class="script" style="font-size:clamp(70px,11vw,150px);margin:0;line-height:.95">${esc(D.titulo)}</h1></div>
@@ -3989,6 +4082,13 @@ function initScreen() {
         if (golpes === 'ninguno' || (golpes === 'extremos' && !last)) return;
         cineHits.push(setTimeout(() => boomGrave(last ? 1 : 0.55), CAT[i] + 200));
       });
+    } else if (sl.k === 'cuentaReg') {
+      const pl = CUENTA.placas || [];
+      h = `<div class="cine"><div class="cine-black" style="animation:none;opacity:1"></div>
+        <div class="v v-host cr-txt"><div class="host-wait">${pl.map(x => { const len = Math.max(8, (x.texto || '').length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2);
+          return `<div class="hw tr ${two ? 'two' : ''}" style="--fs:${fs}vw"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div><span>${esc(x.texto || '')}</span></div>`; }).join('')}</div></div>
+        <div class="cr-leader" id="cr-leader"><div class="crl-cross"></div><div class="crl-ring"></div><div class="crl-sweep"></div><div class="crl-num" id="crl-num"></div><div class="crl-grain"></div></div></div>`;
+      cineHits.push(setTimeout(() => cuentaStart(st.slide), 300));
     } else if (sl.k === 'corto') {
       // antes del corto, la intro de estudio en versión corta (el corto también es una producción de la casa)
       // el corto lo presenta una productora chica, "Bioingeniería Surround", con su cartel de neón (corto.presenta en datos.js)
@@ -4361,6 +4461,12 @@ function initControl() {
         if (sq && sq.held) log('⏸ Queda en negro hasta que toques ▶ Seguir', 'o');
         else if (sq && sq.pending && sq.fire) sq.fire();
         else goSlide(S.slide + 1, true);
+      }
+      if (msg.type === 'cuentaFin' && SCRIPT[S.slide].k === 'cuentaReg' && msg.slide === S.slide) {   // llegó al 1: largan la intro de estudio y los créditos
+        const sq = seqAhora();
+        if (sq && sq.held) log('⏸ Terminó la cuenta: queda en negro hasta que toques ▶ Seguir', 'o');
+        else if (sq && sq.pending && sq.fire) sq.fire();
+        else { clearTimeout(autoT); goSlide(S.slide + 1, true); }
       }
       if (msg.type === 'marcas' && Array.isArray(msg.t)) {
         S.acentos = { id: msg.vid, t: msg.t }; commit(true);
@@ -5034,7 +5140,7 @@ function initControl() {
   /* --- Cambios de estado --- */
   let commitT = null, autoT = null, autoKey = null;
   const seqAhora = () => { try { return seq; } catch { return null; } };
-  const proximoNombre = i => { const n = SCRIPT[i + 1] || {}; return n.k === 'corto' ? '🎞️ El cortometraje' : n.k === 'cine' ? '🎬 Estudio y créditos' : n.k === 'intro' ? '🎺 La fanfarria' : n.k === 'presentador' ? '🎤 Tu entrada' : (n.label || 'Lo que sigue'); };
+  const proximoNombre = i => { const n = SCRIPT[i + 1] || {}; return n.k === 'cuentaReg' ? '⏳ La cuenta regresiva' : n.k === 'corto' ? '🎞️ El cortometraje' : n.k === 'cine' ? '🎬 Estudio y créditos' : n.k === 'intro' ? '🎺 La fanfarria' : n.k === 'presentador' ? '🎤 Tu entrada' : (n.label || 'Lo que sigue'); };
   function commit(soft = false) {
     S.rev = Date.now() + Math.random();
     aplicarBucleAj(S);
@@ -5042,7 +5148,7 @@ function initControl() {
     const m = momentOf(S);
     lightsFor(m);
     // La apertura de cine avanza sola a la fanfarria cuando terminan los créditos
-    if (SCRIPT[S.slide].k === 'cine') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); const k0 = S.slide, fin = cineFin(SCRIPT[S.slide]) + 300;
+    if (SCRIPT[S.slide].k === 'cine' || SCRIPT[S.slide].k === 'cuentaReg') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); const k0 = S.slide, fin = SCRIPT[S.slide].k === 'cuentaReg' ? CUENTA_MS + 1500 : cineFin(SCRIPT[S.slide]) + 300;   // la cuenta: lo dispara el aviso de la tele (cuentaFin); esto es por si no llega
       const sq = seqAhora(), av = ((PREVIA && PREVIA.avisoSeg) || 8) * 1000;
       if (sq && sq.phase === 'apertura') autoT = setTimeout(() => {   // con la apertura en automático: aviso con cuenta regresiva y freno
         if (S.slide !== k0) return;
@@ -5282,6 +5388,7 @@ function initControl() {
         : `<button class="btn" id="seq-start" style="width:100%;margin-top:10px;font-size:17px">${pruebaPrevia() ? `▶ Comenzar previa · 🧪 desde ${mmss(PRUEBA_DESDE)}` : '▶ Comenzar previa automática'}</button><p class="muted" style="margin-top:6px">${esc((D.previa.resumen) || '')}</p>
           ${PRUEBA_DESDE ? `<label class="prueba-chk${pruebaPrevia() ? ' on' : ''}"><input type="checkbox" id="prueba-previa" ${pruebaPrevia() ? 'checked' : ''}><span>🧪 Prueba: la canción arranca en ${mmss(PRUEBA_DESDE)}${pruebaPrevia() ? ' · <b>destildalo la noche del show</b>' : ''}</span></label>` : ''}`) : ''}`;
 
+    else if (sl.k === 'cuentaReg') h = `<div class="now-title">⏳ Cuenta regresiva</div><p class="muted">La voz en inglés con sus frases en pantalla y los números del 10 al 1 en un líder de película. Cierra en el 1 y larga sola la intro de estudio (${Math.round(CUENTA_MS / 1000)} s).</p>`;
     else if (sl.k === 'corto') h = `${CORTO.local && cortoTele === false ? '<p class="warn-big">⚠️ La tele no tiene elegido el video: si llega acá, se saltea.</p>' : ''}<div class="now-title">🎞️ ${esc(CORTO.nombre || 'Cortometraje')}</div><p class="muted">A pantalla completa, sin controles. Cuando termina sigue sola con la intro de estudio y los créditos.</p><p style="margin:6px 0">⏱ <b id="corto-prog">${cortoProg && cortoProg.d ? `${mmss(cortoProg.t)} de ${mmss(cortoProg.d)}` : 'arrancando…'}</b></p>`;
     else if (sl.k === 'cine' && sl.parte === 'avisos') h = `<div class="now-title">Apertura de cine: avisos</div><p class="muted">Los avisos de sala mientras la luz baja hasta negro. Pasa sola al cortometraje en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
     else if (sl.k === 'cine' && sl.parte === 'creditos') h = `<div class="now-title">Apertura de cine: estudio y créditos</div><p class="muted">Desde negro: la intro de estudio y los créditos con la música de cine. Pasa sola a la fanfarria en ${Math.round(cineFin(sl) / 1000)} s.</p>`;

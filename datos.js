@@ -60,6 +60,22 @@ window.TRIVIA = {
         { en: 57.4, texto: 'El Ticket Dorado', sub: 'comienza en instantes', hasta: 62.5 },
       ],
     },
+    // Cuenta regresiva con voz, entre el corto y la intro de estudio. Segundos del mp3 (medidos en el audio; se afinan acá).
+    // desde: arranca sin la música del principio · hasta: corta en el 1, antes del "go" · numeros: dónde dice cada número (10 → 1)
+    cuenta: {
+      archivo: 'cuenta-regresiva.mp3', volumen: 1, desde: 8.9, hasta: 54.85,
+      placas: [
+        { en: 9.0,  texto: 'Damas y caballeros', dura: 2.6 },
+        { en: 11.7, texto: 'Su atención, por favor', dura: 3 },
+        { en: 15.6, texto: 'La espera terminó', dura: 2.2 },
+        { en: 17.9, texto: 'El escenario está listo', dura: 2.6 },
+        { en: 20.6, texto: 'Respiren hondo', dura: 2.6 },
+        { en: 23.4, texto: 'Están por presenciar algo realmente espectacular', dura: 6 },
+        { en: 30.9, texto: 'Es la hora de la cuenta final', dura: 3.6 },
+        { en: 35.7, texto: 'La función comienza en…', dura: 3.6 },
+      ],
+      numeros: [39.34, 40.80, 42.38, 43.98, 45.58, 47.08, 48.70, 50.22, 51.92, 53.44],
+    },
     avisos: [
       // icono: 'shh', 'celular', 'silencio', 'marcador', 'salida', 'sonido', 'reloj' o 'estrella'
       { icono: 'shh',      texto: 'Silencio, por favor', sub: 'Se apagan las luces de la sala', sonido: '' },   // sin sonido
