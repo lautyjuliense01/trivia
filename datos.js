@@ -41,7 +41,7 @@ window.TRIVIA = {
     // sonido (opcional): 'grave' (el de siempre), 'envolvente' (crece, gira por la sala y golpea), 'audio/archivo.mp3' o '' (silencio).
     // audio opcional: 'audio/archivo.mp3' subido al repositorio (por ejemplo, una voz en off grabada).
     // Locución de sala: el audio (subido al repositorio) con una placa por frase. en = segundo del audio en que arranca esa frase.
-    // Si está, reemplaza a los avisos de abajo (menos "Bioingeniería Surround", que sigue después). Sin archivo = avisos mudos.
+    // Si está, reemplaza a los avisos de abajo. Sin archivo = avisos mudos.
     locucion: {
       archivo: 'avisos.mp3', volumen: 1,
       placas: [
@@ -60,19 +60,22 @@ window.TRIVIA = {
         { en: 57.4, texto: 'El Ticket Dorado', sub: 'comienza en instantes', hasta: 62.5 },
       ],
     },
-    // Cuenta regresiva con voz, entre el corto y la intro de estudio. Segundos del mp3 (medidos en el audio; se afinan acá).
-    // desde: arranca sin la música del principio · hasta: corta en el 1, antes del "go" · numeros: dónde dice cada número (10 → 1)
+    // Cuenta regresiva con voz, entre los avisos y el cortometraje. Segundos del mp3.
+    // silencioAntes: segundos de negro y silencio después de los avisos · desde: arranca sin la música del principio
+    // hasta: corta en el 1, antes del "go" · numeros: dónde dice cada número (10 → 1)
+    // placas: "en" = dónde empieza cada frase; queda en pantalla hasta la siguiente (dura: opcional, para que se vaya antes).
+    //   Lo más fácil para afinarlas: en el ensayo, en el celu, "🎯 Marcar las frases" y tocar cuando empieza cada una.
     cuenta: {
-      archivo: 'cuenta-regresiva.mp3', volumen: 1, desde: 8.9, hasta: 54.85,
+      archivo: 'cuenta-regresiva.mp3', volumen: 1, silencioAntes: 10, desde: 8.9, hasta: 54.85,
       placas: [
-        { en: 9.0,  texto: 'Damas y caballeros', dura: 2.6 },
-        { en: 11.7, texto: 'Su atención, por favor', dura: 3 },
-        { en: 15.6, texto: 'La espera terminó', dura: 2.2 },
-        { en: 17.9, texto: 'El escenario está listo', dura: 2.6 },
-        { en: 20.6, texto: 'Respiren hondo', dura: 2.6 },
-        { en: 23.4, texto: 'Están por presenciar algo realmente espectacular', dura: 6 },
-        { en: 30.9, texto: 'Es la hora de la cuenta final', dura: 3.6 },
-        { en: 35.7, texto: 'La función comienza en…', dura: 3.6 },
+        { en: 9.2,  texto: 'Damas y caballeros' },
+        { en: 11.9, texto: 'Su atención, por favor' },
+        { en: 15.7, texto: 'La espera terminó' },
+        { en: 18.2, texto: 'El escenario está listo' },
+        { en: 21.0, texto: 'Respiren hondo' },
+        { en: 24.0, texto: 'Están por presenciar algo realmente espectacular' },
+        { en: 31.1, texto: 'Es la hora de la cuenta final' },
+        { en: 35.8, texto: 'La función comienza en…' },
       ],
       numeros: [39.34, 40.80, 42.38, 43.98, 45.58, 47.08, 48.70, 50.22, 51.92, 53.44],
     },
@@ -83,9 +86,6 @@ window.TRIVIA = {
       { icono: 'silencio', texto: 'Se ruega no soplar las respuestas', sub: 'El que sabe, sabe' },
       { icono: 'marcador', texto: 'Tengan a mano su pizarra y marcador', sub: 'Las respuestas se escriben, no se gritan' },
       { icono: 'salida',   texto: 'Las salidas de emergencia están señalizadas', sub: 'Pero nadie se va hasta el final' },
-      // Prueba de sonido para la barra: unos 5 s de sonido que crece y gira, golpe grave, destello del techo y aparece el texto.
-      // subida: ms hasta el golpe · luz: false para que el techo no destelle
-      { texto: 'Bioingeniería Surround', sonido: 'envolvente', subida: 4800 },
     ],
   },
 
@@ -111,7 +111,7 @@ window.TRIVIA = {
   },
 
   /* ---------- Cortometraje antes de la película (como Pixar) ----------
-     Va después de los avisos de sala ("Bioingeniería Surround") y antes de la intro de estudio.
+     Va después de los avisos de sala y la cuenta regresiva, y antes de la intro de estudio.
      A pantalla completa, sin controles; cuando termina sigue sola.
      inicio / fin: segundos para recortarlo (fin sirve para cortar antes de la pantalla final de YouTube) · volumen: 0 a 1 */
   corto: { local: true, archivo: '', id: '', nombre: 'La historia de Bioingeniería', inicio: 0, fin: null, volumen: 1,
@@ -126,7 +126,8 @@ window.TRIVIA = {
     previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
     cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false, credito: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
-    presentacion: { id: '7EhnvUTkBZM', nombre: 'The Good, the Bad and the Ugly' },
+    presentacion: { id: '7EhnvUTkBZM', archivo: 'presentacion.mp3', nombre: 'The Good, the Bad and the Ugly', bucle: [67.65, 131.642], fundido: 0.15 },
+                  // bucle: del 131,64 vuelve al 67,65 (la segunda vuelta del tema, medida en el audio) · fundido: segundos de mezcla en el salto
     pregunta:     { id: 'usLbaOEjqV4', archivo: 'pregunta.mp3', nombre: '100-1000 Questions', bucle: [8.1857, 36], revela: 49, salida: 18.5 },
                   // salida: hasta este segundo, el tramo suena idéntico en la segunda pasada (36 a 46,3). Si pedís revelar
                   //   mientras suena el 8,2–18,5, salta al mismo punto de la segunda pasada sin que se note y la respuesta llega antes.
@@ -269,7 +270,7 @@ window.TRIVIA = {
      La app la dispara antes según la "demora de la lámpara" que configures en el control. */
   guion: {
     previa: 'salaInicio',    // al reiniciar la partida queda la luz de sala (tira apagada), lista para la previa
-    presentamos: [[0, 'oscuro'], [1700, 'escenario']],
+    presentamos: [[0, 'apagado'], [3000, 'escenario']],   // corte a negro y, cuando entra la música western, azul de escenario
     // cine: lo arma la app sola (baja la luz y un pulso por crédito). Para personalizarlo, agregá cine: [[ms, look], ...]
     intro: [[0, 'noche'], [15300, 'dorado'], [16500, 'destello'], [17900, 'dorado'], [19700, 'calido']],   // golpe dorado con el título (seg. 15)
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
@@ -338,7 +339,7 @@ window.TRIVIA = {
       { texto: 'Damas y caballeros', voz: 7 },
       { texto: 'Bienvenidos', voz: 11.5 },
       { texto: 'Llegó como pasante en 2021', tema: 12, dura: 6.5 },
-      { texto: 'Hoy lidera un equipo de nueve personas', tema: 19, dura: 6.5 },
+      { texto: 'Hoy dirige el mejor departamento de Bioingeniería de la provincia', tema: 19, dura: 6.8 },
       { texto: 'Conoce cada equipo del inventario', tema: 26, dura: 6 },
       { texto: 'Cada marca. Cada modelo.', tema: 32.5, dura: 5.5 },
       { texto: 'Esta noche, solo él sabe todas las respuestas', tema: 38.5, dura: 7.5 },
@@ -367,11 +368,12 @@ window.TRIVIA = {
      Después de las reglas: se dan vuelta los premios de a uno y al final aparece el ticket dorado.
      foto: opcional ('premios/archivo.jpg' subido al repositorio) · detalle: opcional, una línea */
   premiosEnJuego: [
-    { nombre: 'Premio 1', detalle: '' },
-    { nombre: 'Premio 2', detalle: '' },
-    { nombre: 'Premio 3', detalle: '' },
-    { nombre: 'Premio 4', detalle: '' },
-    { nombre: 'Premio 5', detalle: '' },
+    // ⚠️ Simulación con premios de ejemplo. icono: 'vela', 'libro', 'bateria', 'vino', 'cafetera', 'regalo' (o foto: 'premios/archivo.jpg')
+    { nombre: 'Vela aromática', icono: 'vela' },
+    { nombre: 'Libro', icono: 'libro' },
+    { nombre: 'Powerbank', icono: 'bateria' },
+    { nombre: 'Vino', icono: 'vino' },
+    { nombre: 'Cafetera', icono: 'cafetera' },
   ],
   /* Botón 🎫 del celu: lo tocás antes de decir "el ticket dorado" y aparece en la tele con su sonido, en cualquier momento.
      ms: cuánto dura · luz: false para que el techo no destelle */
@@ -385,7 +387,10 @@ window.TRIVIA = {
      comun: opción múltiple y ¿Quién dijo? · aprox: el más cerca en aproximación · exacto: si alguno acierta exacto en aproximación
      ajuste: de a cuánto suman o restan los botones de puntos a mano en el celu.
      Cada pregunta puede tener su propio valor: puntos: 150 (y en aproximación también exacto: 400). */
-  puntos: { comun: 100, aprox: 200, exacto: 300, ajuste: 100 },
+  puntos: { comun: 100, aprox: 150, exacto: 200, ajuste: 100 },
+
+  /* Título que presenta a los participantes: corte seco de tu tema, segundos a oscuras (corte) y entra la música western */
+  presentamos: { titulo: 'Presentamos a los participantes', corte: 2.8 },
 
   /* ---------- Presentación del programa ----------
      Va después de tu golpe de entrada, antes de "Presentamos a los contendientes". Cada toque del celu saca la frase siguiente. */
@@ -397,7 +402,7 @@ window.TRIVIA = {
       'Y el criterio',
       'Un programa lleno de emociones',
       'Lleno de premios',
-      'Y con un solo ticket dorado en juego',
+      'Y con un ticket dorado en juego',
     ],
   },
 
@@ -405,12 +410,11 @@ window.TRIVIA = {
      La primera línea (cuántas preguntas hay de cada tipo) la arma la app sola. */
   // Se muestran como tarjetas que se dan vuelta de a una (un toque por regla). La primera (rondas y preguntas) la arma la app.
   // icono: 'marcador', 'pizarra', 'estrella', 'diana', 'ticket', 'corona', 'reloj', 'silencio', 'celular', 'salida', 'sonido', 'rondas', 'regalo'
+  reglasTitulo: 'Cómo se juega',   // el título de esta parte (va más allá de las reglas: rondas, puntaje, desempate)
   reglas: [
-    { icono: 'marcador', titulo: 'En la pizarra', texto: 'Cada uno escribe su respuesta. Nada de soplar.' },
-    { icono: 'pizarra',  titulo: 'Solo la respuesta', texto: 'En la pizarra no puede haber nada más escrito: ni cuentas, ni borradores, ni dibujos.' },
-    { icono: 'estrella', titulo: '100 puntos', texto: 'En opción múltiple y ¿Quién dijo?, suma 100 cada uno que acierte.' },
-    { icono: 'diana',    titulo: 'El más cerca', texto: 'En aproximación, 200 para quien quede más cerca y 300 si la clava exacta. Si empatan, suman todos.' },
-    { icono: 'ticket',   titulo: 'Desempate', texto: 'Si hay empate en cualquier puesto, una pregunta más define el orden: así se eligen los premios.' },
+    { icono: 'pizarra',  titulo: 'Solo la respuesta', texto: 'En la pizarra, únicamente la respuesta de la pregunta actual.' },
+    { icono: 'estrella', titulo: 'Puntaje', texto: 'Opción múltiple y ¿Quién dijo?: 100 puntos. Aproximación: 150 al más cerca y 200 si es exacta.' },
+    { icono: 'ticket',   titulo: 'Desempate', texto: 'En caso de empate, se realiza una pregunta de aproximación de desempate.' },
   ],
 
   /* ---------- Rondas y preguntas ----------

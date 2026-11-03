@@ -524,6 +524,16 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .hw.tr .hw-burst{background:radial-gradient(ellipse at center,rgba(255,226,170,.42),rgba(255,170,60,.14) 38%,transparent 70%)}
 .hw.tr.on .hw-burst{animation:hwBurst 2.4s .3s cubic-bezier(.2,.8,.2,1) both}
 .host-reveal{display:none}
+/* v32: presentamos con corte a negro y título entre polvo */
+.v-pt.duelo .pt-main{opacity:0;animation:ptDust 2.4s var(--pt,2.8s) cubic-bezier(.2,.7,.2,1) forwards,shine 3s calc(var(--pt,2.8s) + 1.2s) ease-out both!important}
+@keyframes ptDust{0%{opacity:0;filter:blur(22px);letter-spacing:.5em;transform:translateX(-4vw)}60%{opacity:1}100%{opacity:1;filter:blur(0) drop-shadow(0 0 26px rgba(255,200,110,.3));letter-spacing:.07em;transform:none}}
+.v-pt.duelo .pt-line{animation-delay:calc(var(--pt,2.8s) + 1.6s)!important}
+.v-pt.duelo::before{content:'';position:fixed;inset:0;background:#000;z-index:0;animation:fadeOut 1.4s var(--pt,2.8s) ease-out forwards}
+.v-pt.duelo>*{position:relative;z-index:1}
+.cr-txt .hw.tr.off{animation-duration:.45s}
+.pt-dust{position:fixed!important;inset:0;pointer-events:none;overflow:hidden}
+.pt-dust i{position:absolute;left:-4vw;width:3px;height:3px;border-radius:50%;background:rgba(230,196,140,.75);box-shadow:0 0 5px rgba(240,200,130,.5);opacity:0;animation-name:ptWind;animation-timing-function:cubic-bezier(.3,.2,.4,1);animation-fill-mode:both}
+@keyframes ptWind{0%{opacity:0;transform:translate(0,0)}15%{opacity:.9}100%{opacity:0;transform:translate(112vw,var(--dy))}}
 .cd-row.tie.shown .cd-pos::after{content:'⚔️';font-size:.55em;margin-left:.25em;vertical-align:middle}
 .v-prog .host-wait{height:46vh}
 /* v31: cuenta regresiva (líder de película dorado) */
@@ -782,6 +792,15 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .cf-dust.on{opacity:1}
 /* v35: lo que está en juego (premios y ticket dorado) */
 .v-enjuego{width:min(1240px,94vw);position:relative}
+/* v32: primero la pantalla "Lo que está en juego" sola, con la música ya sonando */
+.ej-intro{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .9s ease}
+.v-enjuego.s0 .ej-intro{opacity:1}
+.v-enjuego.s0 .ej-prizes{opacity:0;transform:scale(.94);pointer-events:none}
+.ej-intro-t{font-family:'Cinzel',serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;padding-left:.14em;font-size:clamp(44px,6.6vw,112px);line-height:1.1;text-align:center;
+  background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.9) 50%,transparent 58%) no-repeat,linear-gradient(180deg,#fffaf0 0%,#f6e3b0 38%,#d8a94a 64%,#f6dc93 100%);
+  background-size:300% 100%,100% 100%;background-position:120% 0,0 0;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 30px rgba(255,200,110,.35));opacity:0}
+.v-enjuego.go .ej-intro-t{animation:ejIn 3.2s cubic-bezier(.2,.7,.2,1) both,hwShine 2.4s 1.6s ease-out both}
+@keyframes ejIn{0%{opacity:0;filter:blur(18px) drop-shadow(0 0 0 rgba(255,200,110,0));letter-spacing:.5em;transform:scale(1.08)}100%{opacity:1;filter:blur(0) drop-shadow(0 0 30px rgba(255,200,110,.35));letter-spacing:.14em;transform:none}}
 .ej-prizes{transition:opacity .8s ease,transform .8s ease}
 .v-enjuego.tk .ej-prizes{opacity:0;transform:scale(.92);pointer-events:none}
 .ej-row .rl-card{aspect-ratio:3/4.2}
@@ -1251,7 +1270,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v57 · 03/11 11:00';
+const VERSION = 'v59 · 03/11 20:00';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1544,7 +1563,19 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (!ctx) return Promise.reject(new Error('sin audio'));
     fileBufs[key] = fetch(tracks[key].archivo).then(r => { if (!r.ok) throw new Error('no lo encuentro (' + r.status + ')'); return r.arrayBuffer(); })
       .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
-      .then(b => (fileBufs[key] = b))
+      .then(b => {
+        // fundido del bucle: los últimos segundos antes de "hasta" se mezclan con los que vienen antes de "desde",
+        // así al saltar la música sigue sin corte aunque las dos pasadas no sean idénticas (orquesta en vivo)
+        const t = tracks[key], bq = t.bucle, fd = t.fundido;
+        if (bq && fd > 0) {
+          const sr = b.sampleRate, n = Math.round(fd * sr), A = Math.round(bq[0] * sr), B = Math.round(bq[1] * sr);
+          if (A - n > 0 && B <= b.length) for (let c = 0; c < b.numberOfChannels; c++) {
+            const d = b.getChannelData(c);
+            for (let i = 0; i < n; i++) { const k = (i + 1) / n, g1 = Math.cos(k * Math.PI / 2), g2 = Math.sin(k * Math.PI / 2); d[B - n + i] = d[B - n + i] * g1 + d[A - n + i] * g2; }
+          }
+        }
+        return (fileBufs[key] = b);
+      })
       .catch(e => { delete fileBufs[key]; log(`No pude cargar ${tracks[key].archivo}: ${e.message || e}. Uso YouTube.`, 'e'); throw e; });
     return fileBufs[key];
   }
@@ -2008,6 +2039,7 @@ const IDENT_MS = 11000;
 const PASOS_Q = D.pasosPregunta || ['pregunta'];   // antes había pizarras y tensión; ahora de la pregunta se va directo a revelar
 const PRES_NUEVA = !(D.presentacion && D.presentacion.estilo === 'fotos');   // nombre que aparece y se va, con sello en lugar de foto
 const PRES_MS = (D.presentacion && D.presentacion.ms) || 3000;
+const PT_CORTE = (D.presentamos && D.presentamos.corte != null ? D.presentamos.corte : 2.8) * 1000;   // segundos a oscuras entre el corte de tu tema y la música western
 const CONT_FASE1 = !PRES_NUEVA;
 // Si se indica la duración total de los créditos (la de la música), se reparte: intro de estudio, créditos y el final más largo
 const AP = D.apertura || {}, CRED_N = CREDITS.length;
@@ -2022,7 +2054,8 @@ CREDITS.forEach((c, i) => { CRED_AT.push(CRED_END); CRED_END += credDur(c, i); }
 const CORTO = D.corto && (D.corto.local || D.corto.archivo || D.corto.id) ? D.corto : null;
 /* Cuenta regresiva con voz entre el corto y los créditos (apertura.cuenta): frases con placa y los números 10…1 */
 const CUENTA = AP.cuenta && AP.cuenta.archivo ? AP.cuenta : null;
-const CUENTA_MS = CUENTA ? Math.round(((CUENTA.hasta || 55) - (CUENTA.desde || 0)) * 1000) + 300 : 0;   // local: el video se elige de los archivos de la compu de la tele
+const CUENTA_SIL = CUENTA ? Math.round((CUENTA.silencioAntes != null ? CUENTA.silencioAntes : 10) * 1000) : 0;   // negro y silencio antes de que arranque la voz
+const CUENTA_MS = CUENTA ? CUENTA_SIL + Math.round(((CUENTA.hasta || 55) - (CUENTA.desde || 0)) * 1000) + 300 : 0;   // local: el video se elige de los archivos de la compu de la tele
 const cineOff = sl => (sl && sl.parte === 'creditos' ? CEL - 1200 : 0);                     // en la parte de créditos todo arranca a los 0,8 s
 const cineFin = sl => (sl && sl.parte === 'avisos' ? CEL + 700 : CRED_END - cineOff(sl));   // ms hasta que pasa sola a lo siguiente
 /* Telón de terciopelo dibujado una sola vez: pliegues irregulares, brillo de terciopelo, cenefa con flecos dorados */
@@ -2251,6 +2284,11 @@ function drawValance(ctx, W, Hv, rnd) {
 
 /* Iconos de los avisos de sala (línea dorada) */
 const AV_ICONS = {
+  vela: '<rect x="17" y="22" width="14" height="21" rx="2"/><path d="M17 27q7 3 14 0"/><line x1="24" y1="22" x2="24" y2="18"/><path d="M24 5q-5 6-3.2 10.2a3.4 3.4 0 0 0 6.4 0Q29 11 24 5z"/>',
+  libro: '<path d="M24 12q-7-5-17-4v29q10-1 17 4 7-5 17-4V8q-10-1-17 4z"/><line x1="24" y1="12" x2="24" y2="41"/><path d="M11 15q5-.4 9 1.8M11 21q5-.4 9 1.8M28 16.8q4-2.2 9-1.8M28 22.8q4-2.2 9-1.8"/>',
+  bateria: '<rect x="13" y="6" width="22" height="37" rx="4"/><line x1="20" y1="10" x2="28" y2="10"/><path d="M26 16l-6 10h6l-4 10"/>',
+  vino: '<path d="M14 5h6v8q4 3 4 9v21h-14V22q0-6 4-9z"/><line x1="10" y1="27" x2="24" y2="27"/><path d="M30 18h10q0 9-5 10.5Q30 27 30 18z"/><line x1="35" y1="28.5" x2="35" y2="40"/><line x1="31" y1="40" x2="39" y2="40"/>',
+  cafetera: '<path d="M15 24h18l-3 18H18z"/><path d="M17 24l2-11h10l2 11"/><path d="M20 13l1-5h6l1 5"/><path d="M33 27q6 1 5 6t-6 4"/><line x1="15" y1="24" x2="33" y2="24"/>',
   shh: '<circle cx="24" cy="22.5" r="17"/><path d="M14.6 19q2.4 2 4.8 0M28.6 19q2.4 2 4.8 0"/><path d="M17 31q3.4-2.6 7-1.3 3.6-1.3 7 1.3-3.4 3-7 3t-7-3z"/><rect x="20.6" y="24.5" width="6.8" height="23.5" class="mask"/><path d="M21.2 47.5V27.6a2.8 2.8 0 0 1 5.6 0v19.9"/><path d="M22.8 28.7a1.2 1.2 0 0 1 2.4 0"/>',
   celular: '<rect x="15" y="5" width="18" height="38" rx="3.5"/><line x1="21" y1="38" x2="27" y2="38"/><line x1="8" y1="8" x2="40" y2="40" class="cut"/><line x1="8" y1="8" x2="40" y2="40"/>',
   silencio: '<path d="M9 11h30a3 3 0 0 1 3 3v15a3 3 0 0 1-3 3H22l-8 7v-7H9a3 3 0 0 1-3-3V14a3 3 0 0 1 3-3z"/><line x1="8" y1="8" x2="40" y2="40" class="cut"/><line x1="8" y1="8" x2="40" y2="40"/>',
@@ -2527,7 +2565,7 @@ function hostGuion() {
 const cuentaGuion = () => {
   if (!CUENTA) return 'oscuro';
   const n = CUENTA.numeros || [], d0 = CUENTA.desde || 0, st = [[0, 'oscuro']];
-  n.slice(-3).forEach(t => { const ms = Math.round((t - d0) * 1000) + 300; st.push([ms, 'pulso']); st.push([ms + 650, 'oscuro']); });
+  n.slice(-3).forEach(t => { const ms = CUENTA_SIL + Math.round((t - d0) * 1000) + 300; st.push([ms, 'pulso']); st.push([ms + 650, 'oscuro']); });
   return st;
 };
 const GUION = Object.assign({
@@ -2535,7 +2573,7 @@ const GUION = Object.assign({
   programa: 'calido',
   logo: 'salaInicio',
   previa: 'salaInicio',
-  presentamos: [[0, 'oscuro'], [1700, 'escenario']],
+  presentamos: [[0, 'apagado'], [PT_CORTE + 200, 'escenario']],
   intro: [[0, 'noche'], [T_TITULO + 300, 'dorado'], [T_TITULO + 1500, 'destello'], [T_TITULO + 2900, 'dorado'], [T_TITULO + 4700, 'calido']],
   presentacion: [[0, 'flash'], [650, 'escenario']],
   contendientes: [[0, 'oscuro'], [1650, 'flash'], [2250, 'fiesta']],
@@ -2556,7 +2594,7 @@ const TRACKS = {};
 Object.entries(D.musica || {}).forEach(([k, v]) => {
   const t = typeof v === 'string' ? { id: v } : (v || {});
   const bucle = Array.isArray(t.bucle) && t.bucle.length === 2 && t.bucle[1] > t.bucle[0] ? t.bucle.map(Number) : null;
-  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
+  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, fundido: +t.fundido > 0 ? +t.fundido : 0, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
     loop: t.repetir != null ? !!t.repetir : (bucle ? false : !['redoble', 'respuesta', 'anfitrionVoz'].includes(k)) };
 });
 
@@ -2573,14 +2611,14 @@ const DESEMPATES = (Array.isArray(D.desempates) ? D.desempates : (D.desempate ? 
 const PROGRAMA = ((D.programa && D.programa.frases) || []).filter(Boolean);
 function buildScript() {
   const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }];
-  if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, ...(CUENTA ? [{ k: 'cuentaReg', label: '⏳ Cuenta regresiva (voz)' }] : []), { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
+  if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, ...(CUENTA ? [{ k: 'cuentaReg', label: '⏳ Cuenta regresiva (voz)' }] : []), { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
   else s.push({ k: 'cine', label: 'Apertura de cine: celulares y créditos' });
   s.push({ k: 'intro', label: 'Intro de película (fanfarria)' });
   if (D.presentador) s.push({ k: 'presentador', label: 'Entrada del presentador: ' + D.presentador.nombre });
   if (PROGRAMA.length) s.push({ k: 'programa', label: 'Presentación del programa (una frase por toque)' });
-  s.push({ k: 'presentamos', label: 'Título: presentamos a los contendientes' });
+  s.push({ k: 'presentamos', label: 'Título: presentamos a los participantes' });
   P.forEach((p, i) => s.push({ k: 'presentacion', p: i, label: 'Presentación: ' + p.nombre }));
-  s.push({ k: 'contendientes', label: 'Todos los contendientes' });
+  s.push({ k: 'contendientes', label: 'Todos los participantes' });
   s.push({ k: 'reglas', label: 'Reglas' });
   if ((D.premiosEnJuego || []).length || D.ticketDorado) s.push({ k: 'enjuego', label: 'Lo que está en juego: premios y ticket dorado' });
   let n = 0;
@@ -2776,15 +2814,18 @@ function showLogoHTML(arriba, cls = '') {
     <div class="sl-rule"></div>
     <div class="sl-sub">${esc(D.edicion)}</div></div>`;
 }
-/* El ticket dorado: lámina dorada con muescas, troquel y "válido por" */
+/* El ticket dorado: una sola lámina dorada (sin talón ni troquel), con esquinas caladas, marco art déco y todo centrado */
 const ENJ = () => (D.premiosEnJuego || []);
 function goldTicketHTML(nombre, u = 'a') {
-  // forma: rectángulo con muescas a los costados y en la línea del talón (x=770)
-  const shape = 'M28 0H742a28 28 0 0 0 56 0H972a28 28 0 0 0 28 28V196a34 34 0 0 0 0 68V432a28 28 0 0 0-28 28H798a28 28 0 0 0-56 0H28a28 28 0 0 0-28-28V264a34 34 0 0 0 0-68V28A28 28 0 0 0 28 0z';
+  // esquinas caladas (cóncavas) y una muesca chica al medio de cada lado: forma de ticket, pero de una sola pieza
+  const shape = 'M44 0H956A44 44 0 0 0 1000 44V206a24 24 0 0 0 0 48V416A44 44 0 0 0 956 460H44A44 44 0 0 0 0 416V254a24 24 0 0 0 0-48V44A44 44 0 0 0 44 0z';
+  const marco = 'M70 22H930A48 48 0 0 0 978 70V390A48 48 0 0 0 930 438H70A48 48 0 0 0 22 390V70A48 48 0 0 0 70 22z';
   let guil = '';
   for (let k = 0; k < 14; k++) { let d = ''; for (let x = 0; x <= 1000; x += 10) { const y = 40 + k * 29 + 9 * Math.sin(x / 38 + k * 0.7); d += (x ? 'L' : 'M') + x + ' ' + y.toFixed(1); } guil += `<path d="${d}"/>`; }
-  let rosette = '';
-  for (let k = 0; k < 24; k++) rosette += `<ellipse cx="885" cy="230" rx="62" ry="22" transform="rotate(${k * 7.5} 885 230)"/>`;
+  const ros = cx => { let r = ''; for (let k = 0; k < 24; k++) r += `<ellipse cx="${cx}" cy="230" rx="46" ry="16" transform="rotate(${k * 7.5} ${cx} 230)"/>`; return r; };
+  const abanico = (x, y, sx, sy) => `<g transform="translate(${x} ${y}) scale(${sx} ${sy})">${[0, 1, 2, 3, 4].map(k => `<path d="M0 0L${(Math.cos((k * 22.5) * Math.PI / 180) * 62).toFixed(1)} ${(Math.sin((k * 22.5) * Math.PI / 180) * 62).toFixed(1)}"/>`).join('')}<path d="M62 0A62 62 0 0 1 0 62"/><path d="M40 0A40 40 0 0 1 0 40"/></g>`;
+  const medalla = cx => `<g fill="none" stroke="#3a2204" stroke-opacity=".55"><circle cx="${cx}" cy="230" r="56" stroke-width="2"/><circle cx="${cx}" cy="230" r="49" stroke-width="1"/></g>
+    <path transform="translate(${cx - 885} 0)" d="M885 196l8.3 18.2 19.9 2.2-14.9 13.4 4.2 19.6L885 239.4l-17.5 10 4.2-19.6-14.9-13.4 19.9-2.2z" fill="url(#gt-ink-${u})"/>`;
   const yr = (D.edicion.match(/\d{4}/) || [''])[0];
   const eng = (txt, x, y, size, ls, weight = 900, extra = '') =>   // letras grabadas: luz abajo, sombra arriba
     `<text x="${x}" y="${y + 1.6}" font-size="${size}" letter-spacing="${ls}" font-weight="${weight}" fill="#fff4cf" fill-opacity=".75" ${extra}>${txt}</text>
@@ -2792,33 +2833,30 @@ function goldTicketHTML(nombre, u = 'a') {
      <text x="${x}" y="${y}" font-size="${size}" letter-spacing="${ls}" font-weight="${weight}" fill="url(#gt-ink-${u})" ${extra}>${txt}</text>`;
   return `<div class="gticket"><div class="gt-tilt">
     <svg class="gt-body" viewBox="0 0 1000 460" aria-hidden="true"><defs>
-      <linearGradient id="gt-foil-${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7d5110"/><stop offset=".16" stop-color="#e9c46a"/><stop offset=".3" stop-color="#b9832a"/><stop offset=".47" stop-color="#fbe6a6"/><stop offset=".6" stop-color="#c8912c"/><stop offset=".8" stop-color="#f0cf7e"/><stop offset="1" stop-color="#6e450c"/></linearGradient>
-      <radialGradient id="gt-hl-${u}" cx=".35" cy=".25" r=".8"><stop offset="0" stop-color="#fff8dc" stop-opacity=".55"/><stop offset=".5" stop-color="#fff8dc" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gt-foil-${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7d5110"/><stop offset=".16" stop-color="#e9c46a"/><stop offset=".3" stop-color="#b9832a"/><stop offset=".47" stop-color="#fbe6a6"/><stop offset=".6" stop-color="#c8912c"/><stop offset=".8" stop-color="#f0cf7e"/><stop offset="1" stop-color="#8a5a14"/></linearGradient>
+      <radialGradient id="gt-hl-${u}" cx=".5" cy=".3" r=".75"><stop offset="0" stop-color="#fff8dc" stop-opacity=".55"/><stop offset=".55" stop-color="#fff8dc" stop-opacity="0"/></radialGradient>
       <linearGradient id="gt-ink-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c1802"/><stop offset=".55" stop-color="#5a370a"/><stop offset="1" stop-color="#3a2204"/></linearGradient>
       <linearGradient id="gt-shine-${u}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
       <clipPath id="gt-clip-${u}"><path d="${shape}"/></clipPath></defs>
       <g clip-path="url(#gt-clip-${u})">
         <rect width="1000" height="460" fill="url(#gt-foil-${u})"/>
-        <g fill="none" stroke="#5a3707" stroke-opacity=".13" stroke-width="1.2">${guil}</g>
-        <g fill="none" stroke="#5a3707" stroke-opacity=".22" stroke-width="1">${rosette}</g>
+        <g fill="none" stroke="#5a3707" stroke-opacity=".11" stroke-width="1.2">${guil}</g>
+        <g fill="none" stroke="#5a3707" stroke-opacity=".2" stroke-width="1">${ros(125)}${ros(875)}</g>
         <rect width="1000" height="460" fill="url(#gt-hl-${u})"/>
-        <rect x="22" y="22" width="956" height="416" rx="16" fill="none" stroke="#4a2c05" stroke-opacity=".6" stroke-width="2.2"/>
-        <rect x="23.5" y="23.5" width="953" height="413" rx="15" fill="none" stroke="#fff3c8" stroke-opacity=".55" stroke-width="1"/>
-        <rect x="36" y="36" width="928" height="388" rx="10" fill="none" stroke="#4a2c05" stroke-opacity=".35" stroke-width="1"/>
-        ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map(k => `<circle cx="770" cy="${52 + k * 22.5}" r="3.2" fill="#3a2204" fill-opacity=".55"/>`).join('')}
+        <path d="${marco}" fill="none" stroke="#4a2c05" stroke-opacity=".6" stroke-width="2.2"/>
+        <path d="${marco}" fill="none" stroke="#fff3c8" stroke-opacity=".5" stroke-width="1" transform="translate(1.4 1.4)"/>
+        <rect x="40" y="40" width="920" height="380" rx="30" fill="none" stroke="#4a2c05" stroke-opacity=".3" stroke-width="1"/>
+        <g fill="none" stroke="#3a2204" stroke-opacity=".45" stroke-width="1.4">${abanico(52, 52, 1, 1)}${abanico(948, 52, -1, 1)}${abanico(52, 408, 1, -1)}${abanico(948, 408, -1, -1)}</g>
         <rect class="gt-glint" x="-260" y="-40" width="200" height="540" fill="url(#gt-shine-${u})"/>
       </g>
       <g font-family="Cinzel" text-anchor="middle">
-        ${eng('◆ &#160;' + esc(D.edicion) + '&#160; ◆', 395, 92, 17, 4.2, 700)}
-        ${eng('EL', 395, 150, 30, 14, 700)}
-        ${eng('TICKET', 395, 252, 118, 7)}
-        ${eng('DORADO', 395, 356, 118, 7)}
-        <path d="M215 386h140M435 386h140" stroke="#3a2204" stroke-opacity=".55" stroke-width="1.5"/><path d="M395 378l8 8-8 8-8-8z" fill="#3a2204" fill-opacity=".6"/>
-        ${nombre ? eng(esc(nombre).toUpperCase(), 395, 420, 30, 6, 700) : ''}
-        <g fill="none" stroke="#3a2204" stroke-opacity=".6"><circle cx="885" cy="230" r="70" stroke-width="2"/><circle cx="885" cy="230" r="62" stroke-width="1"/></g>
-        <path d="M885 186l10.4 22.8 24.9 2.7-18.6 16.8 5.3 24.5L885 240.3l-21.9 12.5 5.3-24.5-18.6-16.8 24.9-2.7z" fill="url(#gt-ink-${u})"/>
-        ${eng(yr, 885, 290, 20, 6, 700)}
-        <text x="885" y="230" font-size="14" letter-spacing="5" font-weight="700" fill="#3a2204" fill-opacity=".7" transform="rotate(-90 885 230) translate(0 -88)">INTRANSFERIBLE</text>
+        ${eng('◆ &#160;' + esc(D.edicion) + '&#160; ◆', 500, 96, 17, 4.2, 700)}
+        ${eng('EL', 500, 150, 30, 14, 700)}
+        ${eng('TICKET', 500, 252, 112, 7)}
+        ${eng('DORADO', 500, 354, 112, 7)}
+        <path d="M330 384h140M530 384h140" stroke="#3a2204" stroke-opacity=".55" stroke-width="1.5"/><path d="M500 376l8 8-8 8-8-8z" fill="#3a2204" fill-opacity=".6"/>
+        ${nombre ? eng(esc(nombre).toUpperCase(), 500, 420, 28, 6, 700) : eng(yr, 500, 418, 18, 8, 700)}
+        ${medalla(125)}${medalla(875)}
       </g>
     </svg>
   </div></div>`;
@@ -3187,6 +3225,10 @@ function createDirector(music, fx) {
       }, 100);
       lastKey = key; lastMoment = m; return;
     }
+    if (m === 'presentamos' && lastMoment !== 'presentamos' && key) {   // corte seco: tu tema se apaga de golpe y la música western entra después del negro
+      music.stop(80); afterT = setTimeout(() => { if (lastMoment === 'presentamos') music.play(key, { instant: true }); }, PT_CORTE);
+      lastKey = key; lastMoment = m; return;
+    }
     if (m === 'cine' && lastMoment !== 'cine' && !TRACKS.cine) setTimeout(() => music.cue('intro'), 300); // la fanfarria queda cargada
     if (m === 'cine' && lastMoment !== 'cine' && TRACKS.cine) {
       // los avisos van en silencio; la música de los créditos entra con el primer crédito (con corto: en la segunda parte)
@@ -3348,8 +3390,12 @@ function initScreen() {
     const c = cuentaSrc; cuentaSrc = null; if (!c) return;
     try { const t = c.ctx.currentTime; c.g.gain.cancelScheduledValues(t); c.g.gain.setValueAtTime(c.g.gain.value, t); c.g.gain.linearRampToValueAtTime(0, t + ms / 1000); c.src.stop(t + ms / 1000 + 0.02); } catch {}
   }
-  function cuentaStart(slide) {
-    const d0 = CUENTA.desde || 0, d1 = CUENTA.hasta || 55, pl = CUENTA.placas || [], nums = CUENTA.numeros || [];
+  let cuentaRun = null;   // la cuenta que está sonando (para marcar las frases desde el celu)
+  function cuentaStart(slide, st0 = {}) {
+    const d0 = CUENTA.desde || 0, d1 = CUENTA.hasta || 55, nums = CUENTA.numeros || [];
+    // dónde empieza cada frase: lo marcado en el celu (ensayo) manda sobre datos.js
+    const marcas = st0.crMarcar ? [] : null, enDe = k => (st0.crEn && st0.crEn[k] != null) ? st0.crEn[k] : CUENTA.placas[k].en;
+    const pl = (CUENTA.placas || []).map((p, k) => ({ ...p, en: enDe(k) }));
     const els = [...document.querySelectorAll('.cr-txt .hw')], lead = $('#cr-leader'), num = $('#crl-num');
     let t0 = performance.now(), activo = -1, nAct = -1, fin = false, sonando = null, esperando = true;
     cuentaStop(0);
@@ -3365,6 +3411,7 @@ function initScreen() {
     });
     // el reloj es el del audio; si no hay audio, el de la compu (y mientras carga, espera)
     const reloj = () => sonando && sonando.ctx.state === 'running' ? d0 + Math.max(0, sonando.ctx.currentTime - sonando.at) : (esperando && performance.now() - t0 < 4000 ? d0 - 1 : d0 + (performance.now() - t0) / 1000);
+    cuentaRun = { slide, reloj, marcas, pl };
     const tick = setInterval(() => {
       if (fin || !lead || !lead.isConnected) { clearInterval(tick); return; }
       const t = reloj();
@@ -3375,7 +3422,7 @@ function initScreen() {
         if (activo >= 0 && els[activo]) { els[activo].classList.remove('on'); els[activo].classList.add('off'); }
         if (i >= 0 && els[i]) { els[i].classList.remove('off'); void els[i].offsetWidth; els[i].classList.add('on'); }
         activo = i;
-      } else if (i >= 0 && els[i] && els[i].classList.contains('on') && t > pl[i].en + (pl[i].dura || 6)) { els[i].classList.remove('on'); els[i].classList.add('off'); }
+      } else if (i >= 0 && els[i] && els[i].classList.contains('on') && pl[i].dura && t > pl[i].en + pl[i].dura) { els[i].classList.remove('on'); els[i].classList.add('off'); }   // sin dura: queda hasta la frase siguiente
       // números
       let n = -1; nums.forEach((x, k) => { if (t >= x - 0.04) n = k; });
       if (n !== nAct && n >= 0) {
@@ -3386,7 +3433,7 @@ function initScreen() {
         lead.classList.remove('go'); void lead.offsetWidth; lead.classList.add('go');
       }
       if (t >= d1) {   // cierra en el 1: corte seco a negro y arranca la intro de estudio
-        fin = true; clearInterval(tick); cuentaStop(90);
+        fin = true; clearInterval(tick); cuentaStop(90); cuentaRun = null;
         lead.classList.remove('on'); lead.style.transition = 'none'; lead.style.opacity = '0';
         if (link) link.send({ type: 'cuentaFin', slide });
       }
@@ -3812,8 +3859,9 @@ function initScreen() {
       case 'cine': case 'corto': case 'previa': case 'cierre':
         beams.setup('top2'); beams.level(0); beams.clearPools(); break;
       case 'presentamos':
-        beams.setup('top4'); beams.clearPools(); beams.level(1);
-        scanLock(() => [sq('.pt-main')], 1700, { spread: true });
+        beams.setup('top4'); beams.clearPools(); beams.level(0);   // a oscuras hasta que entra la música
+        later(PT_CORTE, () => beams.level(1));
+        scanLock(() => [sq('.pt-main')], PT_CORTE + 700, { spread: true });
         break;
       case 'intro':
         beams.setup('fox'); beams.over(true); beams.clearPools(); beams.level(0);
@@ -3939,6 +3987,14 @@ function initScreen() {
     if (msg.type === 'marca') { if (mkOn) addMark('celu'); return; }
     if (msg.type === 'flashSuave') { hostFlash('suave'); return; }
     if (msg.type === 'confeti') { confetti(); return; }
+    if (msg.type === 'crMarca') {   // marcar dónde empieza cada frase de la cuenta regresiva (ensayo)
+      if (!cuentaRun || !cuentaRun.marcas) return;
+      const t = Math.max(0, cuentaRun.reloj() - (msg.demora != null ? msg.demora : 0.3));
+      cuentaRun.marcas.push(+t.toFixed(2));
+      const k = cuentaRun.marcas.length - 1; if (cuentaRun.pl[k]) cuentaRun.pl[k].en = cuentaRun.marcas[k];
+      link.send({ type: 'crMarcas', t: cuentaRun.marcas.slice() });
+      return;
+    }
     if (msg.type === 'tvEstrobo') { const per = 30000 / HOST_BPM; for (let i = 0; i * per < (msg.ms || 1860); i++) setTimeout(() => hostFlash('duro'), i * per); return; }
     if (msg.type === 'flashDuro') { const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); return; }
     if (msg.type === 'state' && msg.state) {
@@ -4047,7 +4103,7 @@ function initScreen() {
     clearInterval(confettiLoop); clearTimeout(introTimer); clearTimeout(contPhase);
     cineHits.forEach(h => { clearTimeout(h); clearInterval(h); }); cineHits = []; if (window.__neonStop) window.__neonStop();
     if (sl.k !== 'cuentaReg') cuentaStop(200);
-    if (CUENTA && (sl.k === 'corto' || sl.k === 'cine')) cuentaAudio();   // queda cargada para que arranque al instante
+    if (CUENTA && (sl.k === 'cine' || sl.k === 'cuentaReg')) cuentaAudio();   // queda cargada para que arranque al instante
     let h = '';
     if (sl.k === 'logo') {
       h = `<div class="v enter"><div class="marquee" style="display:inline-block"><div class="edition">${esc(D.edicion)}</div><h1 class="script" style="font-size:clamp(70px,11vw,150px);margin:0;line-height:.95">${esc(D.titulo)}</h1></div>
@@ -4063,7 +4119,11 @@ function initScreen() {
       h = `<div class="v v-host v-prog"><div class="host-wait">${PROGRAMA.map(x => { const t = String(x), len = Math.max(8, t.length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2);
           return `<div class="hw tr ${two ? 'two' : ''}" style="--fs:${fs}vw"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div><span>${esc(t)}</span></div>`; }).join('')}</div></div>`;
     } else if (sl.k === 'presentamos') {
-      h = `<div class="v v-pt"><div class="pt-pre">Y ahora…</div><div class="pt-main">Presentamos a<br>los contendientes</div><div class="pt-line"></div></div>`;
+      // corte seco a negro (golpe) y, cuando entra la música western, el título se arma entre polvo
+      const at = (PT_CORTE / 1000).toFixed(2) + 's';
+      h = `<div class="v v-pt duelo" style="--pt:${at}"><div class="pt-dust">${Array.from({ length: 70 }, () => `<i style="top:${(30 + Math.random() * 40).toFixed(1)}%;animation-delay:calc(var(--pt) + ${(Math.random() * 2.2).toFixed(2)}s);animation-duration:${(2.2 + Math.random() * 2.5).toFixed(2)}s;--dy:${((Math.random() - 0.5) * 18).toFixed(1)}vh"></i>`).join('')}</div>
+        <div class="pt-main">${esc((D.presentamos && D.presentamos.titulo) || 'Presentamos a los participantes')}</div><div class="pt-line"></div></div>`;
+      boomGrave(1.1);
     } else if (sl.k === 'cine') {
       const credHTML = (c, fin) => {
         if (typeof c === 'string') c = { grande: c };
@@ -4125,7 +4185,7 @@ function initScreen() {
         <div class="v v-host cr-txt"><div class="host-wait">${pl.map(x => { const len = Math.max(8, (x.texto || '').length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2);
           return `<div class="hw tr ${two ? 'two' : ''}" style="--fs:${fs}vw"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div><span>${esc(x.texto || '')}</span></div>`; }).join('')}</div></div>
         <div class="cr-leader" id="cr-leader"><div class="crl-cross"></div><div class="crl-ring"></div><div class="crl-sweep"></div><div class="crl-num" id="crl-num"></div><div class="crl-grain"></div></div></div>`;
-      cineHits.push(setTimeout(() => cuentaStart(st.slide), 300));
+      cineHits.push(setTimeout(() => cuentaStart(st.slide, st), 300 + CUENTA_SIL));
     } else if (sl.k === 'corto') {
       // antes del corto, la intro de estudio en versión corta (el corto también es una producción de la casa)
       // el corto lo presenta una productora chica, "Bioingeniería Surround", con su cartel de neón (corto.presenta en datos.js)
@@ -4148,10 +4208,9 @@ function initScreen() {
     } else if (sl.k === 'presentacion' && PRES_NUEVA) {
       const p = P[sl.p];
       h = `<div class="v v-pres2" id="vpres"><div class="pr-reveal">
-          <div class="pr-eye">Contendiente ${sl.p + 1} de ${P.length}</div>
+          <div class="pr-eye">Participante ${sl.p + 1} de ${P.length}</div>
           <div class="pr-seal">${sealHTML(p, 'p' + sl.p)}</div>
           <div class="pr-name"><div class="hw-flare"></div><span>${esc(p.nombre)}</span></div>
-          ${(p.apodo || p.rol) ? `<div class="pr-sub">${esc(p.apodo || p.rol)}</div>` : ''}
         </div></div>`;
       cineHits.push(setTimeout(() => { const v = $('#vpres'); if (v) v.classList.add('gone'); }, PRES_MS));   // a los 3 s se va: pantalla limpia para el próximo
     } else if (sl.k === 'presentacion') {
@@ -4159,7 +4218,7 @@ function initScreen() {
       const chips = [p.edad ? `${esc(p.edad)} años` : '', esc(p.rol), esc(p.antiguedad)].filter(Boolean).map(c => `<span>${c}</span>`).join('');
       const slots = P.map((q, i) => `<div class="slot ${i < sl.p ? 'on' : ''}" data-i="${i}"><div class="slot-ph">${i < sl.p ? photoHTML(q) : '<span class="ini q">?</span>'}</div><div class="slot-name">${i < sl.p ? esc(q.nombre) : '&nbsp;'}</div></div>`).join('');
       h = `<div class="v v-pres">
-          <div class="pres-head">${sl.p === 0 ? 'Esta noche compiten' : 'Contendiente ' + (sl.p + 1) + ' de ' + P.length}</div>
+          <div class="pres-head">${sl.p === 0 ? 'Esta noche compiten' : 'Participante ' + (sl.p + 1) + ' de ' + P.length}</div>
           <div class="pres-main"><div class="pres-bignum">${String(sl.p + 1).padStart(2, '0')}</div>
             <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo">${photoHTML(p)}</div></div>
             <div><h2 class="script pl-name">${esc(p.nombre)}</h2><div class="pl-chips">${chips}</div>${p.frase ? `<p class="pl-frase">“${esc(p.frase)}”</p>` : ''}</div></div>
@@ -4186,7 +4245,7 @@ function initScreen() {
       h = `<div class="v v-pres"><div class="pres-head" style="opacity:.0">&nbsp;</div><div class="pres-main"></div><div class="lineup" id="lineup-final">${slots}</div></div>`;
       contPhase = setTimeout(() => { if (SCRIPT[cur.slide] && SCRIPT[cur.slide].k === 'contendientes') { buildSlide({ ...cur, _fase2: true }, SCRIPT[cur.slide]); lastChoreoKey = null; choreo({ ...cur, _fase2: true }, SCRIPT[cur.slide], true); } }, CONT_PRE);
     } else if (sl.k === 'contendientes') {
-      h = `<div class="v v-cont"><div class="cont-title">Los contendientes</div>
+      h = `<div class="v v-cont"><div class="cont-title">Los participantes</div>
         <div class="cont-row">${P.map((p, i) => `<div class="cont-card" style="animation-delay:${0.25 + i * 0.4}s">${PRES_NUEVA ? `<div class="cont-seal">${sealHTML(p, 'c' + i)}</div>` : `<div class="pl-photo">${photoHTML(p)}</div>`}<div class="script">${esc(p.nombre)}</div></div>`).join('')}</div>
         <div class="cont-sub" style="animation-delay:${0.6 + P.length * 0.4}s">¿Quién se llevará ${esc(PREMIO)}?</div></div>`;
     } else if (sl.k === 'cuenta') {
@@ -4199,7 +4258,8 @@ function initScreen() {
       h = `<div class="v v-cd enter"><h2 class="script">La cuenta final</h2><div class="round-sub" style="margin-top:4px">Del último al primero</div><div class="cd-banner" id="cd-banner"></div><div class="cd-list">${rows.join('')}</div></div>`;
     } else if (sl.k === 'enjuego') {
       const PR = ENJ();
-      h = `<div class="v v-enjuego enter" id="venj">
+      h = `<div class="v v-enjuego enter s0" id="venj">
+        <div class="ej-intro"><div class="ej-intro-t">Lo que está en juego</div></div>
         <div class="ej-prizes"><div class="rl-eyebrow">Lo que está en juego</div>
           <div class="rl-row ej-row" style="--n:${Math.max(1, PR.length)}">${PR.map((r, i) => `<div class="rl-card" data-i="${i}" style="animation-delay:${0.3 + i * 0.12}s"><div class="rl-inner">
             <div class="rl-face rl-back">${avIconHTML('regalo')}</div>
@@ -4211,7 +4271,7 @@ function initScreen() {
       </div>`;
     } else if (sl.k === 'reglas') {
       const RC = rulesCards();
-      h = `<div class="v v-rules2 enter"><div class="rl-eyebrow">Reglas del juego</div>
+      h = `<div class="v v-rules2 enter"><div class="rl-eyebrow">${esc(D.reglasTitulo || 'Cómo se juega')}</div>
         <div class="rl-row ${RC.length > 5 ? 'dos' : ''}" style="--n:${RC.length};--c:${Math.ceil(RC.length / 2)}">${RC.map((r, i) => `<div class="rl-card" data-i="${i}" style="animation-delay:${0.3 + i * 0.12}s"><div class="rl-inner">
           <div class="rl-face rl-back"><div class="rl-num">${ROMAN[i] || i + 1}</div></div>
           <div class="rl-face rl-front"><div class="rl-side"><div class="rl-num sm">${ROMAN[i] || i + 1}</div>${avIconHTML(r.icono || 'estrella')}</div><div class="rl-main">${r.titulo ? `<div class="rl-t">${esc(r.titulo)}</div><div class="av-div"></div>` : ''}<div class="rl-x">${esc(r.texto || '')}</div></div></div>
@@ -4316,7 +4376,11 @@ function initScreen() {
     qNumFbT = setTimeout(() => { if (qArmed === vq) enterNumber(vq); }, ENTRADA_NUM + 1000 + extra);
     qFallbackT = setTimeout(() => { if (qArmed === vq) enterQuestion(vq); }, ENTRADA + 1000 + extra); // si la música no arranca, entra igual
   }
-  window.__onTrackPlaying = key => { if (key === musicKeyOf({ slide: cur.slide, step: 'pregunta' }) && qArmed) startEntryTimer(); };
+  let enjGo = null; const ENJ_TITULO = (D.enjuegoTitulo != null ? D.enjuegoTitulo : 2.2) * 1000;   // segundos de música antes del título
+  window.__onTrackPlaying = key => {
+    if (key === musicKeyOf({ slide: cur.slide, step: 'pregunta' }) && qArmed) startEntryTimer();
+    if (enjGo && (SCRIPT[cur.slide] || {}).k === 'enjuego' && key === musicKeyOf(cur)) enjGo();
+  };
 
   function questionHTML(sl, st = {}) {
     const q = qOf(sl);
@@ -4425,6 +4489,12 @@ function initScreen() {
     } else if (sl.k === 'enjuego') {
       const k = st.sub || 0, n = ENJ().length, ve = $('#venj');
       let fresh = false;
+      if (ve) {
+        ve.classList.toggle('s0', k === 0);
+        // primero suena la música y recién después aparece "Lo que está en juego" (si la música no avisa, a los 3,5 s)
+        if (k === 0 && changed) { enjGo = () => { enjGo = null; setTimeout(() => { const v = $('#venj'); if (v) v.classList.add('go'); }, ENJ_TITULO); }; cineHits.push(setTimeout(() => { if (enjGo) { enjGo = null; const v = $('#venj'); if (v) v.classList.add('go'); } }, 3500)); }
+        if (k > 0) ve.classList.add('go');
+      }
       stage.querySelectorAll('.ej-row .rl-card').forEach((c, i) => { const on = i < k; if (on && !c.classList.contains('on')) fresh = true; c.classList.toggle('on', on); c.classList.toggle('cur', i === k - 1); });
       if (ve) {
         const tk = k > n && !!D.ticketDorado, was = ve.classList.contains('tk');
@@ -4508,6 +4578,7 @@ function initControl() {
         else if (sq && sq.pending && sq.fire) sq.fire();
         else goSlide(S.slide + 1, true);
       }
+      if (msg.type === 'crMarcas' && Array.isArray(msg.t)) { S.crEn = msg.t; commit(true); log(`🎯 Frase ${msg.t.length} marcada en ${msg.t[msg.t.length - 1].toFixed(2)} s`, 'o'); }
       if (msg.type === 'cuentaFin' && SCRIPT[S.slide].k === 'cuentaReg' && msg.slide === S.slide) {   // llegó al 1: largan la intro de estudio y los créditos
         const sq = seqAhora();
         if (sq && sq.held) log('⏸ Terminó la cuenta: queda en negro hasta que toques ▶ Seguir', 'o');
@@ -5450,7 +5521,16 @@ function initControl() {
           ${PRUEBA_DESDE ? `<label class="prueba-chk${pruebaPrevia() ? ' on' : ''}"><input type="checkbox" id="prueba-previa" ${pruebaPrevia() ? 'checked' : ''}><span>🧪 Prueba: la canción arranca en ${mmss(PRUEBA_DESDE)}${pruebaPrevia() ? ' · <b>destildalo la noche del show</b>' : ''}</span></label>` : ''}`) : ''}`;
 
     else if (sl.k === 'programa') h = `<div class="now-title">📣 Presentación del programa</div><p class="muted">Cada toque saca la frase siguiente en la tele. Decila vos y tocá.</p><ol class="muted" style="margin:8px 0 0 18px">${PROGRAMA.map((f, i) => `<li style="${i < (S.sub || 0) ? 'opacity:.45' : i === (S.sub || 0) ? 'color:var(--gold);font-weight:700' : ''}">${esc(f)}</li>`).join('')}</ol>`;
-    else if (sl.k === 'cuentaReg') h = `<div class="now-title">⏳ Cuenta regresiva</div><p class="muted">La voz en inglés con sus frases en pantalla y los números del 10 al 1 en un líder de película. Cierra en el 1 y larga sola la intro de estudio (${Math.round(CUENTA_MS / 1000)} s).</p>`;
+    else if (sl.k === 'cuentaReg') {
+      const pl = CUENTA.placas || [], mk = S.crEn || [];
+      h = `<div class="now-title">⏳ Cuenta regresiva</div><p class="muted">${Math.round(CUENTA_SIL / 1000)} s de negro y silencio, después la voz con sus frases en pantalla y los números del 10 al 1. Cierra en el 1 y sigue el cortometraje.</p>
+        <button class="pbtn ${S.crMarcar ? 'on' : ''}" id="cr-mk" style="margin-top:10px">${S.crMarcar ? '✔ Terminar de marcar' : '🎯 Marcar las frases (ensayo)'}</button>
+        ${S.crMarcar ? `<p class="muted" style="margin-top:6px">Entrá a esta parte desde el índice para que arranque de nuevo y tocá el botón <b>justo cuando la voz empieza cada frase</b>, en orden. Cada frase queda en pantalla hasta que empieza la siguiente.</p>
+          <button class="btn" id="cr-tap" style="width:100%;margin-top:8px;padding:22px 0;font-size:20px;touch-action:manipulation">💥 Empieza: ${esc((pl[mk.length] || {}).texto || '—')}</button>` : ''}
+        ${mk.length ? `<ol class="muted" style="margin:10px 0 0 18px;font-size:13px">${pl.map((p, i) => `<li>${esc(p.texto)} · <b>${mk[i] != null ? mk[i].toFixed(2) : p.en} s</b></li>`).join('')}</ol>
+          <p class="muted" style="margin-top:6px;font-size:12.5px;word-break:break-all">Para dejarlo fijo, en datos.js reemplazá los <code>en:</code> de <code>apertura.cuenta.placas</code> por: <code>${mk.map(x => x.toFixed(2)).join(', ')}</code></p>
+          <button class="btn ghost small" id="cr-reset" style="margin-top:6px">↩ Volver a los de datos.js</button>` : ''}`;
+    }
     else if (sl.k === 'corto') h = `${CORTO.local && cortoTele === false ? '<p class="warn-big">⚠️ La tele no tiene elegido el video: si llega acá, se saltea.</p>' : ''}<div class="now-title">🎞️ ${esc(CORTO.nombre || 'Cortometraje')}</div><p class="muted">A pantalla completa, sin controles. Cuando termina sigue sola con la intro de estudio y los créditos.</p><p style="margin:6px 0">⏱ <b id="corto-prog">${cortoProg && cortoProg.d ? `${mmss(cortoProg.t)} de ${mmss(cortoProg.d)}` : 'arrancando…'}</b></p>`;
     else if (sl.k === 'cine' && sl.parte === 'avisos') h = `<div class="now-title">Apertura de cine: avisos</div><p class="muted">Los avisos de sala mientras la luz baja hasta negro. Pasa sola al cortometraje en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
     else if (sl.k === 'cine' && sl.parte === 'creditos') h = `<div class="now-title">Apertura de cine: estudio y créditos</div><p class="muted">Desde negro: la intro de estudio y los créditos con la música de cine. Pasa sola a la fanfarria en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
@@ -5486,7 +5566,7 @@ function initControl() {
           <div class="row" style="margin-top:6px"><button class="btn ghost small" id="mk-undo">↩ Borrar la última</button><button class="btn ghost small" id="mk-clear">🗑 Borrar todas</button></div>
           <p class="muted" style="margin-top:6px;font-size:12.5px;word-break:break-all">Para dejarlas fijas en datos.js (presentador): <code>acentos: [${ac.join(', ')}]</code></p>` : ''}`;
     }
-    else if (sl.k === 'contendientes') h = `<div class="now-title">Los ${P.length} contendientes juntos</div><p class="muted">Aparecen uno a uno con flash. Luces en festejo.</p>`;
+    else if (sl.k === 'contendientes') h = `<div class="now-title">Los ${P.length} participantes juntos</div><p class="muted">Aparecen uno a uno con flash. Luces en festejo.</p>`;
     else if (sl.k === 'cuenta') {
       const cg = countdownGroups(S.results), k = S.sub || 0, st2 = standing(S.results);
       const hiddenG = rankGroups(S.results).slice(0, rankGroups(S.results).length - cg.length);
@@ -5495,7 +5575,7 @@ function initControl() {
         ${hiddenG.map(g => `<span>🔒 ${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}</span><b>${g.score}</b>`).join('')}</div>`;
     }
     else if (sl.k === 'enjuego') h = `<div class="now-title">Lo que está en juego</div><p class="muted">Cada toque da vuelta un premio; al final, el ticket dorado. Se eligen en orden: el primero elige primero.</p><ol class="muted" style="padding-left:22px;margin:6px 0">${ENJ().map((r, i) => `<li style="${i < (S.sub || 0) ? 'color:#9ff0b9' : ''}">${esc(r.nombre || 'Premio ' + (i + 1))}${i < (S.sub || 0) ? ' ✓' : ''}</li>`).join('')}${D.ticketDorado ? `<li style="list-style:none;${(S.sub || 0) > ENJ().length ? 'color:#9ff0b9' : ''}">🎫 El ticket dorado${(D.ticketDorado.beneficios || []).length ? ': ' + esc(D.ticketDorado.beneficios.join(' + ')) : ''}</li>` : ''}</ol>`;
-    else if (sl.k === 'reglas') h = `<div class="now-title">Reglas del juego</div><p class="muted">Cada toque da vuelta una tarjeta, así explicás una regla por vez.</p><ol class="muted" style="padding-left:22px;margin:6px 0">${rulesList().map((r, i) => `<li style="${i < (S.sub || 0) ? 'color:#9ff0b9' : ''}">${esc(r)}${i < (S.sub || 0) ? ' ✓' : ''}</li>`).join('')}</ol>`;
+    else if (sl.k === 'reglas') h = `<div class="now-title">${esc(D.reglasTitulo || 'Cómo se juega')}</div><p class="muted">Cada toque da vuelta una tarjeta, así explicás una regla por vez.</p><ol class="muted" style="padding-left:22px;margin:6px 0">${rulesList().map((r, i) => `<li style="${i < (S.sub || 0) ? 'color:#9ff0b9' : ''}">${esc(r)}${i < (S.sub || 0) ? ' ✓' : ''}</li>`).join('')}</ol>`;
     else if (sl.k === 'ronda') { const r = D.rondas[sl.r]; h = `<div class="now-title">Ronda ${sl.r + 1}: ${esc(r.titulo)}</div><p class="muted">${r.preguntas.length} preguntas</p>`; }
     else if (isQ(sl)) {
       const q = qOf(sl);
@@ -5560,6 +5640,9 @@ function initControl() {
     const bqr = body.querySelector('#bq-reset'); if (bqr) bqr.addEventListener('click', () => { const bk = bucleKeyOf(S); if (S.bucleAj) { const n = { ...S.bucleAj }; delete n[bk]; S.bucleAj = n; } commit(); });
     const pp = body.querySelector('#prueba-previa'); if (pp) pp.addEventListener('change', () => { try { localStorage.setItem(STORE_PFX + 'pruebaPrevia', pp.checked ? '1' : '0'); } catch {} log(pp.checked ? `🧪 Prueba: la previa arranca en ${mmss(PRUEBA_DESDE)}` : '🧪 Prueba desactivada: la previa arranca desde el principio', 'o'); renderControl(); });
     const sa = body.querySelector('#seq-abort'); if (sa) sa.addEventListener('click', () => abortSeq());
+    const crm = body.querySelector('#cr-mk'); if (crm) crm.addEventListener('click', () => { S.crMarcar = !S.crMarcar; if (S.crMarcar) S.crEn = null; commit(); });
+    const crt = body.querySelector('#cr-tap'); if (crt) crt.addEventListener('click', () => { if (link) link.send({ type: 'crMarca', demora: 0.3 }); });
+    const crr = body.querySelector('#cr-reset'); if (crr) crr.addEventListener('click', () => { S.crEn = null; S.crMarcar = false; commit(); });
     const ct = body.querySelector('#cal-tog'); if (ct) ct.addEventListener('click', () => { S.calib = !S.calib; if (S.calib) S.marcar = false; commit(); });
     const tg = body.querySelector('#tema-go'); if (tg) tg.addEventListener('click', () => { const sq = seqAhora(); if (sq && sq.held && sq.fire) sq.fire(); else temaArrancar(); });
     const th = body.querySelector('#tema-hold'); if (th) th.addEventListener('click', () => { const sq = seqAhora(); if (sq && sq.pending && !sq.held && $('#seq-msg').textContent.includes('Tu tema')) $('#seq-hold').click(); else temaFrenar(); });
