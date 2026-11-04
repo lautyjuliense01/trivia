@@ -168,7 +168,7 @@ window.TRIVIA = {
     redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
     respuesta:    { id: '',            nombre: 'A definir: golpe de respuesta' },      // al revelar; después pasa a "datos"
 
-    ganador:      { id: '',            nombre: 'A definir' },   // vacío: usa la de "datos"
+    ganador:      { id: '32C0ohT-JFU', nombre: 'We Are the Champions (Queen)' },   // arranca con "El ganador de El Ticket Dorado es…" y sigue con la explosión (tu toque)
     premios:      { id: '',            nombre: 'A definir: entrega de premios' },
     enjuego:      { id: 'BuYf0taXoNw', nombre: 'Presentación de premios' },   // mientras se dan vuelta los premios
     ticket:       { id: '',            nombre: 'A definir: aparece el ticket dorado' },  // cuando aparece el ticket
@@ -218,7 +218,7 @@ window.TRIVIA = {
     revelado: 'datos',        // después del golpe de respuesta: datos curiosos
     marcador: 'datos',
     cuenta: 'tension',        // cuenta final, del último al segundo
-    ganador: 'ganador',       // suena después del redoble
+    ganador: 'ganador',       // We Are the Champions: desde el suspenso hasta el festejo
     premios: 'premios',
     gracias: 'gracias',       // tus palabras de cierre
     cierre: 'cierre',

@@ -529,7 +529,29 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .guess.exacto{box-shadow:0 0 0 2px #f6dc93,0 0 18px rgba(246,220,147,.5);background:rgba(246,220,147,.14)}
 .res.exacto{box-shadow:0 0 0 2px #f6dc93,0 0 24px rgba(246,220,147,.55)}
 body.apagon::before{content:'';position:fixed;inset:0;background:#000;z-index:45;pointer-events:none;animation:fadeIn .8s ease both}
-.v-cd{transition:opacity 1.2s ease}.v-cd.espera{opacity:0}
+.v-cd{transition:opacity 1.2s ease}
+/* v34: "El ganador de El Ticket Dorado es…" — suspenso épico hasta tu toque */
+.gs{position:relative;min-height:80vh;display:flex;align-items:center;justify-content:center}
+.gs-rays{position:fixed;left:50%;top:46%;width:200vmax;height:200vmax;margin:-100vmax 0 0 -100vmax;pointer-events:none;opacity:0;
+  background:repeating-conic-gradient(from 0deg,rgba(255,210,130,.10) 0 4deg,transparent 4deg 15deg);-webkit-mask:radial-gradient(circle,#000 0,rgba(0,0,0,.6) 25%,transparent 55%);mask:radial-gradient(circle,#000 0,rgba(0,0,0,.6) 25%,transparent 55%);
+  animation:fadeIn 4s 1s ease forwards,gsSpin 90s linear infinite}
+@keyframes gsSpin{to{transform:rotate(360deg)}}
+.gs-glow{position:fixed;left:50%;top:46%;width:90vmin;height:90vmin;margin:-45vmin 0 0 -45vmin;border-radius:50%;background:radial-gradient(circle,rgba(255,214,140,.28),rgba(255,170,60,.08) 45%,transparent 70%);animation:gsBreath 4.5s ease-in-out infinite;pointer-events:none}
+@keyframes gsBreath{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1.06)}}
+.gs-in{position:relative;text-align:center;animation:gsPush 40s linear both}
+@keyframes gsPush{from{transform:scale(1)}to{transform:scale(1.12)}}
+.gs-pre{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:clamp(30px,3.8vw,60px);color:#ecdcbc;opacity:0;animation:fadeIn 1.6s .6s ease forwards}
+.gs-t{font-family:'Cinzel',serif;font-weight:900;text-transform:uppercase;letter-spacing:.08em;line-height:1.05;font-size:clamp(56px,8.4vw,150px);margin:.15em 0;
+  background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.95) 50%,transparent 58%) no-repeat,linear-gradient(180deg,#fffaf0 0%,#f6e3b0 36%,#d8a94a 62%,#f6dc93 100%);
+  background-size:300% 100%,100% 100%;background-position:120% 0,0 0;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 34px rgba(255,200,110,.45));
+  opacity:0;animation:gsIn 2.6s 1.4s cubic-bezier(.2,.7,.2,1) forwards,gsShine 5s 4s ease-in-out infinite}
+@keyframes gsIn{from{opacity:0;letter-spacing:.45em;filter:blur(16px)}to{opacity:1;letter-spacing:.08em;filter:blur(0) drop-shadow(0 0 34px rgba(255,200,110,.45))}}
+@keyframes gsShine{0%,60%{background-position:120% 0,0 0}100%{background-position:-20% 0,0 0}}
+.gs-es{font-family:'Cinzel',serif;font-weight:700;font-size:clamp(34px,4.4vw,74px);color:#f3e2bd;letter-spacing:.2em;opacity:0;animation:fadeIn 1.4s 3.6s ease forwards}
+.gs-es i{font-style:normal;display:inline-block;animation:gsDot 1.6s ease-in-out infinite}.gs-es i:nth-child(2){animation-delay:.25s}.gs-es i:nth-child(3){animation-delay:.5s}
+@keyframes gsDot{0%,100%{opacity:.2}50%{opacity:1}}
+#win-box.boom .win-names{animation:gsBoom .9s cubic-bezier(.16,1.4,.3,1) both}
+@keyframes gsBoom{from{opacity:0;transform:scale(2.2);filter:blur(12px)}to{opacity:1;transform:none;filter:none}}.v-cd.espera{opacity:0}
 .q-pts{color:var(--gold);white-space:nowrap}.q-pts i{font-style:normal;margin:0 .9em;opacity:.7}
 
 body.espejo .status-chip,body.espejo .yt-wrap,body.espejo #scr-sound,body.espejo #corto-pick{display:none!important}
@@ -1303,7 +1325,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v63 · 03/11 23:50';
+const VERSION = 'v65 · 04/11 00:10';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2028,7 +2050,7 @@ const fmtNum = n => (typeof n === 'number' ? n.toLocaleString('es-AR') : esc(n))
 const TIPO_LABEL = { opciones: 'Opción múltiple', quien: '¿Quién dijo?', aprox: 'Aproximación' };
 const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
-D.momentos = Object.assign({ programa: 'anfitrion', titulo: 'anfitrion', gracias: 'gracias', enjuego: 'enjuego', enjuegoTicket: 'ticket', presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
+D.momentos = Object.assign({ ganadorSuspenso: 'ganador', programa: 'anfitrion', titulo: 'anfitrion', gracias: 'gracias', enjuego: 'enjuego', enjuegoTicket: 'ticket', presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
 D.luces = Object.assign({ contendientes: 'festejo', cuenta: 'tension' }, D.luces || {});
 /* Lámparas Tuya: nombre → ID (tienen que estar también en TUYA_DEVICE del intermediario) */
 const LAMP_CFG = {};
@@ -2670,7 +2692,7 @@ const GUION = Object.assign({
   tension: 'tension',
   redoble: 'oscuro', revelado: 'dorado', despues: 'calido',
   marcador: 'sala', cuenta: 'oscuro',
-  ganadorRedoble: 'oscuro', ganador: 'fiesta',
+  ganadorRedoble: 'oscuro', ganador: 'fiesta', ganadorSuspenso: [[0, 'oscuro'], [1500, { tipo: 'color', h: 38, s: 90, brillo: 6, transicion: 6, nombre: 'brasa dorada', respaldo: 'tension' }]],
   premios: 'calido', gracias: 'calido', cierre: 'ambiente',
 }, D.guion || {});
 
@@ -2826,6 +2848,7 @@ function momentOf(st) {
   const sl = SCRIPT[st.slide] || SCRIPT[0];
   if (isQ(sl)) return st.step || 'pregunta';
   if (sl.k === 'ganador' && st.step === 'redoble') return 'redoble';
+  if (sl.k === 'ganador' && st.step === 'suspenso') return 'ganadorSuspenso';   // "El ganador de El Ticket Dorado es…": ya suena el tema, falta tu toque
   if (sl.k === 'presentador' && st.step === 'golpe') return 'presentadorGolpe';
   if (sl.k === 'enjuego' && D.ticketDorado && (st.sub || 0) > (D.premiosEnJuego || []).length + 1) return 'enjuegoTicket';   // sub: 0 título · 1 premios tapados · 2… cada premio · último: ticket
   return sl.k === 'desempate' ? 'pregunta' : sl.k;
@@ -3389,6 +3412,7 @@ function createDirector(music, fx) {
       } else if (after && TRACKS[after]) music.play(after);
     } else {
       if (fx && lastMoment === 'redoble') fx.stop(150);
+      if (m === 'cine' && (SCRIPT[st.slide] || {}).parte === 'avisos') { lastKey = key; lastMoment = m; return; }   // en los avisos nunca suena la de Dolby
       const fd = FUNDIDOS[m] && lastMoment !== m ? FUNDIDOS[m] : 0;   // ej.: antes de presentar a los participantes, tu tema baja en 5 s
       key ? music.play(key, { ...(st.desde && st.desde.k === key ? { from: st.desde.t } : {}), xfade: desdeQ ? XF : fd }) : music.stop(desdeQ ? XF : (fd || 900));
     }
@@ -3524,6 +3548,13 @@ function initScreen() {
     return (cuentaA[c.archivo] = fetch(c.archivo).then(r => { if (!r.ok) throw new Error('no lo encuentro (' + r.status + ')'); return r.arrayBuffer(); })
       .then(b => new Promise((res, rej) => audioCtx().decodeAudioData(b, res, rej)))
       .catch(e => { log('Locución (' + c.archivo + '): ' + (e && e.message || e) + '. Sigue igual, sin sonido', 'e'); return null; }));
+  }
+  // volumen de las locuciones en vivo (al calibrar o mover el volumen general)
+  function locuVol() {
+    try { if (locAudio) locAudio.volume = Math.min(1, ((LOCUCION && LOCUCION.volumen) || 1) * volGain(musicVol) * ajGain('avisos')); } catch {}
+    const r = cuentaRun; if (!r) return;
+    const C = LOCUS[r.cfg] || CUENTA, v = Math.min(1.5, (C.volumen || 1) * volGain(musicVol) * ajGain('locu_' + r.cfg));
+    try { if (cuentaEl) cuentaEl.volume = Math.min(1, v); if (cuentaSrc) cuentaSrc.g.gain.setTargetAtTime(v, cuentaSrc.ctx.currentTime, 0.05); } catch {}
   }
   function cuentaStop(ms = 90) {
     if (cuentaEl) { const a = cuentaEl; cuentaEl = null; const v0 = a.volume, tt = performance.now(); const f = setInterval(() => { const k = Math.min(1, (performance.now() - tt) / Math.max(30, ms)); try { a.volume = v0 * (1 - k); } catch {} if (k >= 1) { clearInterval(f); a.pause(); } }, 15); }
@@ -3662,7 +3693,8 @@ function initScreen() {
     if (act === 'seek' && t != null) music.seek(Math.max(0, t + v));
     if (act === 'to') music.seek(v);
   }
-  setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: (VOZF && VOZF.status()) || (fxPlayer ? fxPlayer.status() : null), med: cortoPos() }); }, 1000);
+  const locuSonando = () => (locAudio && !locAudio.paused) ? 'avisos' : (cuentaRun && (cuentaSrc || (cuentaEl && !cuentaEl.paused))) ? 'locu_' + cuentaRun.cfg : (cortoOn ? 'corto' : null);
+  setInterval(() => { if (link) link.send({ type: 'musica', a: music.status(), b: (VOZF && VOZF.status()) || (fxPlayer ? fxPlayer.status() : null), med: cortoPos(), loc: locuSonando() }); }, 1000);
   $('#scr-sound').addEventListener('click', () => { music.enableSound(true); $('#scr-sound').hidden = true; });
 
   let lastAjuste = null;
@@ -4096,7 +4128,7 @@ function initScreen() {
       }
       case 'ganador':
         beams.setup('top5'); beams.clearPools();
-        if (st.step === 'redoble') beams.play('scan');
+        if (st.step === 'redoble' || st.step === 'suspenso') { beams.level(st.step === 'suspenso' ? .55 : 1); beams.play('scan'); }
         else later(150, () => { const ph = sqa('.win-card .pl-photo'); beams.aimEls(ph, { ms: 320 }); beams.pools(ph); });
         break;
     }
@@ -4139,7 +4171,7 @@ function initScreen() {
 
   const link = createLink(code, 'screen', msg => {
     if (msg.type === 'luz') { applyTint(msg.L || LOOKS[msg.look], msg.ms); return; }
-    if (msg.type === 'vol') { music.cancelRamp(); musicVol = msg.v; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); cortoVol(); return; }
+    if (msg.type === 'vol') { music.cancelRamp(); musicVol = msg.v; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); cortoVol(); locuVol(); return; }
     if (msg.type === 'volRamp') { if (msg.cancel) music.cancelRamp(); else music.ramp(msg.to, msg.ms); return; }
     if (msg.type === 'reconectar') { link.reconnectDown(); return; }
     if (msg.type === 'ticketShow') { ticketShow(); return; }
@@ -4165,6 +4197,12 @@ function initScreen() {
     if (msg.type === 'tvEstrobo') { const per = 30000 / HOST_BPM; for (let i = 0; i * per < (msg.ms || 1860); i++) setTimeout(() => hostFlash('duro'), i * per); return; }
     if (msg.type === 'flashDuro') { const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); return; }
     if (msg.type === 'state' && msg.state) {
+      // celu y tele con versiones distintas: el número de parte no coincide y puede sonar lo que no corresponde
+      const sid = (() => { const sl = SCRIPT[msg.state.slide] || {}; return [sl.k, sl.parte, sl.cfg, sl.p, sl.r, sl.q, sl.s].filter(x => x != null).join(':'); })();
+      if ((msg.ver && msg.ver !== VERSION) || (msg.sid && msg.sid !== sid)) {
+        if (!window.__verAviso || Date.now() - window.__verAviso > 20000) { window.__verAviso = Date.now(); link.send({ type: 'log', text: `⚠️ La tele tiene ${VERSION} y el celu ${msg.ver || '?'}: recargá las dos páginas (en la tele, Ctrl+Shift+R) para que coincidan`, kind: 'e' }); }
+        if (msg.sid && msg.sid !== sid) return;   // no muestra ni hace sonar una parte equivocada
+      }
       if (msg.state.rev !== curRev) { curRev = msg.state.rev; const pc = $('#previa-code'); if (pc) pc.hidden = true; render(msg.state); }
     }
   }, (st, text) => {
@@ -4215,8 +4253,8 @@ function initScreen() {
     document.body.classList.toggle('tension', ['intro', 'pregunta', 'pizarras', 'tension', 'redoble', 'cuenta', 'contendientes'].includes(m));
     document.body.classList.toggle('dimmed', ['presentacion', 'cuenta', 'redoble'].includes(m) || (SCRIPT[st.slide] || {}).k === 'presentacion');
     $('#yt-wrap').classList.toggle('hidden-player', !!st.hidePlayer);
-    if (st.vol != null && st.vol !== musicVol) { musicVol = st.vol; music.setLevel(); if (fxPlayer) fxPlayer.setLevel(); cortoVol(); }
-    if (JSON.stringify(st.volPistas || {}) !== JSON.stringify(VOL_AJ)) { VOL_AJ = { ...(st.volPistas || {}) }; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); cortoVol(); }
+    if (st.vol != null && st.vol !== musicVol) { musicVol = st.vol; music.setLevel(); if (fxPlayer) fxPlayer.setLevel(); cortoVol(); locuVol(); }
+    if (JSON.stringify(st.volPistas || {}) !== JSON.stringify(VOL_AJ)) { VOL_AJ = { ...(st.volPistas || {}) }; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); cortoVol(); locuVol(); }
     if (st.ajusteMsg && st.ajusteMsg.id !== lastAjuste && P[st.ajusteMsg.p] && !['cuenta', 'desempate', 'ganador'].includes(sl.k)) {
       lastAjuste = st.ajusteMsg.id;
       const t = document.createElement('div'); t.className = 'aj-toast ' + (st.ajusteMsg.d > 0 ? 'mas' : 'menos');
@@ -4593,6 +4631,7 @@ function initScreen() {
   function resultsHTML(sl, st) {
     const q = qOf(sl), res = (st.results || {})[sl.id];
     if (!res) return '';
+    if (sl.k === 'desempate' && (tieSlot(sl, st.results || {}) || {}).pos === 1) return '';   // el del 1°: el resultado se ve recién al anunciar al ganador
     if (q.tipo === 'aprox') {
       const onlyTied = tiedFor(sl, st.results || {});
       const win = closest(q, res.g, onlyTied), aw = sl.k === 'desempate' ? [] : awardsFor(q, res);
@@ -4610,7 +4649,7 @@ function initScreen() {
 
   function winnerHTML(st) {
     const s = standing(st.results || {});
-    const names = s.top.map(i => `<div class="win-card">${s.decided ? `<div class="win-crown">${avIconHTML('ticket')}</div>` : ''}<div class="pl-photo">${photoHTML(P[i])}</div><h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
+    const names = s.top.map(i => `<div class="win-card"><div class="pl-photo">${photoHTML(P[i])}</div><h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
     const extra = s.decided ? `${ptsTxt(s.max)}${s.byTie ? ' · ganó el desempate' : ''}` : `${ptsTxt(s.max)} cada uno · ¡Vamos al desempate!`;
     const medal = { 2: '🥈', 3: '🥉' };
     const rest = s.decided ? finalRanking(st.results || {}).filter(g => g.pos > 1).flatMap(g => g.players.map(i => `<span class="${g.pos <= 3 ? 'pod' : ''}">${g.players.length > 1 ? '⚔️' : (medal[g.pos] || '')} ${g.players.length > 1 ? g.pos + '°–' + (g.pos + g.players.length - 1) + '°' : g.pos + '°'} ${esc(P[i].nombre)} · ${fmtPts(g.score)} pts</span>`)).join('') : '';
@@ -4655,12 +4694,18 @@ function initScreen() {
       if (!box) return;
       if (changed || st.step !== cur.step || JSON.stringify(st.results) !== JSON.stringify(cur.results)) {
         clearInterval(confettiLoop);
-        if (st.step === 'redoble') {
+        if (st.step === 'suspenso') {
+          const w = D.titulo.trim();
+          box.innerHTML = `<div class="v gs"><div class="gs-rays"></div><div class="gs-glow"></div>
+            <div class="gs-in"><div class="gs-pre">${esc(D.ganadorTexto || 'El ganador de')}</div><div class="gs-t">${esc(w)}</div><div class="gs-es">es<i>.</i><i>.</i><i>.</i></div></div>
+            <div class="cf-dust on">${Array.from({ length: 40 }, () => `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * 8).toFixed(2)}s;animation-duration:${(7 + Math.random() * 6).toFixed(2)}s"></i>`).join('')}</div></div>`;
+        } else if (st.step === 'redoble') {
           box.innerHTML = `<div class="v"><div class="win-crown big">${avIconHTML('ticket')}</div><div class="win-pre">Y ${esc(PREMIO)} es para…</div></div>`;
         } else {
           box.innerHTML = winnerHTML(st);
           fixPhotos(box);
           confetti(); confettiLoop = setInterval(confetti, 3500);
+          if (!changed && cur.step === 'suspenso') { SFX.ticket(); const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); box.classList.remove('boom'); void box.offsetWidth; box.classList.add('boom'); }
         }
       }
     } else if (sl.k === 'presentador') {
@@ -4756,7 +4801,7 @@ function initControl() {
       if (msg.type === 'hello') { lastHello = Date.now(); if (msg.corto !== undefined && msg.corto !== cortoTele) { cortoTele = msg.corto; renderControl(); } }
       if (msg.type === 'ping') { lastHello = Date.now(); sendState(); }
       if (msg.type === 'log') { lastHello = Date.now(); log('📺 ' + msg.text, msg.kind || ''); }
-      if (msg.type === 'musica') { lastHello = Date.now(); musNow = { a: msg.a, at: Date.now() }; medNow = msg.med || msg.a || null; showMusic(msg.med || msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a, msg.b); }
+      if (msg.type === 'musica') { lastHello = Date.now(); musNow = { a: msg.a, at: Date.now(), loc: msg.loc || null }; medNow = msg.med || msg.a || null; showMusic(msg.med || msg.a, msg.b); if (window.__onMusicStatus) window.__onMusicStatus(msg.a, msg.b); }
       if (msg.type === 'revelaEn' && msg.slide === S.slide && S.step === 'redoble' && revPlan) revSchedule(msg.ms - 120, msg.ten - 120);
       if (msg.type === 'revelar' && msg.slide === S.slide && S.step === 'redoble') { revDone(); S.step = 'revelado'; commit(); }
       if (msg.type === 'cortoEstado') { cortoProg = { t: msg.t, d: msg.d };
@@ -4823,7 +4868,8 @@ function initControl() {
     $('#link-modal').hidden = !ver;
   }, 1000);
 
-  function sendState() { if (link) link.send({ type: 'state', state: S }); }
+  const slideId = i => { const sl = SCRIPT[i] || {}; return [sl.k, sl.parte, sl.cfg, sl.p, sl.r, sl.q, sl.s].filter(x => x != null).join(':'); };
+  function sendState() { if (link) link.send({ type: 'state', state: S, ver: VERSION, sid: slideId(S.slide) }); }
   // Control del medio que esté sonando en la tele (canción o corto): adelantar, volver, pausar o tocar la barra para ir a un punto
   let medNow = null;
   document.querySelectorAll('[data-med]').forEach(b => b.addEventListener('click', () => { if (link) link.send({ type: 'medio', act: b.dataset.med, v: +b.dataset.v || 0 }); }));
@@ -5512,6 +5558,8 @@ function initControl() {
   function revealWinner() {
     const decided = standing(S.results).decided;
     if (!decided) { clearLights(); fireLook(GUION.despues || 'sala'); S.step = 'revelado'; commit(); return; }
+    // "El ganador de El Ticket Dorado es…": arranca el tema y queda en suspenso hasta que digas el nombre y toques (la explosión)
+    if (D.ganadorSuspenso !== false) { S.step = 'suspenso'; commit(); clearLights(); runSteps(Array.isArray(GUION.ganadorSuspenso) ? GUION.ganadorSuspenso : [[0, GUION.ganadorSuspenso || 'oscuro']]); return; }
     const wait = Math.max(S.delayMs, 2500);
     if (S.delayMs <= 0) { runCue(GUION.ganador || 'fiesta'); S.step = 'revelado'; commit(); return; }
     runSteps([[0, GUION.ganadorRedoble || 'oscuro'], [wait, GUION.ganador || 'fiesta']]);
@@ -5650,6 +5698,12 @@ function initControl() {
       return;
     }
     if (sl.k === 'ganador' && S.step === 'redoble') return;
+    if (sl.k === 'ganador' && S.step === 'suspenso') { S.step = 'revelado'; commit(); runSteps([[0, 'flashSolo'], [150, GUION.ganador || 'fiesta']]); return; }   // ¡la explosión!
+    // desempate por el 1°: no se revela en pantalla (se perdería el suspenso): con los números cargados se pasa directo al ganador
+    if (sl.k === 'desempate' && isQ(sl) && S.step !== 'revelado' && S.step === PASOS_Q[PASOS_Q.length - 1] && (tieSlot(sl, S.results) || {}).pos === 1) {
+      if (!marcado(sl)) { reveal(); return; }
+      goSlide(nextIndex(S.slide, 1)); return;
+    }
     if (sl.k === 'presentador' && S.step !== 'golpe') { clearTimeout(revealT); S.step = 'golpe'; commit(); return; }
     if (isQ(sl) && S.step !== 'revelado') {
       if (S.step === 'redoble') return;
@@ -5695,7 +5749,7 @@ function initControl() {
   const CAL_PISTAS = () => [...Object.keys(TRACKS).map(k => [k, TRACKS[k].name]), ...(LOCUS.voz ? [['locu_voz', 'Voz de bienvenida']] : []), ...(CUENTA ? [['locu_cuenta', 'Cuenta regresiva']] : []), ['avisos', 'Locución de avisos'], ['corto', 'Cortometraje']];
   function renderCalib() {
     if (!$('#calib-card').open) return;
-    const aj = S.volPistas || {}, now = musNow && musNow.a && musNow.a.key;
+    const aj = S.volPistas || {}, now = musNow && Date.now() - musNow.at < 4000 ? (musNow.loc || (musNow.a && musNow.a.key)) : null;
     $('#calib-vol').innerHTML = CAL_PISTAS().map(([k, n]) => `<div class="row" style="justify-content:space-between;margin:5px 0;${k === now ? 'color:var(--gold);font-weight:700' : ''}">
       <span style="flex:1;font-size:13.5px">${k === now ? '♪ ' : ''}${esc(n)}</span><b style="width:58px;text-align:right">${(aj[k] || 0) > 0 ? '+' : ''}${aj[k] || 0} dB</b>
       <span class="row" style="gap:4px;margin-left:8px"><button class="btn ghost small" data-vk="${k}" data-vd="-1">−</button><button class="btn ghost small" data-vk="${k}" data-vd="1">+</button></span></div>`).join('');
@@ -5734,6 +5788,7 @@ function initControl() {
     if (isQ(sl)) {
       if (S.step === 'pregunta' && PASOS_Q.length === 1) return '✨ Revelar respuesta';
       if (S.step === 'pregunta') return '🔄 Den vuelta las pizarras ▶';
+      if (S.step === 'pizarras' && sl.k === 'desempate' && (tieSlot(sl, S.results) || {}).pos === 1) return marcado(sl) ? '👑 Anunciar al ganador ▶' : '⚠️ Cargá los números';
       if (S.step === 'pizarras' && PASOS_Q[PASOS_Q.length - 1] === 'pizarras') { const e = revelaEta(); return marcado(sl) ? `✨ Revelar${e != null ? ` · sale en ${Math.ceil(e)} s` : ''}` : '⚠️ Marcá quién acertó'; }
       if (S.step === 'pizarras') return '⏳ Tensión ▶';
       if (S.step === 'tension') return '🎉 Revelar';
@@ -5749,6 +5804,7 @@ function initControl() {
       return nx.k === 'desempate' ? '⚔️ Desempate ▶' : '👑 ¡Anunciar al ganador! ▶';
     }
     if (sl.k === 'ganador' && S.step === 'redoble') return '🥁 …';
+    if (sl.k === 'ganador' && S.step === 'suspenso') return '💥 ¡Explosión! (al decir el nombre)';
     if (sl.k === 'presentador' && S.step !== 'golpe') return '💥 ¡Golpe de entrada!';
     if (sl.k === 'reglas' && (S.sub || 0) < rulesCards().length) return `📜 Regla ${ROMAN[S.sub || 0] || (S.sub || 0) + 1} ▶`;
     if (sl.k === 'programa' && (S.sub || 0) < PROGRAMA.length) return `📣 Frase ${(S.sub || 0) + 1} de ${PROGRAMA.length} ▶`;
