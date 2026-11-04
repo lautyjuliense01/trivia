@@ -526,9 +526,12 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .host-reveal{display:none}
 #score-card.falta{animation:faltaMarcar .5s ease 2;box-shadow:0 0 0 2px var(--bad)}
 @keyframes faltaMarcar{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.guess.exacto{box-shadow:0 0 0 2px #f6dc93,0 0 18px rgba(246,220,147,.5);background:rgba(246,220,147,.14)}
+.res.exacto{box-shadow:0 0 0 2px #f6dc93,0 0 24px rgba(246,220,147,.55)}
+body.apagon::before{content:'';position:fixed;inset:0;background:#000;z-index:45;pointer-events:none;animation:fadeIn .8s ease both}
+.v-cd{transition:opacity 1.2s ease}.v-cd.espera{opacity:0}
 .q-pts{color:var(--gold);white-space:nowrap}.q-pts i{font-style:normal;margin:0 .9em;opacity:.7}
-.s-pizarras .q-hint.h-piz{font-size:clamp(26px,3.4vw,52px)!important;color:#f6dc93!important;letter-spacing:.06em;animation:pizIn .9s cubic-bezier(.2,1.4,.4,1) both}
-@keyframes pizIn{from{opacity:0;transform:scale(1.4)}to{opacity:1;transform:none}}
+
 body.espejo .status-chip,body.espejo .yt-wrap,body.espejo #scr-sound,body.espejo #corto-pick{display:none!important}
 #espejo-wrap{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;background:#000;margin-top:8px}
 #espejo-wrap iframe{position:absolute;left:0;top:0;width:1280px;height:720px;border:0;transform-origin:0 0;pointer-events:none}
@@ -877,6 +880,9 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .aj-toast.menos b{background:linear-gradient(180deg,#ffd2c8,#e0705c 60%,#a83a28);-webkit-background-clip:text;background-clip:text}
 .aj-toast span{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:clamp(24px,2.8vw,46px);color:#f1e2c2}
 @keyframes ajIn{0%{opacity:0;transform:translate(-50%,30px) scale(.9)}12%{opacity:1;transform:translate(-50%,0) scale(1)}85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,10px)}}
+.modo-bar{padding:10px 12px;margin-bottom:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(233,196,106,.35)}
+.modo-bar .seg{display:flex;gap:6px}.modo-bar .seg button{flex:1;padding:12px 0;border-radius:10px;border:1px solid rgba(233,196,106,.4);background:transparent;color:#e9dcc6;font-weight:800;font-size:15px}
+.modo-bar .seg button.on{background:linear-gradient(180deg,#f6dc93,#c8912c);color:#2a1702;border-color:transparent}
 .auto-banner{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between;padding:10px 12px;margin-bottom:10px;border-radius:10px;background:rgba(70,140,90,.18);border:1px solid rgba(120,220,150,.45);font-size:14px}
 /* v32: final de los créditos ("Segunda edición") con golpe y polvo dorado */
 .cred-card .cred-t{white-space:nowrap}
@@ -1264,6 +1270,16 @@ body{background:
     </div>
   </details>
 
+  <details class="card" id="calib-card">
+    <summary>🎚️ Calibraciones (volumen por pista y copiar todo)</summary>
+    <p class="muted" style="font-size:13px">Quedan guardadas en este celu (no se borran al reiniciar la partida). Para dejarlas fijas en datos.js, copialas y pasámelas.</p>
+    <button class="btn" id="calib-copy" style="width:100%;margin:8px 0">📋 Copiar todas las calibraciones</button>
+    <textarea id="calib-txt" readonly hidden style="width:100%;height:120px;font-size:11px"></textarea>
+    <div class="now-title" style="font-size:15px;margin-top:10px">Volumen de cada pista</div>
+    <p class="muted" style="font-size:12.5px">Con la pista sonando (♪), subila o bajala hasta que quede pareja con las demás. Cada toque es 1 dB.</p>
+    <div id="calib-vol"></div>
+  </details>
+
   <details class="card">
     <summary>Partida</summary>
     <p class="muted">Borra todos los puntos y vuelve al comienzo.</p>
@@ -1287,7 +1303,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v62 · 03/11 23:30';
+const VERSION = 'v63 · 03/11 23:50';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1460,6 +1476,13 @@ const YT_ERRORS = {
 
 
 let musicVol = VOLUME;
+/* Volumen general en decibeles: cada punto son 0,3 dB → 100 = 0 dB (el máximo), 70 = −9 dB, 40 = −18 dB, 0 = mudo.
+   Así de 70 a 100 sube tanto como baja de 70 a 40 (antes era lineal y de 70 a 100 casi no cambiaba).
+   El equipo de sonido se deja más alto y la app tiene margen simétrico para subir y bajar. */
+const VOL_DB = (D.volumenCurva != null ? D.volumenCurva : 0.3);
+const volGain = v => v <= 0 ? 0 : Math.pow(10, VOL_DB * (Math.min(100, v) - 100) / 20);
+let VOL_AJ = {};   // ajuste fino por pista (dB), calibrado desde el celu
+const ajGain = k => Math.pow(10, ((VOL_AJ && VOL_AJ[k]) || 0) / 20);
 function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApoyoBucle = false) {
   let rampOn = false, loopOn = false;
   // Bucle sin corte: un segundo reproductor (mudo) arranca unos segundos antes en el punto de vuelta, se sincroniza y en el salto se intercambian
@@ -1467,7 +1490,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
   let swap = null, swapFail = false, own = null, partnerApi = null, rateNow = 1, loopCfg = { dual: () => false, anticipo: () => 120 }, endPoll = false;
   let reclaimFn = null;
   const raw = new WeakMap();
-  const lv = () => Math.round(musicVol * ((current && tracks[current] && tracks[current].vol != null) ? tracks[current].vol : 1));   // volumen del show × el del tema
+  const lv = () => Math.max(0, Math.min(100, Math.round(100 * volGain(musicVol) * ((current && tracks[current] && tracks[current].vol != null) ? tracks[current].vol : 1) * (current ? ajGain(current) : 1))));   // volumen del show (en dB) × el del tema × el ajuste fino
   let player = null, ready = false, current = null, fadeTimer = null, needsFadeIn = false, muteCheck = null;
   const S = () => (window.YT && YT.PlayerState) || { PLAYING: 1, ENDED: 0 };
 
@@ -1817,6 +1840,10 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (b && tr.salida) {
       const ctx = audioCtx(), T = ctx.currentTime + 0.06, pT = fPos() + 0.06 * F.rate;
       if (pT >= b[0] && pT <= tr.salida) fJump(T, pT + (b[1] - b[0]));
+    } else if (b && tr.periodo) {   // tema que se repite cada "periodo": salta al mismo punto de la última vuelta (así la respuesta llega enseguida)
+      const ctx = audioCtx(), T = ctx.currentTime + 0.06, pT = fPos() + 0.06 * F.rate, P = tr.periodo;
+      const dest = b[1] - P + ((pT - b[0]) % P + P) % P;
+      if (pT >= b[0] && dest > pT + 0.5) fJump(T, dest);
     }
   }
   // empalme exacto: el tema nuevo arranca en T (tiempo del audio) desde "offset" y el viejo se corta ahí mismo, con un fundido de 15 ms
@@ -1847,7 +1874,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
   function lend(fn) { lentTo = fn; if (fn) current = null; }
   function duck(k, ms) { if (F) { fFade(lv() * k, 180).then(() => setTimeout(() => { if (F) fFade(lv(), 700); }, Math.max(200, ms - 180))); return; } if (!ready || !current) return; fadeTo(Math.round(lv() * k), 180).then(() => setTimeout(() => { if (current) fadeTo(lv(), 700); }, Math.max(200, ms - 180))); }
   function ramp(to, ms) { if (F) { musicVol = to; fFade(lv(), Math.max(300, ms)); return; } if (!ready) return; rampOn = true; musicVol = to; fadeTo(lv(), Math.max(300, ms)).then(() => { rampOn = false; }); }
-  function cancelRamp() { if (!rampOn) return; clearInterval(fadeTimer); rampOn = false; try { musicVol = player.getVolume(); } catch {} }
+  function cancelRamp() { if (!rampOn) return; clearInterval(fadeTimer); rampOn = false; }
   function setLevel(now) { if (F) { fFade(lv(), now ? 30 : 300); return; } if (!ready || !current) return; try { if (needsFadeIn) return; if (now) { clearInterval(fadeTimer); player.setVolume(lv()); } else fadeTo(lv(), 300); } catch {} }
   return { play, stop, cue, enableSound, status, setLevel, ramp, cancelRamp, duck, pos, release, relock, seek, toggle, rate, setPartner, setLoopCfg, lend, raw: () => player, isLent: () => !!lentTo, looping: () => (F ? F.loop : loopOn), isReady: () => ready, current: () => current };
 }
@@ -2542,7 +2569,7 @@ function vozArchivo() {
   const a = new Audio(); a.preload = 'auto'; a.src = v.archivo;
   try { a.preservesPitch = v.tono !== 'grave'; a.mozPreservesPitch = a.webkitPreservesPitch = v.tono !== 'grave'; } catch {}
   let fadeT = null, on = false;
-  const nivel = () => Math.min(1, (v.volumen || 1) * Math.max(0.2, musicVol / 70));
+  const nivel = () => Math.min(1, (v.volumen || 1) * volGain(musicVol) * ajGain('anfitrionVoz'));
   VOZF = {
     fail: false,
     cue() { try { a.load(); } catch {} },
@@ -2612,7 +2639,11 @@ function hostGolpeGuion() {
 function hostGuion() {
   const tx = hostTexts(), last = tx[tx.length - 1].est;
   const temaAt = VOZ_MS() || (tx.length >= 3 ? tx[1].est : 0);   // la luz empieza a latir cuando entra el tema
-  return temaAt && temaAt < last ? [[0, 'oscuro'], [temaAt, 'latido'], [last, 'latidoRapido']] : [[0, 'oscuro'], [last, 'latidoRapido']];
+  const g = temaAt && temaAt < last ? [[0, 'oscuro'], [temaAt, 'latido'], [last, 'latidoRapido']] : [[0, 'oscuro'], [last, 'latidoRapido']];
+  // después de "Con ustedes", apagón total hasta el golpe
+  const P = D.presentador || {}, apA = P.apagonAntes != null ? P.apagonAntes : 3, temaIni = (D.musica && D.musica.anfitrion && D.musica.anfitrion.inicio) || 0;
+  if (apA > 0 && P.golpeTema != null) g.push([VOZ_MS() + Math.round((P.golpeTema - apA - temaIni) * 1000) + 400, 'apagado']);
+  return g;
 }
 /* Guion: qué look va en cada momento. Un nombre, o una secuencia [[ms, look], ...] donde ms = cuándo se tiene que VER */
 const cuentaGuion = (c = CUENTA) => {
@@ -2648,7 +2679,7 @@ const TRACKS = {};
 Object.entries(D.musica || {}).forEach(([k, v]) => {
   const t = typeof v === 'string' ? { id: v } : (v || {});
   const bucle = Array.isArray(t.bucle) && t.bucle.length === 2 && t.bucle[1] > t.bucle[0] ? t.bucle.map(Number) : null;
-  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, fundido: +t.fundido > 0 ? +t.fundido : 0, recorte: Array.isArray(t.recorte) && t.recorte[1] > t.recorte[0] ? t.recorte.map(Number) : null, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
+  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, periodo: +t.periodo > 0 ? +t.periodo : null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, fundido: +t.fundido > 0 ? +t.fundido : 0, recorte: Array.isArray(t.recorte) && t.recorte[1] > t.recorte[0] ? t.recorte.map(Number) : null, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
     loop: t.repetir != null ? !!t.repetir : (bucle ? false : !['redoble', 'respuesta', 'anfitrionVoz'].includes(k)) };
 });
 
@@ -3099,7 +3130,7 @@ function riser(ms) {
    - colas en contrafase (izquierda = −derecha): el upmix las tiende a mandar a los laterales y al techo
    - barridos de izquierda a derecha */
 let sfxBus = null;
-const sfxLevel = () => 0.85 * ((D.apertura && D.apertura.volGraves != null) ? D.apertura.volGraves : 1) * Math.min(1.4, (typeof musicVol === 'number' ? musicVol : 70) / 70);
+const sfxLevel = () => 0.85 * ((D.apertura && D.apertura.volGraves != null) ? D.apertura.volGraves : 1) * Math.min(1.4, volGain(typeof musicVol === 'number' ? musicVol : 70) / 0.7);   // misma relación con la música que antes
 function wideReverb(ctx) {
   const len = Math.floor(ctx.sampleRate * 4.6), b = ctx.createBuffer(2, len, ctx.sampleRate);
   for (let c = 0; c < 2; c++) {
@@ -3336,13 +3367,13 @@ function createDirector(music, fx) {
       lastKey = key; lastMoment = m; return;
     }
     if (m === 'cine' && lastMoment !== 'cine' && !TRACKS.cine) setTimeout(() => music.cue('intro'), 300); // la fanfarria queda cargada
-    if (m === 'cine' && lastMoment !== 'cine' && TRACKS.cine) {
+    if (m === 'cine' && (lastMoment !== 'cine' || nuevaQ) && TRACKS.cine) {
       // los avisos van en silencio; la música de los créditos entra con el primer crédito (con corto: en la segunda parte)
       const parte = (SCRIPT[st.slide] || {}).parte || 'todo';
       music.stop(800);
       if (parte === 'todo') { setTimeout(() => music.cue('cine'), 1200); afterT = setTimeout(() => music.play('cine'), Math.max(0, CEL - 300)); }
       else if (parte === 'creditos') afterT = setTimeout(() => music.play('cine', { instant: true }), Math.max(900, CEL - 300 - cineOff(SCRIPT[st.slide])));
-      lastKey = parte === 'avisos' ? null : 'cine'; lastMoment = m; return;
+      lastKey = key; lastMoment = m; return;   // (antes quedaba "sin tema" en los avisos y cualquier cambio de estado arrancaba la música de Dolby)
     }
     if (fx && ['pizarras', 'tension'].includes(m) && TRACKS.redoble) fx.cue('redoble');
     if (m === 'redoble') {
@@ -3400,8 +3431,8 @@ function initScreen() {
   let cortoP = null, cortoReady = false, cortoT = null, cortoOn = false, cortoSt = 0, cortoSlide = -1, cortoSent = 0;
   let cortoV = null;   // corto como archivo (mp4 subido al repositorio)
   const cortoVol = () => {
-    if (cortoV) { cortoV.volume = Math.min(1, Math.max(0, musicVol / 100 * (CORTO.volumen || 1))); return; }
-    if (cortoP && cortoReady) try { cortoP.setVolume(Math.round(Math.min(100, musicVol * (CORTO.volumen || 1)))); } catch {}
+    if (cortoV) { cortoV.volume = Math.min(1, Math.max(0, volGain(musicVol) * (CORTO.volumen || 1) * ajGain('corto'))); if (ESPEJO) cortoV.muted = true; return; }
+    if (cortoP && cortoReady) try { cortoP.setVolume(Math.round(Math.min(100, 100 * volGain(musicVol) * (CORTO.volumen || 1) * ajGain('corto')))); } catch {}
   };
   function cortoInit() {
     if (!CORTO || cortoP || cortoV) return;
@@ -3509,7 +3540,7 @@ function initScreen() {
     const els = [...document.querySelectorAll('.cr-txt .hw')], lead = $('#cr-leader'), num = $('#crl-num');
     let t0 = performance.now(), activo = -1, nAct = -1, fin = false, sonando = null, esperando = true;
     cuentaStop(0);
-    const vol = Math.min(1.5, (C.volumen || 1) * Math.max(0.2, musicVol / 70));
+    const vol = Math.min(1.5, (C.volumen || 1) * volGain(musicVol) * ajGain('locu_' + cfgName));
     if (ESPEJO) { esperando = false; }
     else if (vel !== 1 && d0 === 0) {   // con otra velocidad: reproductor común, que baja la velocidad sin cambiar el tono
       const a = new Audio(C.archivo); cuentaEl = a;
@@ -3689,7 +3720,7 @@ function initScreen() {
   function hostTextsStart(vh) {
     hostTextsStop();
     const tx = hostTexts(), els = [...vh.querySelectorAll('.hw')], t0 = performance.now();
-    let active = -1, shownAt = 0, temaOn = false, fadedOut = false, aDerecha = false;
+    let active = -1, shownAt = 0, temaOn = false, fadedOut = false, aDerecha = false, apagon = false;
     const passed = (e, now, fxS, mS) => {
       const temaSuena = mS && mS.key === 'anfitrion' && mS.t > 0;
       if (e.clock === 'voz') {
@@ -3707,7 +3738,9 @@ function initScreen() {
       tx.forEach((e, i) => { if (passed(e, now, fxS, mS)) idx = i; });
       if (!temaOn && mS && mS.key === 'anfitrion' && mS.t > 0) { temaOn = true; beams.level(.65); preBeat(vh); }
       const gT = cur.autoGolpe != null ? cur.autoGolpe : (D.presentador && D.presentador.golpeTema);
-      if (!aDerecha && gT != null && mS && mS.key === 'anfitrion' && mS.t >= gT - (D.presentador.reflectoresAntes != null ? D.presentador.reflectoresAntes : 0.5)) { aDerecha = true; beamsDerecha(); }
+      const apA = D.presentador.apagonAntes != null ? D.presentador.apagonAntes : 3;   // después de "Con ustedes": todo a oscuras para que entres en la oscuridad (y el humo)
+      if (!apagon && apA > 0 && gT != null && mS && mS.key === 'anfitrion' && mS.t >= gT - apA) { apagon = true; document.body.classList.add('apagon'); beams.level(0); }
+      if (!aDerecha && gT != null && mS && mS.key === 'anfitrion' && mS.t >= gT - (D.presentador.reflectoresAntes != null ? D.presentador.reflectoresAntes : 0.5)) { aDerecha = true; beamsDerecha(apagon); }
       if (cur.autoGolpe != null && mS && mS.key === 'anfitrion' && mS.t >= cur.autoGolpe) { hostGolpe(vh); if (link) link.send({ type: 'golpe' }); return; }
       if (idx !== active && idx >= 0) {
         if (active >= 0 && !fadedOut) { els[active].classList.remove('on'); els[active].classList.add('off'); }
@@ -3765,13 +3798,14 @@ function initScreen() {
   }
   function hostFlash(kind) { const f = document.createElement('div'); f.className = 'flash ' + kind; document.body.appendChild(f); setTimeout(() => f.remove(), 600); }
   // los reflectores van al costado derecho de la pantalla (por donde entrás) justo antes del golpe
-  function beamsDerecha() {
+  function beamsDerecha(apagados = false) {
     let el = $('#beam-derecha');
     if (!el) { el = document.createElement('div'); el.id = 'beam-derecha'; el.style.cssText = 'position:fixed;right:3vw;top:38vh;width:10vw;height:40vh;pointer-events:none'; document.body.appendChild(el); }
-    beams.setup('top4'); beams.clearPools(); beams.level(1); beams.aimEls([el], { ms: 420, spread: true, sway: false });
+    beams.setup('top4'); beams.clearPools(); beams.level(apagados ? 0 : 1); beams.aimEls([el], { ms: 420, spread: true, sway: false });
   }
   function hostGolpe(vh) {
-    if (!vh.querySelector('#beam-dummy') && !document.body.dataset.derecha) beamsDerecha();
+    document.body.classList.remove('apagon');   // se enciende todo con el golpe
+    beamsDerecha(); beams.level(1);
     hostStop(); hostTextsStop();
     const h = host = { vh, wall0: performance.now(), fase: null, lastHalf: null, lastPos: null, lastP: 0, phrase: 0 };
     h.t0 = songClock(); h.marks = h.t0 != null ? marcasSt : null;   // con efectos marcados: salen en esos segundos del tema
@@ -4182,6 +4216,7 @@ function initScreen() {
     document.body.classList.toggle('dimmed', ['presentacion', 'cuenta', 'redoble'].includes(m) || (SCRIPT[st.slide] || {}).k === 'presentacion');
     $('#yt-wrap').classList.toggle('hidden-player', !!st.hidePlayer);
     if (st.vol != null && st.vol !== musicVol) { musicVol = st.vol; music.setLevel(); if (fxPlayer) fxPlayer.setLevel(); cortoVol(); }
+    if (JSON.stringify(st.volPistas || {}) !== JSON.stringify(VOL_AJ)) { VOL_AJ = { ...(st.volPistas || {}) }; music.setLevel(true); if (fxPlayer) fxPlayer.setLevel(true); cortoVol(); }
     if (st.ajusteMsg && st.ajusteMsg.id !== lastAjuste && P[st.ajusteMsg.p] && !['cuenta', 'desempate', 'ganador'].includes(sl.k)) {
       lastAjuste = st.ajusteMsg.id;
       const t = document.createElement('div'); t.className = 'aj-toast ' + (st.ajusteMsg.d > 0 ? 'mas' : 'menos');
@@ -4232,7 +4267,7 @@ function initScreen() {
   }
 
   function buildSlide(st, sl) {
-    hostStop(); hostTextsStop();
+    hostStop(); hostTextsStop(); document.body.classList.remove('apagon');
     if (locAudio) { try { locAudio.pause(); } catch {} locAudio = null; }
     if (sl.k !== 'corto') cortoStop();
     clearInterval(confettiLoop); clearTimeout(introTimer); clearTimeout(contPhase);
@@ -4280,7 +4315,7 @@ function initScreen() {
       const parte = sl.parte || 'todo', off = cineOff(sl), conAv = parte !== 'creditos', conCred = parte !== 'avisos';
       const CAT = CRED_AT.map(x => x - off);
       if (LOCUCION && conAv) cineHits.push(setTimeout(() => {
-        try { locAudio = new Audio(LOCUCION.archivo); locAudio.volume = Math.min(1, (LOCUCION.volumen || 1) * Math.max(0.2, musicVol / 70)); locAudio.play().catch(e => log('No se pudo reproducir la locución (' + LOCUCION.archivo + '): ' + e.message, 'e')); locAudio.onerror = () => log('No encuentro la locución: ' + LOCUCION.archivo, 'e'); } catch {}
+        try { locAudio = new Audio(LOCUCION.archivo); locAudio.volume = Math.min(1, (LOCUCION.volumen || 1) * volGain(musicVol) * ajGain('avisos')); locAudio.play().catch(e => log('No se pudo reproducir la locución (' + LOCUCION.archivo + '): ' + e.message, 'e')); locAudio.onerror = () => log('No encuentro la locución: ' + LOCUCION.archivo, 'e'); } catch {}
       }, AV_T0));
       h = `<div class="cine"><div class="cine-dim"></div><div class="cine-black" style="${conAv ? `animation-delay:${envAt}ms` : 'animation:none;opacity:1'}"></div>
         ${!conAv ? '' : (() => { let t = AV_T0; return AVISOS.map((a, idx) => {
@@ -4396,7 +4431,10 @@ function initScreen() {
       const rows = [];
       for (let k = 0; k < hidden; k++) rows.push(`<div class="cd-row hid"><span class="cd-pos">?</span><span class="cd-av"><span class="ini q">?</span></span><span class="cd-name">???</span><span class="cd-pts">${avIconHTML('ticket')}</span></div>`);
       [...cg].reverse().forEach(g => g.players.forEach(pi => rows.push(`<div class="cd-row" data-g="${g.pos}"><span class="cd-pos">${g.pos}°</span><span class="cd-av">${photoHTML(P[pi])}</span><span class="cd-name">${esc(P[pi].nombre)}</span><span class="cd-pts">${fmtPts(g.score)} pts</span></div>`)));
-      h = `<div class="v v-cd enter"><h2 class="script">La cuenta final</h2><div class="round-sub" style="margin-top:4px">Del último al primero</div><div class="cd-banner" id="cd-banner"></div><div class="cd-list">${rows.join('')}</div></div>`;
+      // la cuenta aparece recién cuando ya suena la música de tensión (si no avisa, a los 5 s)
+      cdGo = () => { cdGo = null; const v = stage.querySelector('.v-cd'); if (v) v.classList.remove('espera'); };
+      cineHits.push(setTimeout(() => { if (cdGo) cdGo(); }, 5000));
+      h = `<div class="v v-cd enter espera"><h2 class="script">La cuenta final</h2><div class="round-sub" style="margin-top:4px">Del último al primero</div><div class="cd-banner" id="cd-banner"></div><div class="cd-list">${rows.join('')}</div></div>`;
     } else if (sl.k === 'enjuego') {
       const PR = ENJ();
       h = `<div class="v v-enjuego enter s0" id="venj">
@@ -4517,10 +4555,12 @@ function initScreen() {
     qNumFbT = setTimeout(() => { if (qArmed === vq) enterNumber(vq); }, ENTRADA_NUM + 1000 + extra);
     qFallbackT = setTimeout(() => { if (qArmed === vq) enterQuestion(vq); }, ENTRADA + 1000 + extra); // si la música no arranca, entra igual
   }
+  let cdGo = null;
   let enjGo = null; const ENJ_TITULO = (D.enjuegoTitulo != null ? D.enjuegoTitulo : 2.2) * 1000;   // segundos de música antes del título
   window.__onTrackPlaying = key => {
     if (key === musicKeyOf({ slide: cur.slide, step: 'pregunta' }) && qArmed) startEntryTimer();
     if (enjGo && (SCRIPT[cur.slide] || {}).k === 'enjuego' && key === musicKeyOf(cur)) enjGo();
+    if (cdGo && (SCRIPT[cur.slide] || {}).k === 'cuenta' && key === musicKeyOf(cur)) setTimeout(() => { if (cdGo) cdGo(); }, 900);
   };
 
   function questionHTML(sl, st = {}) {
@@ -4543,7 +4583,7 @@ function initScreen() {
     return `<div class="v v-q enter stage-pulse ${hasOpts ? 'has-opts' : ''}" id="vq">
       <div class="q-head"><div class="q-num">${num}</div></div><div class="q-round">${esc(title)}${sl.k !== 'desempate' ? `<span class="q-pts"><i>◆</i>${fmtPts(ptsOf(q))} puntos${q.tipo === 'aprox' ? ` · ${fmtPts(exactoOf(q))} si es exacta` : ''}</span>` : ''}</div>
       ${body}
-      <div class="hint q-hint h-piz">¡Den vuelta las pizarras!</div>
+
       <div class="hint q-hint h-ten">Últimos segundos</div>
       <div class="q-results" id="q-results"></div>
       ${q.nota && q.mostrarNota ? `<div class="q-note">${esc(q.nota)}</div>` : ''}
@@ -4561,8 +4601,8 @@ function initScreen() {
         .sort((a, b) => Math.abs(a.n - q.respuesta) - Math.abs(b.n - q.respuesta));
       return rows.map(r => {
         const w = win.includes(r.p), d = Math.abs(r.n - q.respuesta);
-        const a = aw.find(x => x.p === r.p);
-        return `<div class="res ${w ? 'win' : ''}"><span>${w ? '<i class="res-star">★</i>' : ''}${esc(P[r.p].nombre)}</span><span class="rv">${fmtNum(r.n)}</span><span class="rd">${d === 0 ? '¡exacto!' : '±' + fmtNum(Math.round(d * 100) / 100)}${a ? ` · +${fmtPts(a.pts)}` : ''}</span></div>`;
+        const dif = r.n - q.respuesta;   // en la tele, solo la diferencia con la respuesta (ni lo que dijo ni los puntos)
+        return `<div class="res ${w ? 'win' : ''} ${d === 0 ? 'exacto' : ''}"><span>${w ? '<i class="res-star">★</i>' : ''}${esc(P[r.p].nombre)}</span><span class="rd">${d === 0 ? '¡exacto!' : (dif > 0 ? '+' : '−') + fmtNum(Math.round(d * 100) / 100)}</span></div>`;
       }).join('');
     }
     return (res.ok || []).map(p => `<div class="res win"><span>${esc(P[p].nombre)}</span><span class="rd">+${fmtPts(ptsOf(q))}</span></div>`).join('');
@@ -4720,21 +4760,21 @@ function initControl() {
       if (msg.type === 'revelaEn' && msg.slide === S.slide && S.step === 'redoble' && revPlan) revSchedule(msg.ms - 120, msg.ten - 120);
       if (msg.type === 'revelar' && msg.slide === S.slide && S.step === 'redoble') { revDone(); S.step = 'revelado'; commit(); }
       if (msg.type === 'cortoEstado') { cortoProg = { t: msg.t, d: msg.d };
-        { const sq = seqAhora(), av = (PREVIA && PREVIA.avisoSeg) || 8;
-          if (sq && sq.phase === 'apertura' && !sq.pending && SCRIPT[S.slide].k === 'corto' && msg.d > 0 && msg.t > 1) { const left = (CORTO.fin || msg.d) - msg.t; if (left <= av) armAuto(proximoNombre(S.slide), left, () => goSlide(S.slide + 1, true)); } } const el = $('#corto-prog'); if (el) el.textContent = msg.d ? `${mmss(msg.t)} de ${mmss(msg.d)}` : 'cargando…'; }
+ const el = $('#corto-prog'); if (el) el.textContent = msg.d ? `${mmss(msg.t)} de ${mmss(msg.d)}` : 'cargando…'; }
       if (msg.type === 'cortoFin' && SCRIPT[S.slide].k === 'corto' && msg.slide === S.slide) {
         if (msg.error) log('🎞️ ' + msg.error + ' — sigo con la apertura', 'e'); else log('🎞️ Terminó el corto', 'o');
-        const sq = seqAhora();
-        if (sq && sq.held) log('⏸ Queda en negro hasta que toques ▶ Seguir', 'o');
-        else if (sq && sq.pending && sq.fire) sq.fire();
-        else goSlide(S.slide + 1, true);
+        // unos segundos de pantalla negra para comentar el video antes de seguir con la apertura
+        const sq = seqAhora(), negro = (CORTO.negroDespues != null ? CORTO.negroDespues : 10);
+        if (sq && sq.phase === 'apertura' && !sq.pending) armAuto(proximoNombre(S.slide), negro, () => goSlide(S.slide + 1, true));
+        else if (!sq) log('🎞️ Pantalla en negro: tocá Siguiente cuando quieras seguir', 'o');
       }
       if (msg.type === 'crMarcas' && Array.isArray(msg.t)) { S.crEn = { ...(S.crEn || {}), [msg.cfg || 'cuenta']: msg.t }; commit(true); log(`🎯 Frase ${msg.t.length} marcada en ${msg.t[msg.t.length - 1].toFixed(2)} s`, 'o'); }
       if (msg.type === 'cuentaFin' && SCRIPT[S.slide].k === 'cuentaReg' && msg.slide === S.slide) {   // llegó al 1: largan la intro de estudio y los créditos
         const sq = seqAhora();
         if (sq && sq.held) log('⏸ Terminó la cuenta: queda en negro hasta que toques ▶ Seguir', 'o');
         else if (sq && sq.pending && sq.fire) sq.fire();
-        else { clearTimeout(autoT); goSlide(S.slide + 1, true); }
+        else if (sq) { clearTimeout(autoT); goSlide(S.slide + 1, true); }
+        else log('⏳ Terminó la locución: tocá Siguiente', 'o');
       }
       if (msg.type === 'marcas' && Array.isArray(msg.t)) {
         S.acentos = { id: msg.vid, t: msg.t }; commit(true);
@@ -5196,7 +5236,15 @@ function initControl() {
     }
     if (!ok) { const mood = L.respaldo || (['tension', 'festejo', 'normal'].includes(name) ? name : null); if (mood) applyMood(mood, true); }
   }
-  async function sendLookTo(lamp, L) {
+  // Las órdenes a cada lámpara van en fila: la siguiente sale recién cuando respondió la anterior.
+  // (Antes salían en paralelo y a veces la nube aplicaba el flash después del azul y la luz quedaba blanca para siempre)
+  const lampFila = {};
+  function sendLookTo(lamp, L) {
+    const p = (lampFila[lamp] || Promise.resolve()).catch(() => {}).then(() => sendLookToNow(lamp, L));
+    lampFila[lamp] = p.catch(() => {});
+    return p;
+  }
+  async function sendLookToNow(lamp, L) {
         stopLoop(lamp);
         const cfg = LAMP_CFG[lamp] || {};
         let Lx = L[lamp] ? { ...L, ...L[lamp] } : L;               // cada lámpara puede tener su variante (ej.: tira: { h: 280 })
@@ -5423,9 +5471,7 @@ function initControl() {
         if (S.slide !== k0) return;
         const s2 = seqAhora();
         if (s2 && s2.phase === 'apertura' && !s2.pending) armAuto(proximoNombre(k0), Math.min(av, fin) / 1000, () => goSlide(k0 + 1, true));
-        else if (!s2) goSlide(k0 + 1, true);
-      }, Math.max(0, fin - av));
-      else autoT = setTimeout(() => { if (S.slide === k0) goSlide(S.slide + 1, true); }, fin); } }
+      }, Math.max(0, fin - av)); } }   // en manual no avanza sola: queda en negro hasta que toques Siguiente
     else { autoKey = null; clearTimeout(autoT); }
     const k = SCRIPT[S.slide].k;
     if (soft) { clearTimeout(commitT); commitT = setTimeout(sendState, 250); }
@@ -5451,14 +5497,10 @@ function initControl() {
     i = Math.max(0, Math.min(SCRIPT.length - 1, i));
     if (SCRIPT[i].k === 'enjuego' && S.volBase == null) { S.volBase = S.vol; volA(ENJ_VOL[0], 1500); }
     else if (SCRIPT[i].k !== 'enjuego' && S.volBase != null) { volA(S.volBase, 2500); S.volBase = null; }
-    if (!auto && typeof seq !== 'undefined' && seq && SCRIPT[i].k !== 'previa') abortSeq('✋ Pasaste a manual');
+    if (typeof seq !== 'undefined' && seq) cancelarPaso();   // tocar Siguiente en automático solo adelanta: el resto sigue solo
     if (revPlan) revDone();
     S.slide = i; S.overlay = null; S.sub = 0; S.manual = null; S.desde = null; S.calib = false; S.marcar = false; S.bucleCal = null; S.tema = null;
-    // La apertura (desde el primer aviso de cine hasta tu golpe) va siempre en automático, con freno en cada paso,
-    // aunque se haya arrancado a mano (antes, empezando a mano, después de la fanfarria no pasaba sola a tu entrada)
-    if (SCRIPT[i].k === 'cine' && i === SCRIPT.findIndex(x => x.k === 'cine') && !seq && !(PREVIA && PREVIA.hastaGolpe === false)) {
-      seq = { phase: 'apertura', pending: false }; log('🤖 Apertura en automático hasta tu golpe. Cada paso avisa antes y se puede frenar', 'o');
-    }
+    asegurarModo();   // automático: la apertura avanza sola con aviso y freno · manual: nada avanza solo
     if (typeof seq !== 'undefined' && seq) seq.slideAt = Date.now();
     S.autoGolpe = (typeof seq !== 'undefined' && seq && seq.phase === 'apertura' && SCRIPT[i].k === 'presentador' && GOLPE_TEMA != null) ? GOLPE_TEMA : null;
     S.step = isQ(SCRIPT[i]) ? 'pregunta' : (SCRIPT[i].k === 'presentador' ? 'espera' : null);
@@ -5521,6 +5563,21 @@ function initControl() {
     revDone(); clearLights(); S.step = 'pregunta'; lastLightKey = null; commit();
     log('↩ Revelado cancelado: el tema vuelve al bucle', 'e');
   });
+  // en cuántos segundos aparecería la respuesta si tocás Revelar ahora (con el tema en bucle sale del bucle y cae en "revela")
+  function revelaEta() {
+    const sl = SCRIPT[S.slide]; if (!isQ(sl)) return null;
+    const bk = bucleKeyOf(S), b = bk && TRACKS[bk], a = musNow && musNow.a;
+    if (!b || !a || a.key !== bk || !(a.d > 0) || Date.now() - musNow.at > 5000) return S.delayMs > 0 ? S.delayMs / 1000 : 0;
+    const [b0, b1] = b.bucle, te = a.t + (Date.now() - musNow.at) / 1000;
+    let p = te;
+    if (te >= b0 && te <= b1 + 0.05) {
+      if (b.salida && te <= b.salida) p = te + (b1 - b0);
+      else if (b.periodo) { const d = b1 - b.periodo + ((te - b0) % b.periodo + b.periodo) % b.periodo; if (d > te + 0.5) p = d; }
+      return Math.max(0, (b1 - p > 0 ? b1 - p : 0) + (b.revela - Math.max(p, b1)));
+    }
+    return Math.max(0, b.revela - te);
+  }
+  setInterval(() => { const sl = SCRIPT[S.slide]; if (isQ(sl) && ['pregunta', 'pizarras', 'tension'].includes(S.step) && !S.overlay) $('#nav-next').textContent = nextLabel(); }, 500);
   // antes de revelar hay que marcar quién acertó (o "nadie"): así no se pasa por alto cargar los puntos
   function marcado(sl = SCRIPT[S.slide]) {
     if (!isQ(sl)) return true;
@@ -5561,7 +5618,7 @@ function initControl() {
   }
 
   function next() {
-    if (seq) abortSeq('✋ Pasaste a manual');
+    if (seq && seq.phase !== 'apertura' && SCRIPT[S.slide].k !== 'previa') abortSeq('', true);
     const sl = SCRIPT[S.slide];
     if (S.overlay) { S.overlay = null; commit(); return; }
     if (sl.k === 'cuenta' && (S.sub || 0) < countdownGroups(S.results).length) { S.sub = (S.sub || 0) + 1; commit(); return; }
@@ -5604,7 +5661,7 @@ function initControl() {
     if (S.slide < SCRIPT.length - 1) goSlide(nextIndex(S.slide, 1));
   }
   function prev() {
-    if (seq) abortSeq('✋ Pasaste a manual');
+    if (seq) cancelarPaso();
     if (S.overlay) { S.overlay = null; commit(); return; }
     if (SCRIPT[S.slide].k === 'cuenta' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
     if (SCRIPT[S.slide].k === 'reglas' && (S.sub || 0) > 0) { S.sub--; commit(); return; }
@@ -5634,13 +5691,37 @@ function initControl() {
   document.querySelectorAll('.step').forEach(b => b.addEventListener('click', () => setStep(b.dataset.step)));
 
   let resetArmed = null;
+  // Calibraciones: volumen fino por pista (dB) y copia de todo lo calibrado en este celu
+  const CAL_PISTAS = () => [...Object.keys(TRACKS).map(k => [k, TRACKS[k].name]), ...(LOCUS.voz ? [['locu_voz', 'Voz de bienvenida']] : []), ...(CUENTA ? [['locu_cuenta', 'Cuenta regresiva']] : []), ['avisos', 'Locución de avisos'], ['corto', 'Cortometraje']];
+  function renderCalib() {
+    if (!$('#calib-card').open) return;
+    const aj = S.volPistas || {}, now = musNow && musNow.a && musNow.a.key;
+    $('#calib-vol').innerHTML = CAL_PISTAS().map(([k, n]) => `<div class="row" style="justify-content:space-between;margin:5px 0;${k === now ? 'color:var(--gold);font-weight:700' : ''}">
+      <span style="flex:1;font-size:13.5px">${k === now ? '♪ ' : ''}${esc(n)}</span><b style="width:58px;text-align:right">${(aj[k] || 0) > 0 ? '+' : ''}${aj[k] || 0} dB</b>
+      <span class="row" style="gap:4px;margin-left:8px"><button class="btn ghost small" data-vk="${k}" data-vd="-1">−</button><button class="btn ghost small" data-vk="${k}" data-vd="1">+</button></span></div>`).join('');
+    $('#calib-vol').querySelectorAll('[data-vk]').forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.vk; S.volPistas = { ...(S.volPistas || {}) }; S.volPistas[k] = Math.max(-24, Math.min(12, (S.volPistas[k] || 0) + +b.dataset.vd));
+      if (!S.volPistas[k]) delete S.volPistas[k]; commit(true); renderCalib();
+    }));
+  }
+  $('#calib-card').addEventListener('toggle', renderCalib);
+  setInterval(() => { if ($('#calib-card').open) renderCalib(); }, 3000);
+  $('#calib-copy').addEventListener('click', async () => {
+    const c = { version: VERSION, fecha: new Date().toISOString(), volumenPorPista_dB: S.volPistas || {}, ritmo: S.ritmo || null, efectosMarcados: S.acentos || null,
+      frasesMarcadas: S.crEn || null, bucleAjustado: S.bucleAj || null, demoraRevelarMs: S.delayMs, volumenGeneral: S.vol };
+    const txt = 'Calibraciones de la trivia:\n' + JSON.stringify(c, null, 1);
+    let ok = false; try { await navigator.clipboard.writeText(txt); ok = true; } catch {}
+    const ta = $('#calib-txt'); ta.value = txt; ta.hidden = false; if (!ok) { ta.focus(); ta.select(); }
+    $('#calib-copy').textContent = ok ? '✔ Copiado: pegámelo en el chat' : 'Seleccioná el texto de abajo y copialo';
+    setTimeout(() => { $('#calib-copy').textContent = '📋 Copiar todas las calibraciones'; }, 4000);
+  });
   $('#reset-btn').addEventListener('click', () => {
     const b = $('#reset-btn');
     if (!resetArmed) { b.textContent = '¿Seguro? Tocá de nuevo para borrar todo'; resetArmed = setTimeout(() => { resetArmed = null; b.textContent = 'Reiniciar partida'; }, 4000); return; }
     clearTimeout(resetArmed); resetArmed = null; b.textContent = 'Reiniciar partida';
-    if (seq) abortSeq('Secuencia de previa cancelada');
+    if (seq) abortSeq('Secuencia de previa cancelada', true);
     const ini = (PREVIA && PREVIA.inicio) || {};
-    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol, ritmo: S.ritmo, acentos: S.acentos, bucleAj: S.bucleAj, bucleModo: S.bucleModo, bucleAnt: S.bucleAnt, previaModo: ini.pantalla || 'apagado' };
+    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol, ritmo: S.ritmo, acentos: S.acentos, bucleAj: S.bucleAj, crEn: S.crEn, volPistas: S.volPistas, auto: S.auto, bucleModo: S.bucleModo, bucleAnt: S.bucleAnt, previaModo: ini.pantalla || 'apagado' };
     log('Partida reiniciada · luz de sala, lista para la previa', 'o');
     lastLightKey = null; lastLook = null;
     commit();
@@ -5653,7 +5734,7 @@ function initControl() {
     if (isQ(sl)) {
       if (S.step === 'pregunta' && PASOS_Q.length === 1) return '✨ Revelar respuesta';
       if (S.step === 'pregunta') return '🔄 Den vuelta las pizarras ▶';
-      if (S.step === 'pizarras' && PASOS_Q[PASOS_Q.length - 1] === 'pizarras') return marcado(sl) ? '✨ Revelar respuesta' : '⚠️ Marcá quién acertó';
+      if (S.step === 'pizarras' && PASOS_Q[PASOS_Q.length - 1] === 'pizarras') { const e = revelaEta(); return marcado(sl) ? `✨ Revelar${e != null ? ` · sale en ${Math.ceil(e)} s` : ''}` : '⚠️ Marcá quién acertó'; }
       if (S.step === 'pizarras') return '⏳ Tensión ▶';
       if (S.step === 'tension') return '🎉 Revelar';
       if (S.step === 'redoble') return revPlan ? `⏳ Sale sola en el segundo ${revPlan.en}` : '🥁 …';
@@ -5793,12 +5874,13 @@ function initControl() {
       if (sl.k === 'ganador' && !s.decided) h += `<p class="muted">Hay empate en el primer puesto. Volvé con ◀ al desempate y cargá las respuestas.</p>`;
       if (sl.k === 'ganador') { const ts = tieSlots(S.results).filter(g => g.pos > 1); if (ts.length && sl.cuando === 'antes') h += `<p class="muted">Después vienen ${ts.length === 1 ? 'el desempate' : 'los ' + ts.length + ' desempates'}: ${ts.map(g => posTxt(g)).join(' y después ')}.</p>`; }
     }
-    const enApertura = ['cine', 'corto', 'intro'].includes(sl.k) || (sl.k === 'presentador' && S.step !== 'golpe');
-    if (seq && seq.phase === 'apertura') h = `<div class="auto-banner">🤖 <b>Automático hasta el golpe de entrada</b>${GOLPE_TEMA != null ? ` (segundo ${GOLPE_TEMA} del tema)` : ''}<button class="btn ghost small" id="auto-off">✋ Pasar a manual</button></div>` + h;
-    else if (enApertura) h = `<button class="btn ghost small" id="auto-on" style="width:100%;margin-bottom:10px">🤖 Seguir en automático hasta el golpe de entrada</button>` + h;
+
+    if (enApertura() || sl.k === 'previa') h = `<div class="modo-bar"><div class="seg"><button data-modo="1" class="${S.auto !== false ? 'on' : ''}">🤖 Automático</button><button data-modo="0" class="${S.auto === false ? 'on' : ''}">✋ Manual</button></div>
+      <div class="muted" style="font-size:13px;margin-top:6px">${S.auto !== false ? 'Cada paso sale solo y avisa antes (con freno). Siguiente adelanta sin apagar el automático.' : 'Nada avanza solo: tocá Siguiente para cada paso.'}${sl.k === 'previa' ? '' : ` · Sigue: <b>${esc(proximoNombre(S.slide))}</b>`}</div></div>` + h;
+    else if (false) h = `<div class="auto-banner">🤖 <b>Automático hasta el golpe de entrada</b>${GOLPE_TEMA != null ? ` (segundo ${GOLPE_TEMA} del tema)` : ''}<button class="btn ghost small" id="auto-off">✋ Pasar a manual</button></div>` + h;
+
     body.innerHTML = h;
-    const ao = body.querySelector('#auto-off'); if (ao) ao.addEventListener('click', () => abortSeq('✋ Pasaste a manual'));
-    const an = body.querySelector('#auto-on'); if (an) an.addEventListener('click', startApertura);
+    body.querySelectorAll('[data-modo]').forEach(b => b.addEventListener('click', () => ponerModo(b.dataset.modo === '1')));
     body.querySelectorAll('[data-pm]').forEach(b => b.addEventListener('click', () => { S.previaModo = b.dataset.pm; commit(); }));
     const ss = body.querySelector('#seq-start'); if (ss) ss.addEventListener('click', startPrevia);
     const bqd = body.querySelector('details.bq'); if (bqd) bqd.addEventListener('toggle', () => { bucleOpen = bqd.open; });
@@ -5904,9 +5986,10 @@ function initControl() {
     $('#score-body').querySelectorAll('.guess').forEach(row => {
       const i = +row.dataset.p, n = parseNum((res.g || {})[i]), a = aw.find(x => x.p === i);
       row.classList.toggle('win', win.includes(i));
-      const dtx = n === null ? '' : '±' + fmtNum(Math.round(Math.abs(n - q.respuesta) * 100) / 100);
+      const dif = n === null ? 0 : n - q.respuesta, dtx = n === null ? '' : (dif === 0 ? '0' : (dif > 0 ? '+' : '−') + fmtNum(Math.round(Math.abs(dif) * 100) / 100));
+      row.classList.toggle('exacto', n !== null && dif === 0);
       if (orden) { const o = orden.find(x => x.players.includes(i)); row.querySelector('.gd').textContent = n === null ? '' : `${o ? o.pos + '°' : ''}${o && o.players.length > 1 ? ' (siguen empatados)' : ''} · ${dtx}`; }
-      else row.querySelector('.gd').textContent = n === null ? '' : (a ? `★ +${fmtPts(a.pts)}${a.exacto ? ' ¡exacto!' : ''}` : dtx);
+      else row.querySelector('.gd').textContent = n === null ? '' : (a ? (a.exacto ? '★ ¡exacto!' : `★ ${dtx}`) : dtx);
     });
   }
   function renderMini() {
@@ -5944,7 +6027,7 @@ function initControl() {
     S.desde = desde ? { k: ini.pista, t: desde } : null;
     commit();
     if (ini.luz) { clearLights(); fireLook(ini.luz, true); }
-    seq = { i: 0, pending: false, pista: ini.pista };
+    seq = S.auto !== false ? { i: 0, pending: false, pista: ini.pista } : null;   // en manual: suena la previa y los pasos los hacés vos
     log(desde ? `▶ Previa en marcha · 🧪 prueba desde ${mmss(desde)}` : '▶ Previa en marcha', 'o');
     if (desde) {   // los pasos que en la previa real ya habrían pasado se aplican de una, sin aviso
       const pas = PREVIA.pasos || [];
@@ -5952,12 +6035,31 @@ function initControl() {
     }
     renderControl();
   }
-  function abortSeq(msg = '✋ Secuencia frenada: seguís a mano') {
-    if (!seq) return;
+  /* Modo de la apertura (S.auto): en automático cada paso (avisos, voz, corto, créditos, fanfarria, cuenta, tu tema y el golpe)
+     sale solo con cuenta regresiva y freno; en manual nada avanza solo. Se elige arriba en el celu y queda guardado. */
+  const enApertura = () => { const k = SCRIPT[S.slide].k; return ['cine', 'cuentaReg', 'corto', 'intro'].includes(k) || (k === 'presentador' && S.step !== 'golpe'); };
+  function asegurarModo() {
+    if (S.auto === undefined) S.auto = true;
+    if (S.auto && enApertura()) { if (!seq || seq.phase !== 'apertura') seq = { phase: 'apertura', pending: false }; }
+    else if (seq && seq.phase === 'apertura') { seq = null; clearInterval(seqTick); $('#seq-toast').hidden = true; }
+  }
+  function cancelarPaso() {   // se descarta el aviso que estaba corriendo (el paso que lo reemplaza se arma solo)
+    clearInterval(seqTick); clearTimeout(golpeFallbackT); $('#seq-toast').hidden = true;
+    if (seq) { seq.pending = false; seq.held = false; seq.fire = null; }
+  }
+  function ponerModo(auto) {
+    S.auto = auto;
+    if (auto) { asegurarModo(); autoKey = null; if (SCRIPT[S.slide].k === 'presentador' && S.step !== 'golpe' && GOLPE_TEMA != null) S.autoGolpe = GOLPE_TEMA; log('🤖 Automático: cada paso sale solo, con aviso y freno', 'o'); }
+    else { abortSeq('', true); S.autoGolpe = null; clearTimeout(autoT); log('✋ Manual: nada avanza solo, tocá Siguiente', 'o'); }
+    commit();
+  }
+  function abortSeq(msg = '✋ Secuencia frenada: seguís a mano', keepMode = false) {
+    if (!seq) { if (!keepMode) { S.auto = false; commit(); } return; }
     seq = null; clearInterval(seqTick); clearTimeout(golpeFallbackT); $('#seq-toast').hidden = true;
+    if (!keepMode) S.auto = false;
     if (S.autoGolpe != null) { S.autoGolpe = null; commit(); }
     if (link) link.send({ type: 'volRamp', cancel: true });
-    log(msg, 'e'); renderControl();
+    if (msg) log(msg, 'e'); renderControl();
   }
   function execStep(step) {
     const a = lastMus || {};
@@ -5970,8 +6072,7 @@ function initControl() {
     }
     log('✔ ' + seqDescribe(step), 'o');
     if (step.siguiente) {   // la previa terminó: sigue en automático la apertura hasta el golpe de entrada
-      if (PREVIA.hastaGolpe !== false) { seq = { phase: 'apertura', pending: false }; goSlide(SCRIPT.findIndex(x => x.k === 'cine'), true); log('🤖 Automático hasta el golpe de entrada', 'o'); }
-      else { seq = null; goSlide(SCRIPT.findIndex(x => x.k === 'cine'), true); }
+      seq = null; goSlide(SCRIPT.findIndex(x => x.k === 'cine'), true);
       return;
     }
     commit();
@@ -6032,7 +6133,7 @@ function initControl() {
     log(`💥 Golpe de entrada automático (${origen}). Desde acá seguís a mano`, 'o'); renderControl();
   }
   function startApertura() {
-    seq = { phase: 'apertura', pending: false };
+    S.auto = true; seq = { phase: 'apertura', pending: false };
     if (SCRIPT[S.slide].k === 'presentador' && GOLPE_TEMA != null && S.step !== 'golpe') { S.autoGolpe = GOLPE_TEMA; commit(); }
     log('🤖 Automático hasta el golpe de entrada', 'o'); renderControl();
   }

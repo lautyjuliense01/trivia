@@ -68,7 +68,7 @@ window.TRIVIA = {
     // Voz de bienvenida ("ladies and gentlemen"): va después de los avisos y antes del corto, con sus frases en pantalla.
     // velocidad 0.9 = 10 % más lenta sin cambiar el tono (tono: 'grave' para que también baje) · hasta: segundo del audio en que termina
     voz: {
-      archivo: 'voz-presentacion.mp3', volumen: 1, velocidad: 0.9, silencioAntes: 10, desde: 0, hasta: 19,
+      archivo: 'voz-presentacion.mp3', volumen: 0.43, velocidad: 0.9, silencioAntes: 10, desde: 0, hasta: 19,
       placas: [
         { en: 2.8,  texto: '¿Están listos?' },
         { en: 7,    texto: 'Damas y caballeros' },
@@ -77,7 +77,7 @@ window.TRIVIA = {
     },
     // La cuenta regresiva ahora va después de la fanfarria y antes de tu entrada: termina en el 1 y arranca tu tema.
     cuenta: {
-      archivo: 'cuenta-regresiva.mp3', volumen: 1, silencioAntes: 2, desde: 8.9, hasta: 54.85,
+      archivo: 'cuenta-regresiva.mp3', volumen: 0.72, silencioAntes: 2, desde: 8.9, hasta: 54.85,
       placas: [
         { en: 9.2,  texto: 'Damas y caballeros' },
         { en: 11.9, texto: 'Su atención, por favor' },
@@ -126,18 +126,20 @@ window.TRIVIA = {
      A pantalla completa, sin controles; cuando termina sigue sola.
      inicio / fin: segundos para recortarlo (fin sirve para cortar antes de la pantalla final de YouTube) · volumen: 0 a 1 */
   corto: { local: true, archivo: '', id: '', nombre: 'La historia de Bioingeniería', inicio: 0, fin: null, volumen: 1,
-           presenta: { estudio: 'Bioingeniería Surround', texto: 'presenta' } },   // la productora chica (logo de neón) que presenta el corto · presenta: false = sin intro
+           presenta: { estudio: 'Bioingeniería Surround', texto: 'presenta' }, negroDespues: 10 },   // negroDespues: segundos en negro al terminar el video (para comentarlo)   // la productora chica (logo de neón) que presenta el corto · presenta: false = sin intro
   // local: true = el video se elige de los archivos de la compu de la tele (botón 🎞️ en su pantalla de inicio; en Chrome/Edge queda recordado)
   // archivo: mp4 subido al repositorio (si pesa menos de 100 MB) · id: un video de YouTube · todo vacío/false = sin corto
 
   /* ---------- Música (ID del video de YouTube / YouTube Music) ----------
      El ID es lo que va después de "watch?v=" en el link.
      "inicio" = segundo desde el que arranca (opcional). */
+  /* Volúmenes: los mp3 están emparejados por sonoridad medida (todos a −15 LUFS con su "volumen"); los de YouTube no se pueden
+     medir desde acá: se emparejan de oído en el celu (🎚️ Calibraciones). El volumen general va en dB: 70 = −9 dB, 100 = 0 dB. */
   musica: {
     previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
     cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false, credito: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
-    presentacion: { id: '7EhnvUTkBZM', archivo: 'presentacion.mp3', nombre: 'The Good, the Bad and the Ugly', inicio: 26.3, bucle: [67.65, 131.642], fundido: 0.15 },
+    presentacion: { id: '7EhnvUTkBZM', archivo: 'presentacion.mp3', volumen: 0.93, nombre: 'The Good, the Bad and the Ugly', inicio: 26.3, bucle: [67.65, 131.642], fundido: 0.15 },
                   // bucle: del 131,64 vuelve al 67,65 (la segunda vuelta del tema, medida en el audio) · fundido: segundos de mezcla en el salto
     ronda:        { id: 'usLbaOEjqV4', archivo: 'pregunta.mp3', nombre: 'Presentación de ronda (¿Quién quiere ser millonario?)', inicio: 8.19, bucle: [8.1857, 36] },   // solo el tramo del medio, en bucle
     pregunta:     { id: 'usLbaOEjqV4', archivo: 'pregunta.mp3', nombre: '100-1000 Questions', bucle: [8.1857, 36], revela: 49, salida: 18.5 },
@@ -149,7 +151,9 @@ window.TRIVIA = {
                   //   Se afina en el celu, en la pregunta (🔁 Bucle del tema), y después se copia acá.
                   // revela: al tocar Revelar sale del bucle y la respuesta aparece justo en ese segundo; después el tema sigue hasta el final y pasa a "datos"
                   // tension: (opcional) segundo en que la luz pasa a tensión; si no está, al final del bucle
-    final:        { id: 'vScraQIhz4M', nombre: "Let's Play for One Million!" },   // la última pregunta y el desempate
+    final:        { id: 'vScraQIhz4M', archivo: 'final.mp3', volumen: 1, nombre: "Let's Play for One Million!", bucle: [15.95, 51.952], periodo: 4.00025, revela: 54.1 },
+                  // bucle: el pulso de tensión se repite cada 4 s (periodo): al revelar salta a la última vuelta, así la respuesta cae en ≤ 6 s
+                  // revela: el golpe del 54,1; después el tema sigue con su cierre final y pasa a los datos curiosos   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
     anfitrionVoz: { id: 'q9C_euAFpW8', archivo: 'voz-presentacion.mp3', nombre: 'Voz: Ladies and gentlemen', inicio: 0, duracion: 21, fin: 19, velocidad: 0.9, pausa: 5 },
@@ -157,7 +161,7 @@ window.TRIVIA = {
                   // velocidad: 0.9 = 10 % más lenta (los textos atados a voz: siguen en el segundo del video) · pausa: segundos en negro y en silencio entre la voz y el tema
                   // fin: en el segundo 19 del video termina la voz (los últimos 2 s son silencio)
                   // opcionales: fin: segundo en que se corta la voz · solape: segundos que se pisan voz y tema (0.3)
-    anfitrion:    { archivo: 'entrada.mp3', nombre: 'Going the Distance (Rocky, epic)', recorte: [7.01, 48.49], bucle: [67.77, 91.47], fundido: 0.15 },   // tu entrada
+    anfitrion:    { archivo: 'entrada.mp3', volumen: 0.48, nombre: 'Going the Distance (Rocky, epic)', recorte: [7.01, 48.49], bucle: [67.77, 91.47], fundido: 0.15 },   // tu entrada
                   // bucle (contado ya recortado): después de la explosión repite 8 compases, así sigue sonando mientras hablás con el logo de fondo
                   // recorte: a los 7,01 s salta al 48,49 (mismo pasaje de la música, medido en el audio) para que la explosión llegue antes.
                   //   Los segundos de los textos y del golpe están contados con el tema ya recortado: la explosión queda en el 56,95.
@@ -169,7 +173,7 @@ window.TRIVIA = {
     enjuego:      { id: 'BuYf0taXoNw', nombre: 'Presentación de premios' },   // mientras se dan vuelta los premios
     ticket:       { id: '',            nombre: 'A definir: aparece el ticket dorado' },  // cuando aparece el ticket
     muletilla:    { id: '',            nombre: 'A definir: muletilla del ticket', inicio: 0 },   // fragmento corto para el botón 🎫 (vacío = campanas)
-    gracias:      { id: '-QuVe-hjMs0', archivo: 'gracias.mp3', nombre: 'Cierre: palabras de agradecimiento', inicio: 17, recorte: [20.35, 22.45], bucle: [58.15, 124.36], fundido: 0.15, volumen: 0.55, credito: false },
+    gracias:      { id: '-QuVe-hjMs0', archivo: 'gracias.mp3', nombre: 'Cierre: palabras de agradecimiento', inicio: 17, recorte: [20.35, 22.45], bucle: [58.15, 124.36], fundido: 0.15, volumen: 0.43, credito: false },
                   // recorte: saltea los 2 s de silencio del 20,4 · bucle (contado ya recortado): sigue sonando lo que dure tu discurso   // suena más bajo (55 %) para hablar encima
     cierre:       { id: '0T-if-Vj2Xs', nombre: 'Créditos finales', credito: false },   // el rodillo de créditos dura lo que la canción
   },
@@ -363,7 +367,8 @@ window.TRIVIA = {
     // Golpe de entrada automático: segundo del tema en que cae (con la apertura en automático). null = siempre a mano.
     golpeTema: 56.95,
     reflectoresAntes: 0.5,
-    reflectoresDerecha: 5,   // segundos que los reflectores quedan a la derecha después del golpe
+    reflectoresDerecha: 5,
+    apagonAntes: 3,          // segundos antes del golpe en que se apaga todo (tele y luces) para que entres a oscuras; 0 = sin apagón   // segundos que los reflectores quedan a la derecha después del golpe
     logoTras: 7,             // segundos después del golpe en que aparece el logo   // segundos antes del golpe en que los reflectores van al costado derecho (por donde entrás)
     // Qué aparece en el golpe: 'logo' (el logo de la trivia, como en la tele) o 'nombre' (tu nombre y foto)
     revelar: 'logo',
