@@ -478,7 +478,7 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
   filter:drop-shadow(0 0 22px rgba(255,205,120,.55)) drop-shadow(0 0 60px rgba(255,170,60,.25))}
 .hw.on span{animation:hwShine 1.8s cubic-bezier(.3,.1,.3,1) .35s both}
 @keyframes hwShine{from{background-position:120% 0,0 0}to{background-position:-20% 0,0 0}}
-.hw.two span{white-space:normal;text-wrap:balance;max-width:86vw;text-align:center;line-height:1.18}
+.hw.two span{white-space:normal;text-wrap:balance;max-width:var(--mw,86vw);text-align:center;line-height:1.18}
 
 .hw-flare{position:absolute;left:50%;top:calc(50% + var(--fs,6vw) * .72);width:110vw;height:2px;margin:-1px 0 0 -55vw;border-radius:50%;z-index:0;
   background:linear-gradient(90deg,transparent,rgba(255,214,150,.0) 12%,rgba(255,230,190,.75) 50%,rgba(255,214,150,0) 88%,transparent);
@@ -839,7 +839,15 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .v-host.golpe .sl-art{animation:fadeIn .6s .2s both}
 .show-logo.static .sl-top,.show-logo.static .sl-art,.show-logo.static .sl-title,.show-logo.static .sl-sub{opacity:1}
 .show-logo.static .sl-rule{transform:none}
-.intro-title .show-logo .sl-title{font-size:clamp(70px,10.5vw,190px)}
+.intro-title .show-logo .sl-title{font-size:clamp(60px,8.6vw,160px)}
+/* v33: el título siempre por delante del telón y dentro de la boca del escenario */
+.v:has(> .intro-title),.v-titulo{z-index:7!important}
+.intro-title .show-logo,.tit-in .show-logo{max-width:72vw;margin-left:auto;margin-right:auto}
+.trav.abierto{visibility:hidden}.trav.abierto.listo{visibility:visible}
+.v-titulo{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.tit-in{animation:titIn 1.3s cubic-bezier(.2,1.4,.4,1) both}
+.tit-in .show-logo .sl-title{font-size:clamp(60px,8.6vw,160px)}
+@keyframes titIn{0%{opacity:0;transform:scale(.6);filter:blur(10px)}100%{opacity:1;transform:none;filter:none}}
 .sl-top{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.55em;padding-left:.55em;text-transform:uppercase;color:#e8d3a6;font-size:clamp(16px,1.9vw,30px);display:flex;align-items:center;gap:.8em;opacity:0}
 .sl-top span{font-size:.5em;color:#f0cf7e;letter-spacing:0}
 .sl-title{font-family:'Cinzel',serif;font-weight:900;text-transform:uppercase;line-height:.92;letter-spacing:.05em;font-size:clamp(80px,11.5vw,210px);margin:.08em 0 .08em;
@@ -1270,7 +1278,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v59 · 03/11 20:00';
+const VERSION = 'v61 · 03/11 21:30';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1564,6 +1572,21 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     fileBufs[key] = fetch(tracks[key].archivo).then(r => { if (!r.ok) throw new Error('no lo encuentro (' + r.status + ')'); return r.arrayBuffer(); })
       .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
       .then(b => {
+        // recorte: al llegar a recorte[0] salta a recorte[1] (con un fundido corto); los segundos del tema quedan contados ya recortado
+        const rc = tracks[key].recorte;
+        if (rc) {
+          const sr = b.sampleRate, A = Math.round(rc[0] * sr), B = Math.round(rc[1] * sr), n = Math.round((tracks[key].fundidoRecorte || 0.25) * sr);
+          if (B < b.length && A > n) {
+            const out = audioCtx().createBuffer(b.numberOfChannels, b.length - (B - A), sr);
+            for (let c = 0; c < b.numberOfChannels; c++) {
+              const d = b.getChannelData(c), o = out.getChannelData(c);
+              o.set(d.subarray(0, A - n), 0);
+              for (let i = 0; i < n; i++) { const k = (i + 1) / n; o[A - n + i] = d[A - n + i] * Math.cos(k * Math.PI / 2) + d[B - n + i] * Math.sin(k * Math.PI / 2); }
+              o.set(d.subarray(B), A);
+            }
+            b = out;
+          }
+        }
         // fundido del bucle: los últimos segundos antes de "hasta" se mezclan con los que vienen antes de "desde",
         // así al saltar la música sigue sin corte aunque las dos pasadas no sean idénticas (orquesta en vivo)
         const t = tracks[key], bq = t.bucle, fd = t.fundido;
@@ -1967,7 +1990,7 @@ const fmtNum = n => (typeof n === 'number' ? n.toLocaleString('es-AR') : esc(n))
 const TIPO_LABEL = { opciones: 'Opción múltiple', quien: '¿Quién dijo?', aprox: 'Aproximación' };
 const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
-D.momentos = Object.assign({ programa: 'anfitrion', gracias: 'gracias', enjuego: 'enjuego', enjuegoTicket: 'ticket', presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
+D.momentos = Object.assign({ programa: 'anfitrion', titulo: 'anfitrion', gracias: 'gracias', enjuego: 'enjuego', enjuegoTicket: 'ticket', presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
 D.luces = Object.assign({ contendientes: 'festejo', cuenta: 'tension' }, D.luces || {});
 /* Lámparas Tuya: nombre → ID (tienen que estar también en TUYA_DEVICE del intermediario) */
 const LAMP_CFG = {};
@@ -2039,7 +2062,9 @@ const IDENT_MS = 11000;
 const PASOS_Q = D.pasosPregunta || ['pregunta'];   // antes había pizarras y tensión; ahora de la pregunta se va directo a revelar
 const PRES_NUEVA = !(D.presentacion && D.presentacion.estilo === 'fotos');   // nombre que aparece y se va, con sello en lugar de foto
 const PRES_MS = (D.presentacion && D.presentacion.ms) || 3000;
-const PT_CORTE = (D.presentamos && D.presentamos.corte != null ? D.presentamos.corte : 2.8) * 1000;   // segundos a oscuras entre el corte de tu tema y la música western
+/* Fundidos al cambiar de parte: lo que suena baja en estos ms y recién después arranca lo nuevo */
+const FUNDIDOS = Object.assign({ presentamos: 5000, enjuego: 4000 }, D.fundidos || {});
+const PT_CORTE = FUNDIDOS.presentamos;   // la pantalla queda a oscuras mientras baja tu tema; con la música western aparece el título
 const CONT_FASE1 = !PRES_NUEVA;
 // Si se indica la duración total de los créditos (la de la música), se reparte: intro de estudio, créditos y el final más largo
 const AP = D.apertura || {}, CRED_N = CREDITS.length;
@@ -2053,9 +2078,14 @@ CREDITS.forEach((c, i) => { CRED_AT.push(CRED_END); CRED_END += credDur(c, i); }
 /* Cortometraje antes de la película (como en el cine): parte la apertura en dos, avisos → corto → estudio y créditos */
 const CORTO = D.corto && (D.corto.local || D.corto.archivo || D.corto.id) ? D.corto : null;
 /* Cuenta regresiva con voz entre el corto y los créditos (apertura.cuenta): frases con placa y los números 10…1 */
-const CUENTA = AP.cuenta && AP.cuenta.archivo ? AP.cuenta : null;
-const CUENTA_SIL = CUENTA ? Math.round((CUENTA.silencioAntes != null ? CUENTA.silencioAntes : 10) * 1000) : 0;   // negro y silencio antes de que arranque la voz
-const CUENTA_MS = CUENTA ? CUENTA_SIL + Math.round(((CUENTA.hasta || 55) - (CUENTA.desde || 0)) * 1000) + 300 : 0;   // local: el video se elige de los archivos de la compu de la tele
+/* Locuciones con placas (una pantalla negra con la voz y sus frases): "voz" = la bienvenida (ladies and gentlemen), después de
+   los avisos · "cuenta" = la cuenta regresiva, después de la fanfarria y antes de tu entrada */
+const LOCUS = { voz: AP.voz && AP.voz.archivo ? AP.voz : null, cuenta: AP.cuenta && AP.cuenta.archivo ? AP.cuenta : null };
+const CUENTA = LOCUS.cuenta;
+const locuCfg = sl => (sl && sl.k === 'cuentaReg' && LOCUS[sl.cfg || 'cuenta']) || CUENTA;
+const locuVel = c => (c && +c.velocidad > 0 ? +c.velocidad : 1);
+const locuSil = c => c ? Math.round((c.silencioAntes != null ? c.silencioAntes : 2) * 1000) : 0;   // negro y silencio antes de que arranque la voz
+const locuMs = c => c ? locuSil(c) + Math.round(((c.hasta || 55) - (c.desde || 0)) * 1000 / locuVel(c)) + 300 : 0;   // local: el video se elige de los archivos de la compu de la tele
 const cineOff = sl => (sl && sl.parte === 'creditos' ? CEL - 1200 : 0);                     // en la parte de créditos todo arranca a los 0,8 s
 const cineFin = sl => (sl && sl.parte === 'avisos' ? CEL + 700 : CRED_END - cineOff(sl));   // ms hasta que pasa sola a lo siguiente
 /* Telón de terciopelo dibujado una sola vez: pliegues irregulares, brillo de terciopelo, cenefa con flecos dorados */
@@ -2109,7 +2139,7 @@ function renderCurtain(W, H, opt = {}) {
 }
 /* v31: telón a la americana. Cada paño es una tira de pliegues (los cortes caen en el fondo de cada pliegue),
    así al correrse cada pliegue se cierra sobre sí mismo como tela real en vez de estirarse o doblarse. */
-function renderTraveler(W, H, seed, N = 9) {
+function renderTraveler(W, H, seed, N = 8) {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
   let sd = seed | 0;
@@ -2191,7 +2221,7 @@ function curtainAssets(cb) {
   put(L.canvas, '--curtain-l', 0); put(Rm, '--curtain-r', null); put(R.canvas, null, 1); put(V, '--valance', null);
 }
 /* Arma los dos paños de la intro (cada pliegue es una tira) y los deja cerrados */
-function travBuild(stage) {
+function travBuild(stage, listo) {
   curtainAssets(C => {
     stage.querySelectorAll('.trav').forEach(el => {
       const k = el.classList.contains('r') ? 1 : 0, Wc = el.clientWidth || innerWidth / 2, ws = C.widths[k];
@@ -2199,11 +2229,12 @@ function travBuild(stage) {
       el.innerHTML = ws.map(w => { const px = w * Wc, h = `<div class="tv-s" style="width:${px.toFixed(2)}px;transform:translateX(${x.toFixed(2)}px);background-image:url(${C.url[k]});background-size:${Wc}px 100%;background-position:${(-x).toFixed(2)}px 0"><div class="tv-o"></div></div>`; x += px; return h; }).join('');
       el.dataset.ok = '1';
     });
+    if (listo) listo();
   });
 }
 /* Se corren: el canto de adentro tira y los pliegues se van juntando contra el costado, cada uno cuando le llega el empuje.
    Lo de abajo del paño se atrasa un poco al moverse y se acomoda con un vaivén cuando frena. */
-function travOpen(stage, ms = 3600, pack = 0.27) {
+function travOpen(stage, ms = 3600, pack = 0.22, instant = false) {
   const sides = [...stage.querySelectorAll('.trav')].map(el => {
     const Wc = el.clientWidth || innerWidth / 2, k = el.classList.contains('r') ? 1 : 0;
     const ws = (CURT ? CURT.widths[k] : []).map(w => w * Wc), x0 = []; let x = 0; ws.forEach(w => { x0.push(x); x += w; });
@@ -2216,7 +2247,7 @@ function travOpen(stage, ms = 3600, pack = 0.27) {
   const frame = now => {
     if (!sides[0].el.isConnected) return;
     const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)); last = now;
-    const p = Math.min(1, (now - t0) / ms), e = ease(p);
+    const p = instant ? 1 : Math.min(1, (now - t0) / ms), e = ease(p);
     let moving = p < 1;
     sides.forEach(sd => {
       const { Wc, ws, x0, strips } = sd, n = ws.length, Lw = Wc - (1 - pack) * Wc * e;   // canto de adentro
@@ -2227,11 +2258,14 @@ function travOpen(stage, ms = 3600, pack = 0.27) {
         const target = Math.max(-3, Math.min(3, -v * 0.0048));   // grados: lo de abajo se atrasa
         sd.angV[i] += (60 * (target - sd.ang[i]) - 8.5 * sd.angV[i]) * dt; sd.ang[i] += sd.angV[i] * dt;
         if (Math.abs(sd.ang[i]) > 0.02 || Math.abs(sd.angV[i]) > 0.05) moving = true;
-        strips[i].style.transform = `translateX(${xs[i].toFixed(2)}px) skewX(${sd.ang[i].toFixed(3)}deg) scaleX(${s.toFixed(4)})`;
-        strips[i].firstChild.style.opacity = (0.72 * Math.min(1, (1 - s) / (1 - pack))).toFixed(3);   // al juntarse, los pliegues se hunden
+        const cmp = Math.min(1, (1 - s) / (1 - pack)), abre = -1.6 * cmp * (i + 1) / n;   // recogido, el paño se abre un poco hacia afuera abajo (cae con peso)
+        if (instant) { sd.ang[i] = 0; sd.angV[i] = 0; }
+        strips[i].style.transform = `translateX(${xs[i].toFixed(2)}px) skewX(${(sd.ang[i] + abre).toFixed(3)}deg) scaleX(${s.toFixed(4)})`;
+        strips[i].firstChild.style.opacity = (0.55 * cmp).toFixed(3);   // al juntarse, los pliegues se hunden
       }
     });
-    if (moving) requestAnimationFrame(frame);
+    if (moving && !instant) requestAnimationFrame(frame);
+    if (instant) sides.forEach(sd => sd.el.classList.add('listo'));
   };
   requestAnimationFrame(frame);
 }
@@ -2386,6 +2420,12 @@ function identHTML(c, t0, dur) {
     <div class="id-fog f3" style="animation-duration:${dur}ms;animation-delay:${t0}ms"></div>
   </div>`;
 }
+/* Tamaño de las frases de tráiler: hasta 22 letras en un renglón; más largas en 2 o 3 renglones parejos, con la letra lo más grande que entre */
+function hwSize(texto) {
+  const len = Math.max(8, String(texto || '').length), lines = len > 46 ? 3 : len > 22 ? 2 : 1, per = len / lines;
+  const fs = Math.min(lines === 1 ? 7.4 : 6, (lines === 1 ? 96 : 90) / ((per + 2) * (lines === 1 ? 1 : 0.92)));
+  return { two: lines > 1, fs: fs.toFixed(2), mw: lines > 1 ? Math.min(90, (per + 5) * 0.95 * fs).toFixed(1) : null };
+}
 /* Productora chica (antes del corto): cartel de neón que se enciende a los tirones, con zumbido y chasquidos */
 function neonHTML(c) {
   const words = (c.estudio || '').trim().split(/\s+/), top = words.length > 1 ? words.slice(0, -1).join(' ') : words[0] || '', bot = words.length > 1 ? words[words.length - 1] : '';
@@ -2513,7 +2553,8 @@ function vozArchivo() {
 }
 const vozPlayer = fx => vozArchivo() || fx;   // el que esté disponible: archivo primero
 let TEMA_ESPERA = false;   // la tele está esperando para arrancar tu tema (los textos del tema no avanzan solos)
-const VOZ_MS = () => { const v = D.musica && D.musica.anfitrionVoz; return v && v.id ? Math.round((v.fin || v.duracion || 21) * 1000 / VOZ_VEL()) + VOZ_PAUSA() : 0; };
+const PRES_VOZ = !!(D.presentador && D.presentador.voz);   // la voz "ladies and gentlemen" antes de tu tema (ahora va en la apertura)
+const VOZ_MS = () => { const v = D.musica && D.musica.anfitrionVoz; return PRES_VOZ && v && (v.id || v.archivo) ? Math.round((v.fin || v.duracion || 21) * 1000 / VOZ_VEL()) + VOZ_PAUSA() : 0; };
 function hostTexts() {
   const p = D.presentador || {}, temaIni = (D.musica && D.musica.anfitrion && D.musica.anfitrion.inicio) || 0;
   let at = p.inicioTextos != null ? p.inicioTextos : 1200;
@@ -2530,10 +2571,11 @@ function hostTexts() {
 }
 const HOST_BPM = (D.presentador && D.presentador.ritmo && D.presentador.ritmo.bpm) || 128;
 // la calibración guardada en el celu vale solo para el tema con el que se hizo
-const ritmoValido = r => !!(r && r.id && TRACKS.anfitrion && r.id === TRACKS.anfitrion.id && (r.fase != null || r.ajuste));
+const ANF_ID = () => TRACKS.anfitrion ? (TRACKS.anfitrion.id || TRACKS.anfitrion.archivo || '') : '';
+const ritmoValido = r => !!(r && r.id && TRACKS.anfitrion && r.id === ANF_ID() && (r.fase != null || r.ajuste));
 /* Efectos marcados a mano en tu tema (segundos del video). Los del celu (marcados en el ensayo) mandan sobre los de datos.js.
    null = sin marcas: el efecto sale cada 8 compases como antes */
-const acentosValidos = a => !!(a && Array.isArray(a.t) && TRACKS.anfitrion && a.id === TRACKS.anfitrion.id);
+const acentosValidos = a => !!(a && Array.isArray(a.t) && TRACKS.anfitrion && a.id === ANF_ID());
 function acentosBase(st) {   // la lista que se edita al marcar
   if (st && acentosValidos(st.acentos)) return st.acentos.t.slice();
   const d = D.presentador && D.presentador.acentos;
@@ -2562,15 +2604,16 @@ function hostGuion() {
   return temaAt && temaAt < last ? [[0, 'oscuro'], [temaAt, 'latido'], [last, 'latidoRapido']] : [[0, 'oscuro'], [last, 'latidoRapido']];
 }
 /* Guion: qué look va en cada momento. Un nombre, o una secuencia [[ms, look], ...] donde ms = cuándo se tiene que VER */
-const cuentaGuion = () => {
-  if (!CUENTA) return 'oscuro';
-  const n = CUENTA.numeros || [], d0 = CUENTA.desde || 0, st = [[0, 'oscuro']];
-  n.slice(-3).forEach(t => { const ms = CUENTA_SIL + Math.round((t - d0) * 1000) + 300; st.push([ms, 'pulso']); st.push([ms + 650, 'oscuro']); });
+const cuentaGuion = (c = CUENTA) => {
+  if (!c) return 'oscuro';
+  const n = c.numeros || [], d0 = c.desde || 0, st = [[0, 'oscuro']];
+  n.slice(-3).forEach(t => { const ms = locuSil(c) + Math.round((t - d0) * 1000 / locuVel(c)) + 300; st.push([ms, 'pulso']); st.push([ms + 650, 'oscuro']); });
   return st;
 };
 const GUION = Object.assign({
   cuentaReg: cuentaGuion(),
   programa: 'calido',
+  titulo: [[0, 'flashSolo'], [150, 'dorado'], [1600, 'calido']],
   logo: 'salaInicio',
   previa: 'salaInicio',
   presentamos: [[0, 'apagado'], [PT_CORTE + 200, 'escenario']],
@@ -2594,7 +2637,7 @@ const TRACKS = {};
 Object.entries(D.musica || {}).forEach(([k, v]) => {
   const t = typeof v === 'string' ? { id: v } : (v || {});
   const bucle = Array.isArray(t.bucle) && t.bucle.length === 2 && t.bucle[1] > t.bucle[0] ? t.bucle.map(Number) : null;
-  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, fundido: +t.fundido > 0 ? +t.fundido : 0, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
+  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, fundido: +t.fundido > 0 ? +t.fundido : 0, recorte: Array.isArray(t.recorte) && t.recorte[1] > t.recorte[0] ? t.recorte.map(Number) : null, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
     loop: t.repetir != null ? !!t.repetir : (bucle ? false : !['redoble', 'respuesta', 'anfitrionVoz'].includes(k)) };
 });
 
@@ -2611,11 +2654,13 @@ const DESEMPATES = (Array.isArray(D.desempates) ? D.desempates : (D.desempate ? 
 const PROGRAMA = ((D.programa && D.programa.frases) || []).filter(Boolean);
 function buildScript() {
   const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }];
-  if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, ...(CUENTA ? [{ k: 'cuentaReg', label: '⏳ Cuenta regresiva (voz)' }] : []), { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
+  if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, ...(LOCUS.voz ? [{ k: 'cuentaReg', cfg: 'voz', label: '🎙️ Voz de bienvenida (ladies and gentlemen)' }] : []), { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
   else s.push({ k: 'cine', label: 'Apertura de cine: celulares y créditos' });
   s.push({ k: 'intro', label: 'Intro de película (fanfarria)' });
+  if (CUENTA) s.push({ k: 'cuentaReg', cfg: 'cuenta', label: '⏳ Cuenta regresiva (voz)' });
   if (D.presentador) s.push({ k: 'presentador', label: 'Entrada del presentador: ' + D.presentador.nombre });
   if (PROGRAMA.length) s.push({ k: 'programa', label: 'Presentación del programa (una frase por toque)' });
+  if (D.tituloShow !== false) s.push({ k: 'titulo', label: 'El título del show' });
   s.push({ k: 'presentamos', label: 'Título: presentamos a los participantes' });
   P.forEach((p, i) => s.push({ k: 'presentacion', p: i, label: 'Presentación: ' + p.nombre }));
   s.push({ k: 'contendientes', label: 'Todos los participantes' });
@@ -2740,7 +2785,7 @@ function momentOf(st) {
   if (isQ(sl)) return st.step || 'pregunta';
   if (sl.k === 'ganador' && st.step === 'redoble') return 'redoble';
   if (sl.k === 'presentador' && st.step === 'golpe') return 'presentadorGolpe';
-  if (sl.k === 'enjuego' && D.ticketDorado && (st.sub || 0) > (D.premiosEnJuego || []).length) return 'enjuegoTicket';
+  if (sl.k === 'enjuego' && D.ticketDorado && (st.sub || 0) > (D.premiosEnJuego || []).length + 1) return 'enjuegoTicket';   // sub: 0 título · 1 premios tapados · 2… cada premio · último: ticket
   return sl.k === 'desempate' ? 'pregunta' : sl.k;
 }
 function musicKeyOf(st) {
@@ -3195,9 +3240,9 @@ function createDirector(music, fx) {
     }
     if (bk && nuevaQ && m === 'pregunta' && key === bk) { music.play(key, { restart: true, xfade: desdeQ ? XF : 0 }); lastKey = key; lastMoment = m; return; }   // pregunta nueva: el tema arranca de cero y el anterior se desvanece
     // la voz de presentación queda cargada durante la intro, para que arranque al instante
-    if (m === 'intro' && lastMoment !== 'intro' && fx && TRACKS.anfitrionVoz) setTimeout(() => vozPlayer(fx).cue('anfitrionVoz'), 1500);
+    if (m === 'intro' && lastMoment !== 'intro' && fx && TRACKS.anfitrionVoz && PRES_VOZ) setTimeout(() => vozPlayer(fx).cue('anfitrionVoz'), 1500);
     // Entrada del presentador: primero la voz ("Damas y caballeros…") y el tema entra cuando la voz termina
-    if (m === 'presentador' && lastMoment !== 'presentador' && fx && TRACKS.anfitrionVoz && key) {
+    if (m === 'presentador' && lastMoment !== 'presentador' && fx && TRACKS.anfitrionVoz && PRES_VOZ && key) {
       const v = (D.musica && D.musica.anfitrionVoz) || {}, solape = v.solape != null ? v.solape : 0.3, t0 = Date.now();
       music.stop(300);
       setTimeout(() => music.cue(key), 380);
@@ -3225,10 +3270,6 @@ function createDirector(music, fx) {
       }, 100);
       lastKey = key; lastMoment = m; return;
     }
-    if (m === 'presentamos' && lastMoment !== 'presentamos' && key) {   // corte seco: tu tema se apaga de golpe y la música western entra después del negro
-      music.stop(80); afterT = setTimeout(() => { if (lastMoment === 'presentamos') music.play(key, { instant: true }); }, PT_CORTE);
-      lastKey = key; lastMoment = m; return;
-    }
     if (m === 'cine' && lastMoment !== 'cine' && !TRACKS.cine) setTimeout(() => music.cue('intro'), 300); // la fanfarria queda cargada
     if (m === 'cine' && lastMoment !== 'cine' && TRACKS.cine) {
       // los avisos van en silencio; la música de los créditos entra con el primer crédito (con corto: en la segunda parte)
@@ -3252,7 +3293,8 @@ function createDirector(music, fx) {
       } else if (after && TRACKS[after]) music.play(after);
     } else {
       if (fx && lastMoment === 'redoble') fx.stop(150);
-      key ? music.play(key, { ...(st.desde && st.desde.k === key ? { from: st.desde.t } : {}), xfade: desdeQ ? XF : 0 }) : music.stop(desdeQ ? XF : 900);
+      const fd = FUNDIDOS[m] && lastMoment !== m ? FUNDIDOS[m] : 0;   // ej.: antes de presentar a los participantes, tu tema baja en 5 s
+      key ? music.play(key, { ...(st.desde && st.desde.k === key ? { from: st.desde.t } : {}), xfade: desdeQ ? XF : fd }) : music.stop(desdeQ ? XF : (fd || 900));
     }
     lastKey = key; lastMoment = m;
   }
@@ -3378,40 +3420,49 @@ function initScreen() {
   /* Cuenta regresiva: suena el mp3 (desde/hasta), cada frase tiene su placa y los números 10…1 salen en un líder de película
      clavados al segundo del audio. Termina en el 1 (sin el "go") y la tele avisa al celu para largar con la intro de estudio. */
   // el audio se decodifica entero en memoria: así arranca exacto en "desde" (sin depender de que el servidor deje adelantar el mp3)
-  let cuentaA = null, cuentaSrc = null;
-  function cuentaAudio() {
-    if (cuentaA) return cuentaA;
-    cuentaA = fetch(CUENTA.archivo).then(r => { if (!r.ok) throw new Error('no lo encuentro (' + r.status + ')'); return r.arrayBuffer(); })
+  let cuentaA = {}, cuentaSrc = null, cuentaEl = null;
+  function cuentaAudio(c = CUENTA) {
+    if (!c) return Promise.resolve(null);
+    if (cuentaA[c.archivo]) return cuentaA[c.archivo];
+    return (cuentaA[c.archivo] = fetch(c.archivo).then(r => { if (!r.ok) throw new Error('no lo encuentro (' + r.status + ')'); return r.arrayBuffer(); })
       .then(b => new Promise((res, rej) => audioCtx().decodeAudioData(b, res, rej)))
-      .catch(e => { log('Cuenta regresiva (' + CUENTA.archivo + '): ' + (e && e.message || e) + '. Sigue igual, sin sonido', 'e'); return null; });
-    return cuentaA;
+      .catch(e => { log('Locución (' + c.archivo + '): ' + (e && e.message || e) + '. Sigue igual, sin sonido', 'e'); return null; }));
   }
   function cuentaStop(ms = 90) {
+    if (cuentaEl) { const a = cuentaEl; cuentaEl = null; const v0 = a.volume, tt = performance.now(); const f = setInterval(() => { const k = Math.min(1, (performance.now() - tt) / Math.max(30, ms)); try { a.volume = v0 * (1 - k); } catch {} if (k >= 1) { clearInterval(f); a.pause(); } }, 15); }
     const c = cuentaSrc; cuentaSrc = null; if (!c) return;
     try { const t = c.ctx.currentTime; c.g.gain.cancelScheduledValues(t); c.g.gain.setValueAtTime(c.g.gain.value, t); c.g.gain.linearRampToValueAtTime(0, t + ms / 1000); c.src.stop(t + ms / 1000 + 0.02); } catch {}
   }
-  let cuentaRun = null;   // la cuenta que está sonando (para marcar las frases desde el celu)
-  function cuentaStart(slide, st0 = {}) {
-    const d0 = CUENTA.desde || 0, d1 = CUENTA.hasta || 55, nums = CUENTA.numeros || [];
+  let cuentaRun = null;   // la locución que está sonando (para marcar las frases desde el celu)
+  function cuentaStart(slide, st0 = {}, C = CUENTA, cfgName = 'cuenta') {
+    const d0 = C.desde || 0, d1 = C.hasta || 55, nums = C.numeros || [], vel = locuVel(C);
     // dónde empieza cada frase: lo marcado en el celu (ensayo) manda sobre datos.js
-    const marcas = st0.crMarcar ? [] : null, enDe = k => (st0.crEn && st0.crEn[k] != null) ? st0.crEn[k] : CUENTA.placas[k].en;
-    const pl = (CUENTA.placas || []).map((p, k) => ({ ...p, en: enDe(k) }));
+    const mk = (st0.crEn && st0.crEn[cfgName]) || null;
+    const marcas = st0.crMarcar ? [] : null, enDe = k => (mk && mk[k] != null) ? mk[k] : C.placas[k].en;
+    const pl = (C.placas || []).map((p, k) => ({ ...p, en: enDe(k) }));
     const els = [...document.querySelectorAll('.cr-txt .hw')], lead = $('#cr-leader'), num = $('#crl-num');
     let t0 = performance.now(), activo = -1, nAct = -1, fin = false, sonando = null, esperando = true;
     cuentaStop(0);
-    cuentaAudio().then(buf => {
+    const vol = Math.min(1.5, (C.volumen || 1) * Math.max(0.2, musicVol / 70));
+    if (vel !== 1 && d0 === 0) {   // con otra velocidad: reproductor común, que baja la velocidad sin cambiar el tono
+      const a = new Audio(C.archivo); cuentaEl = a;
+      try { a.preservesPitch = C.tono !== 'grave'; a.defaultPlaybackRate = a.playbackRate = vel; a.volume = Math.min(1, vol); } catch {}
+      a.play().then(() => { esperando = false; sonando = { el: a }; }).catch(e => { esperando = false; t0 = performance.now(); log('No se pudo reproducir ' + C.archivo + ': ' + e.message, 'e'); });
+    } else cuentaAudio(C).then(buf => {
       esperando = false;
       if (!buf || fin || !lead.isConnected) { t0 = performance.now(); return; }
       const ctx = audioCtx(), src = ctx.createBufferSource(), g = ctx.createGain();
-      src.buffer = buf; g.gain.value = Math.min(1.5, (CUENTA.volumen || 1) * Math.max(0.2, musicVol / 70));
+      src.buffer = buf; src.playbackRate.value = vel; g.gain.value = vol;
       src.connect(g); g.connect(ctx.destination);
       const at = ctx.currentTime + 0.05; src.start(at, d0);
       cuentaSrc = { src, g, ctx }; sonando = { ctx, at };
-      if (ctx.state !== 'running') log('El sonido de la tele está bloqueado (falta tocar «activar»): la cuenta sigue por reloj', 'e');
+      if (ctx.state !== 'running') log('El sonido de la tele está bloqueado (falta tocar «activar»): sigue por reloj', 'e');
     });
     // el reloj es el del audio; si no hay audio, el de la compu (y mientras carga, espera)
-    const reloj = () => sonando && sonando.ctx.state === 'running' ? d0 + Math.max(0, sonando.ctx.currentTime - sonando.at) : (esperando && performance.now() - t0 < 4000 ? d0 - 1 : d0 + (performance.now() - t0) / 1000);
-    cuentaRun = { slide, reloj, marcas, pl };
+    const reloj = () => sonando && sonando.el ? sonando.el.currentTime
+      : sonando && sonando.ctx.state === 'running' ? d0 + Math.max(0, sonando.ctx.currentTime - sonando.at) * vel
+      : (esperando && performance.now() - t0 < 4000 ? d0 - 1 : d0 + (performance.now() - t0) / 1000 * vel);
+    cuentaRun = { slide, reloj, marcas, pl, cfg: cfgName };
     const tick = setInterval(() => {
       if (fin || !lead || !lead.isConnected) { clearInterval(tick); return; }
       const t = reloj();
@@ -3436,6 +3487,7 @@ function initScreen() {
         fin = true; clearInterval(tick); cuentaStop(90); cuentaRun = null;
         lead.classList.remove('on'); lead.style.transition = 'none'; lead.style.opacity = '0';
         if (link) link.send({ type: 'cuentaFin', slide });
+        if (cuentaEl) cuentaStop(90);
       }
     }, 30);
     cineHits.push(tick);
@@ -3570,7 +3622,7 @@ function initScreen() {
   function hostTextsStart(vh) {
     hostTextsStop();
     const tx = hostTexts(), els = [...vh.querySelectorAll('.hw')], t0 = performance.now();
-    let active = -1, shownAt = 0, temaOn = false, fadedOut = false;
+    let active = -1, shownAt = 0, temaOn = false, fadedOut = false, aDerecha = false;
     const passed = (e, now, fxS, mS) => {
       const temaSuena = mS && mS.key === 'anfitrion' && mS.t > 0;
       if (e.clock === 'voz') {
@@ -3587,6 +3639,8 @@ function initScreen() {
       let idx = -1;
       tx.forEach((e, i) => { if (passed(e, now, fxS, mS)) idx = i; });
       if (!temaOn && mS && mS.key === 'anfitrion' && mS.t > 0) { temaOn = true; beams.level(.65); preBeat(vh); }
+      const gT = cur.autoGolpe != null ? cur.autoGolpe : (D.presentador && D.presentador.golpeTema);
+      if (!aDerecha && gT != null && mS && mS.key === 'anfitrion' && mS.t >= gT - (D.presentador.reflectoresAntes != null ? D.presentador.reflectoresAntes : 0.5)) { aDerecha = true; beamsDerecha(); }
       if (cur.autoGolpe != null && mS && mS.key === 'anfitrion' && mS.t >= cur.autoGolpe) { hostGolpe(vh); if (link) link.send({ type: 'golpe' }); return; }
       if (idx !== active && idx >= 0) {
         if (active >= 0 && !fadedOut) { els[active].classList.remove('on'); els[active].classList.add('off'); }
@@ -3643,7 +3697,14 @@ function initScreen() {
     setTimeout(() => { o.remove(); tkBusy = false; }, dur);
   }
   function hostFlash(kind) { const f = document.createElement('div'); f.className = 'flash ' + kind; document.body.appendChild(f); setTimeout(() => f.remove(), 600); }
+  // los reflectores van al costado derecho de la pantalla (por donde entrás) justo antes del golpe
+  function beamsDerecha() {
+    let el = $('#beam-derecha');
+    if (!el) { el = document.createElement('div'); el.id = 'beam-derecha'; el.style.cssText = 'position:fixed;right:3vw;top:38vh;width:10vw;height:40vh;pointer-events:none'; document.body.appendChild(el); }
+    beams.setup('top4'); beams.clearPools(); beams.level(1); beams.aimEls([el], { ms: 420, spread: true, sway: false });
+  }
   function hostGolpe(vh) {
+    if (!vh.querySelector('#beam-dummy') && !document.body.dataset.derecha) beamsDerecha();
     hostStop(); hostTextsStop();
     const h = host = { vh, wall0: performance.now(), fase: null, lastHalf: null, lastPos: null, lastP: 0, phrase: 0 };
     h.t0 = songClock(); h.marks = h.t0 != null ? marcasSt : null;   // con efectos marcados: salen en esos segundos del tema
@@ -3780,7 +3841,7 @@ function initScreen() {
     if (!r) { $('#cal-r').textContent = '⚠️ Toques muy irregulares: empezá de nuevo'; calTaps = []; return; }
     const ok = r.err <= 45;
     $('#cal-r').textContent = `${r.bpm} bpm · fase ${r.fase.toFixed(3)} s · ±${r.err} ms · ${r.n} toques ${ok ? '✔ guardado' : '· irregular, seguí tocando'}`;
-    if (ok) { calLocal = { bpm: r.bpm, fase: r.fase }; if (link) link.send({ type: 'ritmo', bpm: r.bpm, fase: r.fase, err: r.err, n: r.n, vid: TRACKS.anfitrion ? TRACKS.anfitrion.id : '' }); }
+    if (ok) { calLocal = { bpm: r.bpm, fase: r.fase }; if (link) link.send({ type: 'ritmo', bpm: r.bpm, fase: r.fase, err: r.err, n: r.n, vid: TRACKS.anfitrion ? ANF_ID() : '' }); }
   }
   document.addEventListener('pointerdown', calTap, true);
   document.addEventListener('keydown', e => { if (e.code === 'Space' || e.key === ' ') calTap(e); });
@@ -3808,7 +3869,7 @@ function initScreen() {
     const ring = document.createElement('div'); ring.className = 'mk-ring'; document.body.appendChild(ring); setTimeout(() => ring.remove(), 850);
     const dot = $('#mk-dot'); dot.classList.add('pop'); setTimeout(() => dot.classList.remove('pop'), 160);
     $('#mk-r').textContent = `${base.length} marcado${base.length === 1 ? '' : 's'} · último en ${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
-    if (link) link.send({ type: 'marcas', vid: TRACKS.anfitrion.id, t: base, nueva: t });
+    if (link) link.send({ type: 'marcas', vid: ANF_ID(), t: base, nueva: t });
   }
   function mkTap(e) {
     if (!mkOn || calOn) return;
@@ -3897,9 +3958,10 @@ function initScreen() {
       case 'enjuego': {
         const k = st.sub || 0, n = ENJ().length;
         beams.setup('top3'); beams.clearPools();
-        if (k > n) { beams.setup('top5'); beams.level(1); scanLock(() => [sq('.gticket')], 700, { spread: true }); }
-        else if (!k) { beams.level(.6); later(100, () => beams.aimEls([sq('.ej-row')], { ms: 1400, spread: true })); }
-        else { beams.level(1); scanLock(() => [sq(`.ej-row .rl-card[data-i="${k - 1}"]`)], 380); }
+        if (k > n + 1) { beams.setup('top5'); beams.level(1); scanLock(() => [sq('.gticket')], 700, { spread: true }); }
+        else if (!k) { beams.level(.4); later(100, () => beams.aimEls([sq('.ej-intro-t')], { ms: 1400, spread: true })); }
+        else if (k === 1) { beams.level(.6); later(100, () => beams.aimEls([sq('.ej-row')], { ms: 1400, spread: true })); }
+        else { beams.level(1); scanLock(() => [sq(`.ej-row .rl-card[data-i="${k - 2}"]`)], 380); }
         break;
       }
       case 'reglas': {
@@ -3992,7 +4054,7 @@ function initScreen() {
       const t = Math.max(0, cuentaRun.reloj() - (msg.demora != null ? msg.demora : 0.3));
       cuentaRun.marcas.push(+t.toFixed(2));
       const k = cuentaRun.marcas.length - 1; if (cuentaRun.pl[k]) cuentaRun.pl[k].en = cuentaRun.marcas[k];
-      link.send({ type: 'crMarcas', t: cuentaRun.marcas.slice() });
+      link.send({ type: 'crMarcas', t: cuentaRun.marcas.slice(), cfg: cuentaRun.cfg });
       return;
     }
     if (msg.type === 'tvEstrobo') { const per = 30000 / HOST_BPM; for (let i = 0; i * per < (msg.ms || 1860); i++) setTimeout(() => hostFlash('duro'), i * per); return; }
@@ -4030,7 +4092,8 @@ function initScreen() {
     marcasSt = st.marcar && mkLocal && Date.now() - mkLocal.at < 1500 ? mkLocal.t : acentosDe(st);
     if (host) host.marks = host.t0 != null ? marcasSt : null;
     marcarSet(!!st.marcar && sl.k === 'presentador');
-    if (changed) buildSlide(st, sl);
+    const reCr = sl.k === 'cuentaReg' && !changed && (st.crRun || 0) !== (cur.crRun || 0);   // "marcar frases": vuelve a arrancar la locución
+    if (changed || reCr) buildSlide(st, sl);
     updateSlide(st, sl, changed);
     // Superposición del marcador
     const ov = $('#overlay');
@@ -4103,7 +4166,7 @@ function initScreen() {
     clearInterval(confettiLoop); clearTimeout(introTimer); clearTimeout(contPhase);
     cineHits.forEach(h => { clearTimeout(h); clearInterval(h); }); cineHits = []; if (window.__neonStop) window.__neonStop();
     if (sl.k !== 'cuentaReg') cuentaStop(200);
-    if (CUENTA && (sl.k === 'cine' || sl.k === 'cuentaReg')) cuentaAudio();   // queda cargada para que arranque al instante
+    if (sl.k === 'cine' || sl.k === 'intro' || sl.k === 'cuentaReg') { cuentaAudio(LOCUS.voz && !(locuVel(LOCUS.voz) !== 1) ? LOCUS.voz : null); cuentaAudio(CUENTA); }   // quedan cargadas
     let h = '';
     if (sl.k === 'logo') {
       h = `<div class="v enter"><div class="marquee" style="display:inline-block"><div class="edition">${esc(D.edicion)}</div><h1 class="script" style="font-size:clamp(70px,11vw,150px);margin:0;line-height:.95">${esc(D.titulo)}</h1></div>
@@ -4114,16 +4177,22 @@ function initScreen() {
         : '<div class="hypno"></div><div class="hypno h2"></div><div class="hypno-core"></div><div class="hring"></div><div class="hring r2"></div><div class="hring r3"></div>';
       h = `<div class="previa">${fondo}
            <div class="previa-code" id="previa-code" ${curRev ? 'hidden' : ''}>Código para el control <b>${code}</b></div></div>`;
+    } else if (sl.k === 'titulo') {
+      // el título del show (como al final de la fanfarria), con el telón abierto enmarcándolo
+      h = `<div class="intro-stage"></div><div class="trav l abierto"></div><div class="trav r abierto"></div><div class="intro-valance"></div>
+        <div class="v v-titulo"><div class="tit-in">${showLogoHTML('', 'static')}</div></div>`;
+      setTimeout(() => travBuild(stage, () => travOpen(stage, 1, undefined, true)), 0);
+      boomGrave(1); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700);
+      introTimer = setTimeout(() => { confetti(); }, 500);
     } else if (sl.k === 'programa') {
       // presentación del programa: vos hablás y cada toque saca la frase siguiente, con placa de tráiler
-      h = `<div class="v v-host v-prog"><div class="host-wait">${PROGRAMA.map(x => { const t = String(x), len = Math.max(8, t.length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2);
-          return `<div class="hw tr ${two ? 'two' : ''}" style="--fs:${fs}vw"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div><span>${esc(t)}</span></div>`; }).join('')}</div></div>`;
+      h = `<div class="v v-host v-prog"><div class="host-wait">${PROGRAMA.map(x => { const t = String(x), { two, fs, mw } = hwSize(t);
+          return `<div class="hw tr ${two ? 'two' : ''}" style="--fs:${fs}vw${mw ? `;--mw:${mw}vw` : ''}"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div><span>${esc(t)}</span></div>`; }).join('')}</div></div>`;
     } else if (sl.k === 'presentamos') {
       // corte seco a negro (golpe) y, cuando entra la música western, el título se arma entre polvo
       const at = (PT_CORTE / 1000).toFixed(2) + 's';
       h = `<div class="v v-pt duelo" style="--pt:${at}"><div class="pt-dust">${Array.from({ length: 70 }, () => `<i style="top:${(30 + Math.random() * 40).toFixed(1)}%;animation-delay:calc(var(--pt) + ${(Math.random() * 2.2).toFixed(2)}s);animation-duration:${(2.2 + Math.random() * 2.5).toFixed(2)}s;--dy:${((Math.random() - 0.5) * 18).toFixed(1)}vh"></i>`).join('')}</div>
         <div class="pt-main">${esc((D.presentamos && D.presentamos.titulo) || 'Presentamos a los participantes')}</div><div class="pt-line"></div></div>`;
-      boomGrave(1.1);
     } else if (sl.k === 'cine') {
       const credHTML = (c, fin) => {
         if (typeof c === 'string') c = { grande: c };
@@ -4180,12 +4249,12 @@ function initScreen() {
         cineHits.push(setTimeout(() => boomGrave(last ? 1 : 0.55), CAT[i] + 200));
       });
     } else if (sl.k === 'cuentaReg') {
-      const pl = CUENTA.placas || [];
+      const LC = locuCfg(sl), pl = LC.placas || [];
       h = `<div class="cine"><div class="cine-black" style="animation:none;opacity:1"></div>
-        <div class="v v-host cr-txt"><div class="host-wait">${pl.map(x => { const len = Math.max(8, (x.texto || '').length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2);
-          return `<div class="hw tr ${two ? 'two' : ''}" style="--fs:${fs}vw"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div><span>${esc(x.texto || '')}</span></div>`; }).join('')}</div></div>
+        <div class="v v-host cr-txt"><div class="host-wait">${pl.map(x => { const { two, fs, mw } = hwSize(x.texto);
+          return `<div class="hw tr ${two ? 'two' : ''}" style="--fs:${fs}vw${mw ? `;--mw:${mw}vw` : ''}"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div><span>${esc(x.texto || '')}</span></div>`; }).join('')}</div></div>
         <div class="cr-leader" id="cr-leader"><div class="crl-cross"></div><div class="crl-ring"></div><div class="crl-sweep"></div><div class="crl-num" id="crl-num"></div><div class="crl-grain"></div></div></div>`;
-      cineHits.push(setTimeout(() => cuentaStart(st.slide, st), 300 + CUENTA_SIL));
+      cineHits.push(setTimeout(() => cuentaStart(st.slide, st, LC, sl.cfg || 'cuenta'), 300 + (st.crMarcar ? 1000 : locuSil(LC))));   // marcando, casi sin silencio
     } else if (sl.k === 'corto') {
       // antes del corto, la intro de estudio en versión corta (el corto también es una producción de la casa)
       // el corto lo presenta una productora chica, "Bioingeniería Surround", con su cartel de neón (corto.presenta en datos.js)
@@ -4230,9 +4299,9 @@ function initScreen() {
       const chips = [esc(p.rol), esc(p.antiguedad)].filter(Boolean).map(c => `<span>${c}</span>`).join('');
       const t = hostTexts();
       h = `<div class="v v-host" id="vhost">
-          <div class="host-wait">${t.map((x, i) => { const len = Math.max(8, x.texto.length), two = len > 22, fs = (two ? Math.min(5.8, 96 / (len / 2 + 3)) : Math.min(7.4, 96 / len)).toFixed(2), last = i === t.length - 1;
+          <div class="host-wait">${t.map((x, i) => { const { two, fs, mw } = hwSize(x.texto), last = i === t.length - 1;
             const tr = x.clock === 'tema', brasas = tr ? `<div class="hw-embers">${Array.from({ length: 22 }, () => `<i style="left:${(8 + Math.random() * 84).toFixed(1)}%;animation-delay:${(0.35 + Math.random() * 1.6).toFixed(2)}s;animation-duration:${(3.5 + Math.random() * 3.5).toFixed(2)}s;--dx:${((Math.random() - 0.5) * 12).toFixed(1)}vw"></i>`).join('')}</div>` : '';
-            return `<div class="hw ${last ? 'last' : ''} ${two ? 'two' : ''} ${x.clock === 'voz' ? 'ep' : ''} ${tr ? 'tr' : ''}" style="--fs:${fs}vw"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div>${brasas}<span>${esc(x.texto)}</span></div>`; }).join('')}</div>
+            return `<div class="hw ${last ? 'last' : ''} ${two ? 'two' : ''} ${x.clock === 'voz' ? 'ep' : ''} ${tr ? 'tr' : ''}" style="--fs:${fs}vw${mw ? `;--mw:${mw}vw` : ''}"><div class="hw-smoke"></div><div class="hw-burst"></div><div class="hw-ring"></div><div class="hw-flare"></div>${brasas}<span>${esc(x.texto)}</span></div>`; }).join('')}</div>
           ${(p.revelar || 'logo') === 'logo' ? `<div class="host-reveal">${showLogoHTML(p.logoArriba || 'Segunda edición', 'host')}</div>` : `<div class="host-reveal">
             <div class="host-tag">Su anfitrión</div>
             <div class="pl-card"><div class="pl-photo-wrap"><div class="ring"></div><div class="ring r2"></div><div class="pl-photo host">${photoHTML(p)}</div></div>
@@ -4492,12 +4561,12 @@ function initScreen() {
       if (ve) {
         ve.classList.toggle('s0', k === 0);
         // primero suena la música y recién después aparece "Lo que está en juego" (si la música no avisa, a los 3,5 s)
-        if (k === 0 && changed) { enjGo = () => { enjGo = null; setTimeout(() => { const v = $('#venj'); if (v) v.classList.add('go'); }, ENJ_TITULO); }; cineHits.push(setTimeout(() => { if (enjGo) { enjGo = null; const v = $('#venj'); if (v) v.classList.add('go'); } }, 3500)); }
+        if (k === 0 && changed) { enjGo = () => { enjGo = null; setTimeout(() => { const v = $('#venj'); if (v) v.classList.add('go'); }, ENJ_TITULO); }; cineHits.push(setTimeout(() => { if (enjGo) { enjGo = null; const v = $('#venj'); if (v) v.classList.add('go'); } }, 3500 + (FUNDIDOS.enjuego || 0))); }
         if (k > 0) ve.classList.add('go');
       }
-      stage.querySelectorAll('.ej-row .rl-card').forEach((c, i) => { const on = i < k; if (on && !c.classList.contains('on')) fresh = true; c.classList.toggle('on', on); c.classList.toggle('cur', i === k - 1); });
+      stage.querySelectorAll('.ej-row .rl-card').forEach((c, i) => { const on = i < k - 1; if (on && !c.classList.contains('on')) fresh = true; c.classList.toggle('on', on); c.classList.toggle('cur', i === k - 2); });
       if (ve) {
-        const tk = k > n && !!D.ticketDorado, was = ve.classList.contains('tk');
+        const tk = k > n + 1 && !!D.ticketDorado, was = ve.classList.contains('tk');
         ve.classList.toggle('tk', tk);
         if (tk && !was && !changed) { boomGrave(1); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
         else if (fresh && !changed) boomGrave(0.45);
@@ -4578,7 +4647,7 @@ function initControl() {
         else if (sq && sq.pending && sq.fire) sq.fire();
         else goSlide(S.slide + 1, true);
       }
-      if (msg.type === 'crMarcas' && Array.isArray(msg.t)) { S.crEn = msg.t; commit(true); log(`🎯 Frase ${msg.t.length} marcada en ${msg.t[msg.t.length - 1].toFixed(2)} s`, 'o'); }
+      if (msg.type === 'crMarcas' && Array.isArray(msg.t)) { S.crEn = { ...(S.crEn || {}), [msg.cfg || 'cuenta']: msg.t }; commit(true); log(`🎯 Frase ${msg.t.length} marcada en ${msg.t[msg.t.length - 1].toFixed(2)} s`, 'o'); }
       if (msg.type === 'cuentaFin' && SCRIPT[S.slide].k === 'cuentaReg' && msg.slide === S.slide) {   // llegó al 1: largan la intro de estudio y los créditos
         const sq = seqAhora();
         if (sq && sq.held) log('⏸ Terminó la cuenta: queda en negro hasta que toques ▶ Seguir', 'o');
@@ -5234,6 +5303,7 @@ function initControl() {
     if (m === 'redoble' || m === 'revelado') return; // los maneja reveal()
     if (SCRIPT[S.slide].k === 'ganador') return;      // lo maneja revealWinner()
     if (m === 'cine') return runSteps(GUION.cine || cineSteps(SCRIPT[S.slide]));
+    if (m === 'cuentaReg' && !(D.guion && D.guion.cuentaReg)) return runSteps(cuentaGuion(locuCfg(SCRIPT[S.slide])) === 'oscuro' ? [[0, 'oscuro']] : cuentaGuion(locuCfg(SCRIPT[S.slide])));
     if (m === 'presentadorGolpe' && !(D.guion && D.guion.presentadorGolpe)) return runSteps(golpeSteps());
     runCue(GUION[m]);
   }
@@ -5257,7 +5327,7 @@ function initControl() {
   /* --- Cambios de estado --- */
   let commitT = null, autoT = null, autoKey = null;
   const seqAhora = () => { try { return seq; } catch { return null; } };
-  const proximoNombre = i => { const n = SCRIPT[i + 1] || {}; return n.k === 'cuentaReg' ? '⏳ La cuenta regresiva' : n.k === 'corto' ? '🎞️ El cortometraje' : n.k === 'cine' ? '🎬 Estudio y créditos' : n.k === 'intro' ? '🎺 La fanfarria' : n.k === 'presentador' ? '🎤 Tu entrada' : (n.label || 'Lo que sigue'); };
+  const proximoNombre = i => { const n = SCRIPT[i + 1] || {}; return n.k === 'cuentaReg' ? (n.cfg === 'voz' ? '🎙️ La voz de bienvenida' : '⏳ La cuenta regresiva') : n.k === 'corto' ? '🎞️ El cortometraje' : n.k === 'cine' ? '🎬 Estudio y créditos' : n.k === 'intro' ? '🎺 La fanfarria' : n.k === 'presentador' ? '🎤 Tu entrada' : (n.label || 'Lo que sigue'); };
   function commit(soft = false) {
     S.rev = Date.now() + Math.random();
     aplicarBucleAj(S);
@@ -5265,7 +5335,7 @@ function initControl() {
     const m = momentOf(S);
     lightsFor(m);
     // La apertura de cine avanza sola a la fanfarria cuando terminan los créditos
-    if (SCRIPT[S.slide].k === 'cine' || SCRIPT[S.slide].k === 'cuentaReg') { if (autoKey !== S.slide) { autoKey = S.slide; clearTimeout(autoT); const k0 = S.slide, fin = SCRIPT[S.slide].k === 'cuentaReg' ? CUENTA_MS + 1500 : cineFin(SCRIPT[S.slide]) + 300;   // la cuenta: lo dispara el aviso de la tele (cuentaFin); esto es por si no llega
+    if (SCRIPT[S.slide].k === 'cine' || SCRIPT[S.slide].k === 'cuentaReg') { if (autoKey !== S.slide + ':' + (S.crRun || 0)) { autoKey = S.slide + ':' + (S.crRun || 0); clearTimeout(autoT); const k0 = S.slide, fin = SCRIPT[S.slide].k === 'cuentaReg' ? locuMs(locuCfg(SCRIPT[S.slide])) + (S.crMarcar ? 1500 - locuSil(locuCfg(SCRIPT[S.slide])) + 1000 : 1500) : cineFin(SCRIPT[S.slide]) + 300;   // la cuenta: lo dispara el aviso de la tele (cuentaFin); esto es por si no llega
       const sq = seqAhora(), av = ((PREVIA && PREVIA.avisoSeg) || 8) * 1000;
       if (sq && sq.phase === 'apertura') autoT = setTimeout(() => {   // con la apertura en automático: aviso con cuenta regresiva y freno
         if (S.slide !== k0) return;
@@ -5398,12 +5468,12 @@ function initControl() {
     const sl = SCRIPT[S.slide];
     if (S.overlay) { S.overlay = null; commit(); return; }
     if (sl.k === 'cuenta' && (S.sub || 0) < countdownGroups(S.results).length) { S.sub = (S.sub || 0) + 1; commit(); return; }
-    if (sl.k === 'enjuego' && (S.sub || 0) < ENJ().length + (D.ticketDorado ? 1 : 0)) {
+    if (sl.k === 'enjuego' && (S.sub || 0) < ENJ().length + 1 + (D.ticketDorado ? 1 : 0)) {
       S.sub = (S.sub || 0) + 1;
-      volA(ENJ_VOL[Math.min(S.sub, ENJ_VOL.length - 1)], 1800);   // la música sube con cada premio, hasta el ticket
+      volA(ENJ_VOL[Math.min(Math.max(0, S.sub - 1), ENJ_VOL.length - 1)], 1800);   // la música sube con cada premio, hasta el ticket
       commit();
       const base = typeof GUION.enjuego === 'string' ? GUION.enjuego : 'calido';
-      if (S.sub > ENJ().length) runSteps([[0, 'flashSolo'], [150, { tipo: 'color', h: 40, s: 92, brillo: 45, transicion: 0.4, nombre: 'ticket dorado', respaldo: 'festejo' }]]);
+      if (S.sub > ENJ().length + 1) runSteps([[0, 'flashSolo'], [150, { tipo: 'color', h: 40, s: 92, brillo: 45, transicion: 0.4, nombre: 'ticket dorado', respaldo: 'festejo' }]]);
       else runSteps([[0, 'pulso'], [1300, base]]);
       return;
     }
@@ -5440,7 +5510,7 @@ function initControl() {
     if (i < 0) return;
     S.slide = i; S.overlay = null; S.manual = null; S.desde = null;
     S.step = isQ(SCRIPT[i]) || SCRIPT[i].k === 'ganador' ? 'revelado' : null;
-    S.sub = SCRIPT[i].k === 'cuenta' ? countdownGroups(S.results).length : SCRIPT[i].k === 'reglas' ? rulesCards().length : SCRIPT[i].k === 'programa' ? PROGRAMA.length : SCRIPT[i].k === 'enjuego' ? ENJ().length + (D.ticketDorado ? 1 : 0) : 0;
+    S.sub = SCRIPT[i].k === 'cuenta' ? countdownGroups(S.results).length : SCRIPT[i].k === 'reglas' ? rulesCards().length : SCRIPT[i].k === 'programa' ? PROGRAMA.length : SCRIPT[i].k === 'enjuego' ? ENJ().length + 1 + (D.ticketDorado ? 1 : 0) : 0;
     clearTimeout(revealT);
     commit();
   }
@@ -5496,8 +5566,9 @@ function initControl() {
     if (sl.k === 'presentador' && S.step !== 'golpe') return '💥 ¡Golpe de entrada!';
     if (sl.k === 'reglas' && (S.sub || 0) < rulesCards().length) return `📜 Regla ${ROMAN[S.sub || 0] || (S.sub || 0) + 1} ▶`;
     if (sl.k === 'programa' && (S.sub || 0) < PROGRAMA.length) return `📣 Frase ${(S.sub || 0) + 1} de ${PROGRAMA.length} ▶`;
-    if (sl.k === 'enjuego' && (S.sub || 0) < ENJ().length) return `🎁 Premio ${(S.sub || 0) + 1} ▶`;
-    if (sl.k === 'enjuego' && D.ticketDorado && (S.sub || 0) === ENJ().length) return '🎫 El ticket dorado ▶';
+    if (sl.k === 'enjuego' && !(S.sub || 0)) return '🎁 Mostrar los premios (tapados) ▶';
+    if (sl.k === 'enjuego' && (S.sub || 0) <= ENJ().length) return `🎁 Premio ${S.sub} ▶`;
+    if (sl.k === 'enjuego' && D.ticketDorado && (S.sub || 0) === ENJ().length + 1) return '🎫 El ticket dorado ▶';
     const n = SCRIPT[nextIndex(S.slide, 1)];
     if (!n) return 'Fin';
     if (n.k === 'presentacion' && PRES_NUEVA) return `🎤 ${P[n.p].nombre} ▶`;
@@ -5520,15 +5591,17 @@ function initControl() {
         : `<button class="btn" id="seq-start" style="width:100%;margin-top:10px;font-size:17px">${pruebaPrevia() ? `▶ Comenzar previa · 🧪 desde ${mmss(PRUEBA_DESDE)}` : '▶ Comenzar previa automática'}</button><p class="muted" style="margin-top:6px">${esc((D.previa.resumen) || '')}</p>
           ${PRUEBA_DESDE ? `<label class="prueba-chk${pruebaPrevia() ? ' on' : ''}"><input type="checkbox" id="prueba-previa" ${pruebaPrevia() ? 'checked' : ''}><span>🧪 Prueba: la canción arranca en ${mmss(PRUEBA_DESDE)}${pruebaPrevia() ? ' · <b>destildalo la noche del show</b>' : ''}</span></label>` : ''}`) : ''}`;
 
+    else if (sl.k === 'titulo') h = `<div class="now-title">✨ El título del show</div><p class="muted">Golpe, destello y el logo de ${esc(D.titulo)} entre el telón, como al final de la fanfarria. Sigue sonando tu tema. Al seguir, la música baja en ${Math.round(FUNDIDOS.presentamos / 1000)} s y entra la presentación de participantes.</p>`;
     else if (sl.k === 'programa') h = `<div class="now-title">📣 Presentación del programa</div><p class="muted">Cada toque saca la frase siguiente en la tele. Decila vos y tocá.</p><ol class="muted" style="margin:8px 0 0 18px">${PROGRAMA.map((f, i) => `<li style="${i < (S.sub || 0) ? 'opacity:.45' : i === (S.sub || 0) ? 'color:var(--gold);font-weight:700' : ''}">${esc(f)}</li>`).join('')}</ol>`;
     else if (sl.k === 'cuentaReg') {
-      const pl = CUENTA.placas || [], mk = S.crEn || [];
-      h = `<div class="now-title">⏳ Cuenta regresiva</div><p class="muted">${Math.round(CUENTA_SIL / 1000)} s de negro y silencio, después la voz con sus frases en pantalla y los números del 10 al 1. Cierra en el 1 y sigue el cortometraje.</p>
+      const LC = locuCfg(sl), cf = sl.cfg || 'cuenta', pl = LC.placas || [], mk = (S.crEn && S.crEn[cf]) || [];
+      const voz = cf === 'voz';
+      h = `<div class="now-title">${voz ? '🎙️ Voz de bienvenida' : '⏳ Cuenta regresiva'}</div><p class="muted">${Math.round(locuSil(LC) / 1000)} s de negro y silencio, después la voz con sus frases en pantalla${voz ? '' : ' y los números del 10 al 1. Cierra en el 1 y sigue tu entrada'}.</p>
         <button class="pbtn ${S.crMarcar ? 'on' : ''}" id="cr-mk" style="margin-top:10px">${S.crMarcar ? '✔ Terminar de marcar' : '🎯 Marcar las frases (ensayo)'}</button>
-        ${S.crMarcar ? `<p class="muted" style="margin-top:6px">Entrá a esta parte desde el índice para que arranque de nuevo y tocá el botón <b>justo cuando la voz empieza cada frase</b>, en orden. Cada frase queda en pantalla hasta que empieza la siguiente.</p>
-          <button class="btn" id="cr-tap" style="width:100%;margin-top:8px;padding:22px 0;font-size:20px;touch-action:manipulation">💥 Empieza: ${esc((pl[mk.length] || {}).texto || '—')}</button>` : ''}
+        ${S.crMarcar ? `<p class="muted" style="margin-top:6px">La voz arranca de nuevo (sin el silencio). Tocá el botón <b>justo cuando la voz empieza cada frase</b>, en orden. Cada frase queda en pantalla hasta que empieza la siguiente. Para repetir: ↻.</p>
+          <div class="row" style="gap:8px;margin-top:8px"><button class="btn" id="cr-tap" style="flex:1;padding:22px 0;font-size:19px;touch-action:manipulation">💥 Empieza: ${esc((pl[mk.length] || {}).texto || '—')}</button><button class="btn ghost" id="cr-again" style="flex:0 0 auto">↻</button></div>` : ''}
         ${mk.length ? `<ol class="muted" style="margin:10px 0 0 18px;font-size:13px">${pl.map((p, i) => `<li>${esc(p.texto)} · <b>${mk[i] != null ? mk[i].toFixed(2) : p.en} s</b></li>`).join('')}</ol>
-          <p class="muted" style="margin-top:6px;font-size:12.5px;word-break:break-all">Para dejarlo fijo, en datos.js reemplazá los <code>en:</code> de <code>apertura.cuenta.placas</code> por: <code>${mk.map(x => x.toFixed(2)).join(', ')}</code></p>
+          <p class="muted" style="margin-top:6px;font-size:12.5px;word-break:break-all">Para dejarlo fijo, en datos.js reemplazá los <code>en:</code> de <code>apertura.${cf}.placas</code> por: <code>${mk.map(x => x.toFixed(2)).join(', ')}</code></p>
           <button class="btn ghost small" id="cr-reset" style="margin-top:6px">↩ Volver a los de datos.js</button>` : ''}`;
     }
     else if (sl.k === 'corto') h = `${CORTO.local && cortoTele === false ? '<p class="warn-big">⚠️ La tele no tiene elegido el video: si llega acá, se saltea.</p>' : ''}<div class="now-title">🎞️ ${esc(CORTO.nombre || 'Cortometraje')}</div><p class="muted">A pantalla completa, sin controles. Cuando termina sigue sola con la intro de estudio y los créditos.</p><p style="margin:6px 0">⏱ <b id="corto-prog">${cortoProg && cortoProg.d ? `${mmss(cortoProg.t)} de ${mmss(cortoProg.d)}` : 'arrancando…'}</b></p>`;
@@ -5547,7 +5620,7 @@ function initControl() {
       h = S.step === 'golpe'
         ? `<div class="now-title">🎤 ¡${esc(D.presentador.nombre)}!</div><p class="muted">Un compás de estrobo, el logo de la trivia en el segundo y después fiesta al ritmo del tema. Cuando quieras, seguís con los contendientes.</p>`
         : `<div class="now-title">🎤 Tu entrada</div><p class="muted">Sala a oscuras${TRACKS.anfitrionVoz ? ', la voz de presentación y después tu tema' : ', suena tu tema'}, aparecen los textos y la luz late cada vez más rápido. Entrá y, cuando estés en tu lugar (idealmente en un golpe fuerte del tema), tocá <b>💥 ¡Golpe de entrada!</b>.${D.presentador.golpeAuto > 0 ? ` Si no lo tocás, sale solo a los ${Math.round(D.presentador.golpeAuto / 1000)} s.` : ''}</p>`;
-      if (S.step !== 'golpe' && TRACKS.anfitrionVoz) h += S.tema === 'hold'
+      if (S.step !== 'golpe' && TRACKS.anfitrionVoz && PRES_VOZ) h += S.tema === 'hold'
         ? `<button class="btn" id="tema-go" style="width:100%;margin:10px 0 4px;padding:18px 0;font-size:20px">🎵 Arrancar tu tema</button><p class="muted" style="font-size:12.5px">La tele está en negro y en silencio esperando este toque.</p>`
         : S.tema === 'go' ? '' : `<button class="btn ghost" id="tema-hold" style="width:100%;margin:10px 0 4px">✋ Que el tema espere mi toque</button><p class="muted" style="font-size:12.5px">Si no lo tocás, el tema arranca solo ${Math.round(VOZ_PAUSA() / 1000)} s después de la voz.</p>`;
       const rd = D.presentador.ritmo || {}, rit = ritmoValido(S.ritmo) ? S.ritmo : (rd.fase != null ? rd : null);
@@ -5640,21 +5713,23 @@ function initControl() {
     const bqr = body.querySelector('#bq-reset'); if (bqr) bqr.addEventListener('click', () => { const bk = bucleKeyOf(S); if (S.bucleAj) { const n = { ...S.bucleAj }; delete n[bk]; S.bucleAj = n; } commit(); });
     const pp = body.querySelector('#prueba-previa'); if (pp) pp.addEventListener('change', () => { try { localStorage.setItem(STORE_PFX + 'pruebaPrevia', pp.checked ? '1' : '0'); } catch {} log(pp.checked ? `🧪 Prueba: la previa arranca en ${mmss(PRUEBA_DESDE)}` : '🧪 Prueba desactivada: la previa arranca desde el principio', 'o'); renderControl(); });
     const sa = body.querySelector('#seq-abort'); if (sa) sa.addEventListener('click', () => abortSeq());
-    const crm = body.querySelector('#cr-mk'); if (crm) crm.addEventListener('click', () => { S.crMarcar = !S.crMarcar; if (S.crMarcar) S.crEn = null; commit(); });
+    const crCf = () => SCRIPT[S.slide].cfg || 'cuenta';
+    const crm = body.querySelector('#cr-mk'); if (crm) crm.addEventListener('click', () => { S.crMarcar = !S.crMarcar; if (S.crMarcar) { S.crEn = { ...(S.crEn || {}), [crCf()]: [] }; S.crRun = Date.now(); } commit(); });   // al empezar a marcar, la locución arranca de nuevo
+    const cra = body.querySelector('#cr-again'); if (cra) cra.addEventListener('click', () => { S.crEn = { ...(S.crEn || {}), [crCf()]: [] }; S.crRun = Date.now(); commit(); });
     const crt = body.querySelector('#cr-tap'); if (crt) crt.addEventListener('click', () => { if (link) link.send({ type: 'crMarca', demora: 0.3 }); });
-    const crr = body.querySelector('#cr-reset'); if (crr) crr.addEventListener('click', () => { S.crEn = null; S.crMarcar = false; commit(); });
+    const crr = body.querySelector('#cr-reset'); if (crr) crr.addEventListener('click', () => { if (S.crEn) delete S.crEn[crCf()]; S.crMarcar = false; commit(); });
     const ct = body.querySelector('#cal-tog'); if (ct) ct.addEventListener('click', () => { S.calib = !S.calib; if (S.calib) S.marcar = false; commit(); });
     const tg = body.querySelector('#tema-go'); if (tg) tg.addEventListener('click', () => { const sq = seqAhora(); if (sq && sq.held && sq.fire) sq.fire(); else temaArrancar(); });
     const th = body.querySelector('#tema-hold'); if (th) th.addEventListener('click', () => { const sq = seqAhora(); if (sq && sq.pending && !sq.held && $('#seq-msg').textContent.includes('Tu tema')) $('#seq-hold').click(); else temaFrenar(); });
     const mt = body.querySelector('#mk-tog'); if (mt) mt.addEventListener('click', () => { S.marcar = !S.marcar; if (S.marcar) S.calib = false; commit(); log(S.marcar ? '🎯 Marcando efectos: tocá «Acá va uno» en cada golpe fuerte' : '🎯 Marcas listas', 'o'); });
     const mk = body.querySelector('#mk-tap'); if (mk) mk.addEventListener('pointerdown', e => { e.preventDefault(); if (link) link.send({ type: 'marca' }); mk.classList.add('hit'); setTimeout(() => mk.classList.remove('hit'), 140); if (navigator.vibrate) navigator.vibrate(25); });
-    const setAc = t => { S.acentos = { id: TRACKS.anfitrion ? TRACKS.anfitrion.id : '', t }; commit(); };
+    const setAc = t => { S.acentos = { id: TRACKS.anfitrion ? ANF_ID() : '', t }; commit(); };
     body.querySelectorAll('[data-mk]').forEach(b => b.addEventListener('click', () => { const l = acentosBase(S); const [x] = l.splice(+b.dataset.mk, 1); setAc(l); log(`🎯 Marca borrada (${mmssD(x)})`, 'o'); }));
     const mu = body.querySelector('#mk-undo'); if (mu) mu.addEventListener('click', () => { const l = acentosBase(S); l.pop(); setAc(l); });
     const mc = body.querySelector('#mk-clear'); if (mc) mc.addEventListener('click', () => { setAc([]); log('🎯 Marcas borradas: el efecto vuelve a salir cada 8 compases', 'o'); });
     const md = body.querySelector('#mk-datos'); if (md) md.addEventListener('click', () => { S.acentos = null; commit(); });
     body.querySelectorAll('[data-aj]').forEach(b => b.addEventListener('click', () => {
-      const rd = D.presentador.ritmo || {}, base = ritmoValido(S.ritmo) ? S.ritmo : { bpm: rd.bpm || HOST_BPM, fase: rd.fase, ajuste: rd.ajuste || 0, id: TRACKS.anfitrion ? TRACKS.anfitrion.id : '' };
+      const rd = D.presentador.ritmo || {}, base = ritmoValido(S.ritmo) ? S.ritmo : { bpm: rd.bpm || HOST_BPM, fase: rd.fase, ajuste: rd.ajuste || 0, id: TRACKS.anfitrion ? ANF_ID() : '' };
       S.ritmo = { ...base, ajuste: (base.ajuste || 0) + +b.dataset.aj }; commit();
     }));
 
@@ -5869,7 +5944,7 @@ function initControl() {
         const sal = D.intro && D.intro.salida;   // segundo de la fanfarria en que pasa a tu entrada (si no, al terminar)
         const at = a && a.key === 'intro' && a.d > 0 ? (sal || a.d - 1) : null;
         const sinMusica = (!a || a.key !== 'intro') && Date.now() - (seq.slideAt || Date.now()) > 30000;
-        if ((at != null && a.t >= at - Math.min(aviso, 5)) || sinMusica) armAuto('Tu entrada', at != null ? Math.max(1, at - a.t) : 5, () => goSlide(SCRIPT.findIndex(x => x.k === 'presentador'), true));
+        if ((at != null && a.t >= at - Math.min(aviso, 5)) || sinMusica) armAuto(proximoNombre(S.slide), at != null ? Math.max(1, at - a.t) : 5, () => goSlide(S.slide + 1, true));
       }
       // la voz termina, unos segundos en negro y arranca tu tema: también se puede frenar
       if (k === 'presentador' && S.step !== 'golpe' && !S.tema && seq.temaSlide !== S.slide && b && b.key === 'anfitrionVoz' && b.d > 0) {

@@ -65,8 +65,19 @@ window.TRIVIA = {
     // hasta: corta en el 1, antes del "go" · numeros: dónde dice cada número (10 → 1)
     // placas: "en" = dónde empieza cada frase; queda en pantalla hasta la siguiente (dura: opcional, para que se vaya antes).
     //   Lo más fácil para afinarlas: en el ensayo, en el celu, "🎯 Marcar las frases" y tocar cuando empieza cada una.
+    // Voz de bienvenida ("ladies and gentlemen"): va después de los avisos y antes del corto, con sus frases en pantalla.
+    // velocidad 0.9 = 10 % más lenta sin cambiar el tono (tono: 'grave' para que también baje) · hasta: segundo del audio en que termina
+    voz: {
+      archivo: 'voz-presentacion.mp3', volumen: 1, velocidad: 0.9, silencioAntes: 10, desde: 0, hasta: 19,
+      placas: [
+        { en: 2.8,  texto: '¿Están listos?' },
+        { en: 7,    texto: 'Damas y caballeros' },
+        { en: 11.5, texto: 'Bienvenidos' },
+      ],
+    },
+    // La cuenta regresiva ahora va después de la fanfarria y antes de tu entrada: termina en el 1 y arranca tu tema.
     cuenta: {
-      archivo: 'cuenta-regresiva.mp3', volumen: 1, silencioAntes: 10, desde: 8.9, hasta: 54.85,
+      archivo: 'cuenta-regresiva.mp3', volumen: 1, silencioAntes: 2, desde: 8.9, hasta: 54.85,
       placas: [
         { en: 9.2,  texto: 'Damas y caballeros' },
         { en: 11.9, texto: 'Su atención, por favor' },
@@ -145,7 +156,9 @@ window.TRIVIA = {
                   // velocidad: 0.9 = 10 % más lenta (los textos atados a voz: siguen en el segundo del video) · pausa: segundos en negro y en silencio entre la voz y el tema
                   // fin: en el segundo 19 del video termina la voz (los últimos 2 s son silencio)
                   // opcionales: fin: segundo en que se corta la voz · solape: segundos que se pisan voz y tema (0.3)
-    anfitrion:    { id: 'p3l7fgvrEKM', nombre: 'Freed from Desire (Gala)', inicio: 10 },   // tu entrada (antes: I Gotta Feeling Jt0qUO4pqWQ)
+    anfitrion:    { archivo: 'entrada.mp3', nombre: 'Going the Distance (Rocky, epic)', recorte: [7.01, 48.49] },   // tu entrada
+                  // recorte: a los 7,01 s salta al 48,49 (mismo pasaje de la música, medido en el audio) para que la explosión llegue antes.
+                  //   Los segundos de los textos y del golpe están contados con el tema ya recortado: la explosión queda en el 56,95.
     redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
     respuesta:    { id: '',            nombre: 'A definir: golpe de respuesta' },      // al revelar; después pasa a "datos"
 
@@ -163,6 +176,7 @@ window.TRIVIA = {
      hasta que pases de pantalla o vuelvas a "Automático". */
   pistas: [
     { id: 'ZP69PLBqFUo', nombre: 'Hold the Line (Toto)' },
+    { id: 'p3l7fgvrEKM', nombre: 'Freed from Desire (Gala)', inicio: 10 },
   ],
 
   /* Cuánto dura el golpe de respuesta antes de pasar a la música de datos curiosos (ms) */
@@ -270,7 +284,7 @@ window.TRIVIA = {
      La app la dispara antes según la "demora de la lámpara" que configures en el control. */
   guion: {
     previa: 'salaInicio',    // al reiniciar la partida queda la luz de sala (tira apagada), lista para la previa
-    presentamos: [[0, 'apagado'], [3000, 'escenario']],   // corte a negro y, cuando entra la música western, azul de escenario
+    presentamos: [[0, 'apagado'], [5200, 'escenario']],   // a oscuras mientras baja tu tema y, cuando entra la música western, azul de escenario
     // cine: lo arma la app sola (baja la luz y un pulso por crédito). Para personalizarlo, agregá cine: [[ms, look], ...]
     intro: [[0, 'noche'], [15300, 'dorado'], [16500, 'destello'], [17900, 'dorado'], [19700, 'calido']],   // golpe dorado con el título (seg. 15)
     presentacion: [[0, 'flash'], [650, 'escenario']],           // destello con cada participante
@@ -334,27 +348,25 @@ window.TRIVIA = {
     // dura: segundos que queda si el siguiente tarda (6 por defecto). El último queda hasta el golpe.
     // En el celu, arriba, ves el segundo de la voz y del tema mientras suenan: así lo ajustás fino.
     textos: [
-      // voz: segundos medidos en voz-presentacion.mp3 (donde arranca cada frase; el texto entra una décima antes)
-      { texto: '¿Están listos?', voz: 2.8 },
-      { texto: 'Damas y caballeros', voz: 7 },
-      { texto: 'Bienvenidos', voz: 11.5 },
-      { texto: 'Llegó como pasante en 2021', tema: 12, dura: 6.5 },
-      { texto: 'Hoy dirige el mejor departamento de Bioingeniería de la provincia', tema: 19, dura: 6.8 },
-      { texto: 'Conoce cada equipo del inventario', tema: 26, dura: 6 },
-      { texto: 'Cada marca. Cada modelo.', tema: 32.5, dura: 5.5 },
-      { texto: 'Esta noche, solo él sabe todas las respuestas', tema: 38.5, dura: 7.5 },
-      { texto: 'Y viene a encontrar al que más sabe de Bioingeniería', tema: 46.5, dura: 8 },
-      { texto: 'Con ustedes', tema: 55 },
+      // tema: segundo del tema ya recortado (el que ves en el celu mientras suena). La voz "damas y caballeros" ahora va en la apertura.
+      { texto: 'Llegó como pasante en 2021', tema: 3, dura: 6.5 },
+      { texto: 'Hoy dirige el mejor departamento de Bioingeniería de la provincia', tema: 10.5, dura: 7.5 },
+      { texto: 'Conoce cada equipo del inventario', tema: 19, dura: 6.5 },
+      { texto: 'Cada marca, cada modelo', tema: 26.5, dura: 5.5 },
+      { texto: 'Esta noche, solo él sabe todas las respuestas', tema: 33, dura: 7.5 },
+      { texto: 'Y viene a encontrar al que más sabe de Bioingeniería', tema: 41.5, dura: 8 },
+      { texto: 'Con ustedes', tema: 51 },
     ],
     // Golpe de entrada automático: segundo del tema en que cae (con la apertura en automático). null = siempre a mano.
-    golpeTema: 59.8,
+    golpeTema: 56.95,
+    reflectoresAntes: 0.5,   // segundos antes del golpe en que los reflectores van al costado derecho (por donde entrás)
     // Qué aparece en el golpe: 'logo' (el logo de la trivia, como en la tele) o 'nombre' (tu nombre y foto)
     revelar: 'logo',
     logoArriba: 'Segunda edición',
     golpeAuto: 0,   // ms: si es mayor que 0, el golpe de entrada sale solo a ese tiempo (si no lo tocás antes)
     // Ritmo del tema para que la tele destelle en el bombo. Lo más fácil: calibrarlo en el ensayo desde el celu (🥁 Calibrar).
     // fase: segundo del video en que cae un golpe (lo da la calibración). Sin fase, el compás arranca cuando tocás el golpe.
-    ritmo: { bpm: 129, fase: null },
+    ritmo: { bpm: 81, fase: null },   // Going the Distance: ~81 bpm (calibralo en el ensayo con 🥁)
     // Después del golpe: juegos de luces de 4 compases cada uno, en este orden (se repiten ~1 minuto)
     frases: ['fiestaHost', 'contraluz', 'fiestaDorada', 'barrido'],
     // Efectos marcados a mano (segundos del video del tema). Se marcan en el ensayo desde el celu (🎯 Marcar efectos):
@@ -390,7 +402,8 @@ window.TRIVIA = {
   puntos: { comun: 100, aprox: 150, exacto: 200, ajuste: 100 },
 
   /* Título que presenta a los participantes: corte seco de tu tema, segundos a oscuras (corte) y entra la música western */
-  presentamos: { titulo: 'Presentamos a los participantes', corte: 2.8 },
+  presentamos: { titulo: 'Presentamos a los participantes' },
+  fundidos: { presentamos: 5000, enjuego: 4000 },   // ms en que baja la música al entrar a esa parte, antes de que arranque la nueva
 
   /* ---------- Presentación del programa ----------
      Va después de tu golpe de entrada, antes de "Presentamos a los contendientes". Cada toque del celu saca la frase siguiente. */
