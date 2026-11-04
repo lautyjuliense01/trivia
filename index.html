@@ -524,6 +524,14 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .hw.tr .hw-burst{background:radial-gradient(ellipse at center,rgba(255,226,170,.42),rgba(255,170,60,.14) 38%,transparent 70%)}
 .hw.tr.on .hw-burst{animation:hwBurst 2.4s .3s cubic-bezier(.2,.8,.2,1) both}
 .host-reveal{display:none}
+#score-card.falta{animation:faltaMarcar .5s ease 2;box-shadow:0 0 0 2px var(--bad)}
+@keyframes faltaMarcar{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.q-pts{color:var(--gold);white-space:nowrap}.q-pts i{font-style:normal;margin:0 .9em;opacity:.7}
+.s-pizarras .q-hint.h-piz{font-size:clamp(26px,3.4vw,52px)!important;color:#f6dc93!important;letter-spacing:.06em;animation:pizIn .9s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes pizIn{from{opacity:0;transform:scale(1.4)}to{opacity:1;transform:none}}
+body.espejo .status-chip,body.espejo .yt-wrap,body.espejo #scr-sound,body.espejo #corto-pick{display:none!important}
+#espejo-wrap{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;background:#000;margin-top:8px}
+#espejo-wrap iframe{position:absolute;left:0;top:0;width:1280px;height:720px;border:0;transform-origin:0 0;pointer-events:none}
 /* v32: presentamos con corte a negro y título entre polvo */
 .v-pt.duelo .pt-main{opacity:0;animation:ptDust 2.4s var(--pt,2.8s) cubic-bezier(.2,.7,.2,1) forwards,shine 3s calc(var(--pt,2.8s) + 1.2s) ease-out both!important}
 @keyframes ptDust{0%{opacity:0;filter:blur(22px);letter-spacing:.5em;transform:translateX(-4vw)}60%{opacity:1}100%{opacity:1;filter:blur(0) drop-shadow(0 0 26px rgba(255,200,110,.3));letter-spacing:.07em;transform:none}}
@@ -1124,6 +1132,7 @@ body{background:
     <div class="row" id="seq-held" hidden><button class="btn" id="seq-go" style="flex:1;font-size:20px;padding:16px 0">▶ Seguir</button></div>
     <button class="btn ghost small" id="seq-undo" style="width:100%;margin-top:8px;font-size:13px">Pasar todo a manual</button>
   </div>
+  <details class="card" id="espejo-card" style="padding:10px 14px"><summary style="cursor:pointer;font-weight:700">📺 Ver la tele en el celu</summary><div id="espejo-wrap"></div><p class="muted" style="font-size:12px;margin-top:6px">Es una copia sin sonido: los textos atados a la música pueden ir unos segundos corridos. Cerralo para ahorrar batería.</p></details>
   <div class="card" id="mus-card" style="padding:10px 14px">
     <div class="row" style="justify-content:space-between"><span id="mus-name" class="muted">♪ Sin música</span><b id="mus-left" style="color:var(--gold)"></b></div>
     <div class="br-track" id="mus-track" style="height:14px;margin-top:8px;cursor:pointer;touch-action:manipulation"><div class="br-fill" id="mus-bar" style="width:0;transition:width 1s linear"></div></div>
@@ -1278,7 +1287,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v61 · 03/11 21:30';
+const VERSION = 'v62 · 03/11 23:30';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1293,7 +1302,9 @@ if (!D) {
 const $ = s => document.querySelector(s);
 /* Ensayo en el celu: tele y control en la misma pantalla, con su propia partida guardada aparte y sin luces */
 const ENSAYO = (() => { const e = new URLSearchParams(location.search).get('ensayo'); return /^\d{4}$/.test(e || '') ? e : null; })();
-const STORE_PFX = ENSAYO ? 'bt_ens_' : 'bt_';
+/* Espejo: la tele en miniatura dentro del celu (mismo código), sin sonido y sin mandar nada: solo mira */
+const ESPEJO = (() => { const e = new URLSearchParams(location.search).get('espejo'); return /^\d{4}$/.test(e || '') ? e : null; })();
+const STORE_PFX = ENSAYO ? 'bt_ens_' : ESPEJO ? 'bt_esp_' : 'bt_';
 const store = {
   get(k, d = null) { try { const v = localStorage.getItem(STORE_PFX + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem(STORE_PFX + k, JSON.stringify(v)); } catch {} },
@@ -2059,7 +2070,7 @@ function say(text) {
 const CRED = (D.apertura && D.apertura.credito) || 2800;
 /* La intro de estudio ("El monumento") dura más que un crédito común */
 const IDENT_MS = 11000;
-const PASOS_Q = D.pasosPregunta || ['pregunta'];   // antes había pizarras y tensión; ahora de la pregunta se va directo a revelar
+const PASOS_Q = D.pasosPregunta || ['pregunta', 'pizarras'];   // la pregunta y "den vuelta las pizarras" (ahí se marca quién acertó y recién después se revela)   // antes había pizarras y tensión; ahora de la pregunta se va directo a revelar
 const PRES_NUEVA = !(D.presentacion && D.presentacion.estilo === 'fotos');   // nombre que aparece y se va, con sello en lugar de foto
 const PRES_MS = (D.presentacion && D.presentacion.ms) || 3000;
 /* Fundidos al cambiar de parte: lo que suena baja en estos ms y recién después arranca lo nuevo */
@@ -2651,7 +2662,7 @@ const ptsOf = q => q.puntos != null ? +q.puntos : (q.tipo === 'aprox' ? PTS.apro
 const exactoOf = q => q.exacto != null ? +q.exacto : Math.max(PTS.exacto, ptsOf(q));
 /* Desempates: preguntas de aproximación (datos.js: desempates: [ ... ]; también vale el viejo "desempate" suelto) */
 const DESEMPATES = (Array.isArray(D.desempates) ? D.desempates : (D.desempate ? [D.desempate] : [])).filter(Boolean).map(q => ({ ...q, tipo: 'aprox' }));
-const PROGRAMA = ((D.programa && D.programa.frases) || []).filter(Boolean);
+const PROGRAMA = (D.programa && D.programa.activo !== false && D.programa.frases || []).filter(Boolean);
 function buildScript() {
   const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }];
   if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, ...(LOCUS.voz ? [{ k: 'cuentaReg', cfg: 'voz', label: '🎙️ Voz de bienvenida (ladies and gentlemen)' }] : []), { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
@@ -2979,6 +2990,7 @@ requestAnimationFrame(bulbify);
 /* ================= Redoble (sintetizado, sin archivos) ================= */
 let actx = null;
 function audioCtx() {
+  if (ESPEJO) return null;   // el espejo del celu no suena
   try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state !== 'running') actx.resume(); } catch {}
   return actx;
 }
@@ -3126,6 +3138,59 @@ function whoosh(ms = 380) {
     n.connect(bp); bp.connect(g); g.connect(bus.master); g.connect(bus.rev); n.start(t0); n.stop(t0 + d + 0.12);
   } catch {}
 }
+/* ---------- Efectos de sonido más trabajados (reglas, premios, ticket, cuenta final) ----------
+   Capas sintetizadas: timbal grave, acorde de bronces (sierras desafinadas con filtro que se cierra), campanas y aire. */
+const semi = (f, n) => f * Math.pow(2, n / 12);
+function sfxTimbal(f = 70, g = 0.9, when = 0) {
+  const ctx = audioCtx(); if (!ctx) return;
+  const bus = sfxOut(ctx), t0 = ctx.currentTime + 0.02 + when;
+  const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(f * 1.5, t0); o.frequency.exponentialRampToValueAtTime(f, t0 + 0.08); o.frequency.exponentialRampToValueAtTime(f * 0.85, t0 + 1.4);
+  const og = ctx.createGain(); og.gain.setValueAtTime(0.0001, t0); og.gain.exponentialRampToValueAtTime(g, t0 + 0.01); og.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.6);
+  o.connect(og); og.connect(bus.master); og.connect(bus.rev); o.start(t0); o.stop(t0 + 1.7);
+  const n = ctx.createBufferSource(); n.buffer = noise(ctx);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 0.8;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(g * 0.5, t0); ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+  n.connect(bp); bp.connect(ng); ng.connect(bus.master); n.start(t0); n.stop(t0 + 0.15);
+}
+function sfxBronces(freqs, dur = 0.9, g = 0.16, when = 0, brillo = 2600) {
+  const ctx = audioCtx(); if (!ctx) return;
+  const bus = sfxOut(ctx), t0 = ctx.currentTime + 0.02 + when;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 2.2;
+  lp.frequency.setValueAtTime(300, t0); lp.frequency.exponentialRampToValueAtTime(brillo, t0 + 0.06); lp.frequency.exponentialRampToValueAtTime(500, t0 + dur);
+  const vg = ctx.createGain(); vg.gain.setValueAtTime(0.0001, t0); vg.gain.exponentialRampToValueAtTime(g, t0 + 0.03); vg.gain.setTargetAtTime(g * 0.55, t0 + 0.08, 0.18); vg.gain.setTargetAtTime(0.0001, t0 + dur * 0.7, dur * 0.25);
+  lp.connect(vg); vg.connect(bus.master); vg.connect(bus.rev);
+  freqs.forEach(f => [-7, 0, 7].forEach(c => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = c; o.connect(lp); o.start(t0); o.stop(t0 + dur + 1.2); }));
+}
+function sfxCampanas(base = 1046.5, notas = [0, 4, 7, 12], g = 0.11, paso = 0.07, when = 0) {
+  const ctx = audioCtx(); if (!ctx) return;
+  const bus = sfxOut(ctx);
+  notas.forEach((n, i) => {
+    const t0 = ctx.currentTime + 0.02 + when + i * paso, f = semi(base, n);
+    [1, 2.76, 5.4].forEach((m, j) => { const o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sine'; o.frequency.value = f * m;
+      og.gain.setValueAtTime(0.0001, t0); og.gain.exponentialRampToValueAtTime(g / (j + 1), t0 + 0.005); og.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.6 / (j + 1));
+      o.connect(og); og.connect(bus.master); og.connect(bus.rev); o.start(t0); o.stop(t0 + 1.7); });
+  });
+}
+function sfxCoro(freqs, dur = 2.6, g = 0.07, when = 0) {   // colchón de voces (senos con vibrato y ataque lento)
+  const ctx = audioCtx(); if (!ctx) return;
+  const bus = sfxOut(ctx), t0 = ctx.currentTime + 0.02 + when;
+  const vg = ctx.createGain(); vg.gain.setValueAtTime(0.0001, t0); vg.gain.exponentialRampToValueAtTime(g, t0 + 0.5); vg.gain.setTargetAtTime(0.0001, t0 + dur * 0.6, dur * 0.25);
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400; lp.connect(vg); vg.connect(bus.rev); vg.connect(bus.master);
+  freqs.forEach(f => [-9, 9].forEach(c => { const o = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(); o.type = 'triangle'; o.frequency.value = f; o.detune.value = c;
+    lfo.frequency.value = 5 + Math.random(); lg.gain.value = 6; lfo.connect(lg); lg.connect(o.detune); o.connect(lp); o.start(t0); lfo.start(t0); o.stop(t0 + dur + 1); lfo.stop(t0 + dur + 1); }));
+}
+const SFX = {
+  // cada regla que se da vuelta: aire, timbal y un acorde de bronces que va subiendo
+  regla(i = 0) { whoosh(260); const r = [0, 2, 5, 7, 9][i % 5]; setTimeout(() => { sfxTimbal(semi(73.4, r / 2), 0.7); sfxBronces([semi(146.8, r), semi(220, r), semi(293.7, r)], 0.8, 0.12); }, 230); },
+  // aparecen los premios tapados: un golpe grave con un acorde menor que queda en suspenso
+  tapados() { boomGrave(0.5); sfxBronces([110, 130.8, 164.8], 1.6, 0.09, 0.05, 1400); sfxCoro([220, 261.6, 329.6], 2.8, 0.05, 0.2); },
+  // cada premio: aire, golpe, campanas brillantes (más agudas con cada premio)
+  premio(i = 0) { whoosh(320); setTimeout(() => { boomGrave(0.4); sfxTimbal(65, 0.5); sfxCampanas(semi(784, [0, 2, 4, 5, 7][i % 5]), [0, 7, 12, 16], 0.1, 0.06); sfxBronces([semi(196, [0, 2, 4, 5, 7][i % 5]), semi(293.7, [0, 2, 4, 5, 7][i % 5])], 0.7, 0.08); }, 260); },
+  // el ticket dorado: golpe enorme, acorde mayor de bronces, coro y lluvia de campanas
+  ticket() { boomGrave(1.1); sfxTimbal(55, 1); sfxBronces([146.8, 220, 293.7, 370, 440], 2.4, 0.2, 0.02, 3200); sfxCoro([293.7, 370, 440, 587.3], 3.8, 0.08, 0.1); sfxCampanas(1174.7, [0, 4, 7, 12, 16, 19], 0.09, 0.09, 0.15); },
+  // cuenta final: cada puesto que se revela pega más fuerte y más arriba a medida que se acerca al podio
+  puesto(pos = 5) { const up = Math.max(0, 6 - pos), r = [0, 2, 3, 5, 7, 9][Math.min(5, up)]; sfxTimbal(semi(65, r / 2), 0.6 + up * 0.08); sfxBronces([semi(130.8, r), semi(196, r), semi(261.6, r)], 0.7 + up * 0.15, 0.1 + up * 0.015); if (pos <= 3) sfxCampanas(semi(659.3, r), [0, 7, 12], 0.07, 0.08, 0.1); },
+};
 function boomGrave(size = 1, when = 0) {
   const ctx = audioCtx();
   if (!ctx) return;
@@ -3313,16 +3378,17 @@ function initScreen() {
   $('#unlock-title').textContent = D.titulo;
   // Telón de terciopelo: dos paños con costura al centro y la cenefa arriba (se dibuja una vez, en segundo plano)
   setTimeout(() => { try { curtainAssets(); } catch (e) { log('Telón: ' + e.message, 'e'); } }, 60);
-  let code = ENSAYO || store.get('screen_code');
+  let code = ESPEJO || ENSAYO || store.get('screen_code');
+  if (ESPEJO) { document.body.classList.add('espejo'); $('#unlock').hidden = true; }
   if (!/^\d{4}$/.test(code || '')) { code = String(Math.floor(1000 + Math.random() * 9000)); store.set('screen_code', code); }
 
-  const music = createMusic('yt-screen', TRACKS, t => {
+  const music = createMusic('yt-screen', ESPEJO ? {} : TRACKS, t => {
     $('#scr-yt-label').textContent = t;
     const bad = /⚠️/.test(t);
     $('#yt-toast').hidden = !bad; if (bad) $('#yt-toast').textContent = t;
   }, muted => { $('#scr-sound').hidden = !muted; }, k => { if (typeof direct === 'function' && direct.ended) direct.ended(k); }, true);
 
-  const fxPlayer = Object.values(TRACKS).length && (TRACKS.redoble || TRACKS.anfitrionVoz || TRACKS.muletilla) ? createMusic('yt-fx', TRACKS, () => {}, () => {}) : null;
+  const fxPlayer = !ESPEJO && Object.values(TRACKS).length && (TRACKS.redoble || TRACKS.anfitrionVoz || TRACKS.muletilla) ? createMusic('yt-fx', TRACKS, () => {}, () => {}) : null;
   const direct = createDirector(music, fxPlayer);
   if (fxPlayer) music.setPartner(fxPlayer);
   music.setLoopCfg({
@@ -3422,7 +3488,7 @@ function initScreen() {
   // el audio se decodifica entero en memoria: así arranca exacto en "desde" (sin depender de que el servidor deje adelantar el mp3)
   let cuentaA = {}, cuentaSrc = null, cuentaEl = null;
   function cuentaAudio(c = CUENTA) {
-    if (!c) return Promise.resolve(null);
+    if (!c || ESPEJO) return Promise.resolve(null);
     if (cuentaA[c.archivo]) return cuentaA[c.archivo];
     return (cuentaA[c.archivo] = fetch(c.archivo).then(r => { if (!r.ok) throw new Error('no lo encuentro (' + r.status + ')'); return r.arrayBuffer(); })
       .then(b => new Promise((res, rej) => audioCtx().decodeAudioData(b, res, rej)))
@@ -3444,7 +3510,8 @@ function initScreen() {
     let t0 = performance.now(), activo = -1, nAct = -1, fin = false, sonando = null, esperando = true;
     cuentaStop(0);
     const vol = Math.min(1.5, (C.volumen || 1) * Math.max(0.2, musicVol / 70));
-    if (vel !== 1 && d0 === 0) {   // con otra velocidad: reproductor común, que baja la velocidad sin cambiar el tono
+    if (ESPEJO) { esperando = false; }
+    else if (vel !== 1 && d0 === 0) {   // con otra velocidad: reproductor común, que baja la velocidad sin cambiar el tono
       const a = new Audio(C.archivo); cuentaEl = a;
       try { a.preservesPitch = C.tono !== 'grave'; a.defaultPlaybackRate = a.playbackRate = vel; a.volume = Math.min(1, vol); } catch {}
       a.play().then(() => { esperando = false; sonando = { el: a }; }).catch(e => { esperando = false; t0 = performance.now(); log('No se pudo reproducir ' + C.archivo + ': ' + e.message, 'e'); });
@@ -3726,23 +3793,27 @@ function initScreen() {
   function hostEvent(h, k) {
     const vh = h.vh;
     if (!vh.isConnected) return hostStop();
+    // medio tiempo en segundos: con el golpe, los reflectores quedan a la derecha (por donde entrás) unos segundos y el logo llega después
+    if (h.kLogo == null) { const half = 30 / (ritmoCfg().bpm || HOST_BPM), P = D.presentador || {}; h.kLogo = Math.max(8, Math.round((P.logoTras != null ? P.logoTras : 7) / half)); h.kLibre = Math.round((P.reflectoresDerecha != null ? P.reflectoresDerecha : 5) / half); }
+    const KL = h.kLogo, K0 = KL + 8;
     if (k < 8) return hostFlash('duro');
-    if (k === 8) {
+    if (k < KL) { if (k === h.kLibre) { beams.level(.8); beams.play('scan'); } if (k % 2 === 0) hostFlash('suave'); return; }
+    if (k === KL) {
       vh.classList.add('golpe'); hostFlash('duro'); confetti();
       beams.setup('top5'); beams.clearPools(); beams.level(1);
       setTimeout(() => { const ph = vh.querySelector('.sl-title') || vh.querySelector('.pl-photo'); if (ph && host === h) { beams.aimEls([ph], { ms: 260, sway: false, spread: true }); beams.pools([ph], true); } }, 40);
       return;
     }
-    if (k < 16) { if (k % 2 === 0) hostFlash('suave'); return; }
-    if (k === 16) beams.motion(partyBeams(h));
+    if (k < K0) { if (k % 2 === 0) hostFlash('suave'); return; }
+    if (k === K0) beams.motion(partyBeams(h));
     if (h.marks) {   // efectos marcados a mano: estrobo el compás anterior y explosión en la marca
       const r = marksEvent(h);
       if (r === 'strobe') return;
       if (k % 2) return;
-      hostBeat(h, (k - 16) / 2);
+      hostBeat(h, (k - K0) / 2);
       return;
     }
-    const nb = (k - 16) / 2, inBlock = Math.floor(nb) % 32;
+    const nb = (k - K0) / 2, inBlock = Math.floor(nb) % 32;
     if (inBlock >= 28) { hostFlash('duro'); return; }        // último compás de cada 8: estrobo (igual que las lámparas)
     if (k % 2) return;
     const n = nb;
@@ -4067,6 +4138,7 @@ function initScreen() {
     $('#scr-status').textContent = `${text} · código ${code}`;
     if (st === 'ok') link && link.send({ type: 'ping' });
   }, { auto: (D.conexion || {}).pantallaAuto !== false });   // la pantalla rehace sola un servidor caído (no se puede tocar durante el show)
+  if (ESPEJO) link.send = () => {};   // el espejo no le avisa nada a nadie
   setInterval(() => link.send({ type: 'hello', corto: CORTO && CORTO.local ? (cortoURL ? cortoNombre : false) : null }), 3000);
   window.__logSink = (text, kind) => link.send({ type: 'log', text, kind });
 
@@ -4469,9 +4541,9 @@ function initScreen() {
       body = `<div class="q-text">${esc(q.texto)}</div><div><div class="ticket show ans" data-ans="${q.tipo === 'aprox' ? fmtNum(q.respuesta) : esc(q.respuesta)}"><span class="ans-eye">Respuesta</span><span class="ans-v">?</span></div></div>`;
     }
     return `<div class="v v-q enter stage-pulse ${hasOpts ? 'has-opts' : ''}" id="vq">
-      <div class="q-head"><div class="q-num">${num}</div></div><div class="q-round">${esc(title)}</div>
+      <div class="q-head"><div class="q-num">${num}</div></div><div class="q-round">${esc(title)}${sl.k !== 'desempate' ? `<span class="q-pts"><i>◆</i>${fmtPts(ptsOf(q))} puntos${q.tipo === 'aprox' ? ` · ${fmtPts(exactoOf(q))} si es exacta` : ''}</span>` : ''}</div>
       ${body}
-      <div class="hint q-hint h-piz">Escriban en sus pizarras</div>
+      <div class="hint q-hint h-piz">¡Den vuelta las pizarras!</div>
       <div class="hint q-hint h-ten">Últimos segundos</div>
       <div class="q-results" id="q-results"></div>
       ${q.nota && q.mostrarNota ? `<div class="q-note">${esc(q.nota)}</div>` : ''}
@@ -4531,7 +4603,7 @@ function initScreen() {
         if (on && !row.classList.contains('shown')) fresh = true;
         row.classList.toggle('shown', on);
       });
-      if (fresh && !changed) hit();
+      if (fresh && !changed) { const g = cg[(st.sub || 1) - 1]; SFX.puesto(g ? g.pos : 5); }
       const all = (st.sub || 0) >= cg.length, tied = standing(st.results || {}).tied.length;
       const bn = $('#cd-banner');
       if (bn) { bn.textContent = !all ? '' : (tied > 1 ? (tied === 2 ? '¡Empate en el primer puesto!' : `¡Empate ${tied === 3 ? 'triple' : 'de ' + tied} en el primer puesto!`) : 'Quedan los dos mejores…'); bn.classList.toggle('on', all); }
@@ -4568,8 +4640,9 @@ function initScreen() {
       if (ve) {
         const tk = k > n + 1 && !!D.ticketDorado, was = ve.classList.contains('tk');
         ve.classList.toggle('tk', tk);
-        if (tk && !was && !changed) { boomGrave(1); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
-        else if (fresh && !changed) boomGrave(0.45);
+        if (k === 1 && cur.sub === 0 && !changed) SFX.tapados();
+        if (tk && !was && !changed) { SFX.ticket(); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
+        else if (fresh && !changed) SFX.premio(k - 2);
       }
     } else if (sl.k === 'programa') {
       const k = st.sub || 0, els = [...stage.querySelectorAll('.v-prog .hw')];
@@ -4582,7 +4655,7 @@ function initScreen() {
       const k = st.sub || 0;
       let fresh = false;
       stage.querySelectorAll('.rl-card').forEach((c, i) => { const on = i < k; if (on && !c.classList.contains('on')) fresh = true; c.classList.toggle('on', on); c.classList.toggle('cur', i === k - 1); });
-      if (fresh && !changed && D.reglasGrave !== false) boomGrave(0.45);
+      if (fresh && !changed && D.reglasGrave !== false) SFX.regla(k - 1);
     } else if (sl.k === 'previa' && !changed && st.previaModo !== cur.previaModo) {
       buildSlide(st, sl);
     } else if (sl.k === 'marcador' && !changed && JSON.stringify(st.results) !== JSON.stringify(cur.results)) {
@@ -4623,6 +4696,15 @@ function initControl() {
   codeInput.value = ENSAYO || store.get('ctl_code', '');
   if (ENSAYO) $('#link-card').hidden = true;   // en el ensayo ya está vinculado solo
   if (!codeInput.value) $('#link-card').open = true;
+  // Espejo de la tele: se arma al abrir la tarjeta y se destruye al cerrarla
+  if (ENSAYO) $('#espejo-card').hidden = true;
+  const espejoFit = () => { const w = $('#espejo-wrap'), f = w && w.querySelector('iframe'); if (f) f.style.transform = `scale(${w.clientWidth / 1280})`; };
+  $('#espejo-card').addEventListener('toggle', () => {
+    const w = $('#espejo-wrap'), c = (codeInput.value || '').trim();
+    if ($('#espejo-card').open && /^\d{4}$/.test(c)) { w.innerHTML = `<iframe src="?modo=pantalla&espejo=${c}" tabindex="-1"></iframe>`; espejoFit(); setTimeout(() => sendState && sendState(), 2500); }
+    else w.innerHTML = '';
+  });
+  addEventListener('resize', espejoFit);
   function setLinkStatus(st, text) { $('#ctl-dot').className = 'dot ' + (st === 'ok' ? 'ok' : 'bad'); $('#ctl-status').textContent = text; }
   function doLink() {
     const code = codeInput.value.trim();
@@ -5353,7 +5435,13 @@ function initControl() {
   }
 
   // Volumen de la presentación de premios: arranca bajo y sube con cada premio; al salir vuelve al de antes
-  const ENJ_VOL = D.enjuegoVolumen || [25, 35, 45, 60, 75, 100];
+  // Volumen de la música de los premios en cada paso: el título, los premios tapados, cada premio y el ticket dorado
+  const EV0 = D.enjuegoVolumen || {};
+  const EV = Array.isArray(EV0) ? { titulo: EV0[0], tapados: EV0[0], premios: EV0.slice(1, -1), ticket: EV0[EV0.length - 1] } : EV0;
+  const enjVol = sub => sub <= 0 ? (EV.titulo != null ? EV.titulo : 35) : sub === 1 ? (EV.tapados != null ? EV.tapados : EV.titulo || 35)
+    : sub <= ENJ().length + 1 ? ((EV.premios || [])[Math.min(sub - 2, (EV.premios || []).length - 1)] != null ? EV.premios[Math.min(sub - 2, EV.premios.length - 1)] : 60) : (EV.ticket != null ? EV.ticket : 100);
+  const ENJ_VOL = [enjVol(0)];
+  let ticketEnCamino = false;
   function volA(to, ms) {
     if (to == null) return;
     S.vol = to; $('#set-vol').value = to; $('#set-vol-v').textContent = to;
@@ -5433,8 +5521,17 @@ function initControl() {
     revDone(); clearLights(); S.step = 'pregunta'; lastLightKey = null; commit();
     log('↩ Revelado cancelado: el tema vuelve al bucle', 'e');
   });
+  // antes de revelar hay que marcar quién acertó (o "nadie"): así no se pasa por alto cargar los puntos
+  function marcado(sl = SCRIPT[S.slide]) {
+    if (!isQ(sl)) return true;
+    const r = S.results[sl.id] || {};
+    if (r.nadie) return true;
+    if (qOf(sl).tipo === 'aprox') { const t = tiedFor(sl, S.results); return Object.entries(r.g || {}).some(([p, v]) => parseNum(v) !== null && (!t || t.includes(+p))); }
+    return (r.ok || []).length > 0;
+  }
   function reveal() {
     if (S.step === 'redoble' || S.step === 'revelado') return;
+    if (!marcado()) { log('⚠️ Antes de revelar marcá quién acertó (o «Nadie»)', 'e'); const c = $('#score-card'); if (c) { c.classList.remove('falta'); void c.offsetWidth; c.classList.add('falta'); c.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
     const fest = +($('#st-fest-ms') ? $('#st-fest-ms').value : 6000);
     S.bucleCal = null;
     const bk = bucleKeyOf(S), b = bk && TRACKS[bk], a = musNow && musNow.a;
@@ -5469,8 +5566,15 @@ function initControl() {
     if (S.overlay) { S.overlay = null; commit(); return; }
     if (sl.k === 'cuenta' && (S.sub || 0) < countdownGroups(S.results).length) { S.sub = (S.sub || 0) + 1; commit(); return; }
     if (sl.k === 'enjuego' && (S.sub || 0) < ENJ().length + 1 + (D.ticketDorado ? 1 : 0)) {
+      if (ticketEnCamino) return;
+      if ((S.sub || 0) + 1 > ENJ().length + 1 && D.ticketDorado) {   // el ticket: la música sube a pleno un segundo antes de que aparezca
+        ticketEnCamino = true; volA(enjVol(S.sub + 1), 900);
+        setTimeout(() => { ticketEnCamino = false; if (SCRIPT[S.slide].k !== 'enjuego') return; S.sub = ENJ().length + 2; commit();
+          runSteps([[0, 'flashSolo'], [150, { tipo: 'color', h: 40, s: 92, brillo: 45, transicion: 0.4, nombre: 'ticket dorado', respaldo: 'festejo' }]]); }, 1000);
+        return;
+      }
       S.sub = (S.sub || 0) + 1;
-      volA(ENJ_VOL[Math.min(Math.max(0, S.sub - 1), ENJ_VOL.length - 1)], 1800);   // la música sube con cada premio, hasta el ticket
+      volA(enjVol(S.sub), 1500);   // la música sube con los premios, hasta el ticket
       commit();
       const base = typeof GUION.enjuego === 'string' ? GUION.enjuego : 'calido';
       if (S.sub > ENJ().length + 1) runSteps([[0, 'flashSolo'], [150, { tipo: 'color', h: 40, s: 92, brillo: 45, transicion: 0.4, nombre: 'ticket dorado', respaldo: 'festejo' }]]);
@@ -5548,7 +5652,8 @@ function initControl() {
     if (S.overlay) return 'Volver ▶';
     if (isQ(sl)) {
       if (S.step === 'pregunta' && PASOS_Q.length === 1) return '✨ Revelar respuesta';
-      if (S.step === 'pregunta') return '✍️ Pizarras ▶';
+      if (S.step === 'pregunta') return '🔄 Den vuelta las pizarras ▶';
+      if (S.step === 'pizarras' && PASOS_Q[PASOS_Q.length - 1] === 'pizarras') return marcado(sl) ? '✨ Revelar respuesta' : '⚠️ Marcá quién acertó';
       if (S.step === 'pizarras') return '⏳ Tensión ▶';
       if (S.step === 'tension') return '🎉 Revelar';
       if (S.step === 'redoble') return revPlan ? `⏳ Sale sola en el segundo ${revPlan.en}` : '🥁 …';
@@ -5744,7 +5849,7 @@ function initControl() {
     renderMini();
     renderIndex();
     $('#nav-next').textContent = nextLabel();
-    $('#nav-next').disabled = S.step === 'redoble' || (!S.overlay && S.slide === SCRIPT.length - 1);
+    $('#nav-next').disabled = S.step === 'redoble' || (!S.overlay && S.slide === SCRIPT.length - 1) || (isQ(sl) && !S.overlay && S.step === PASOS_Q[PASOS_Q.length - 1] && PASOS_Q.length > 1 && !marcado(sl));
     $('#nav-score').classList.toggle('on', S.overlay === 'marcador');
     $('#nav-score').style.opacity = spoilerZone() && !S.overlay ? .35 : 1;
   }
@@ -5779,12 +5884,12 @@ function initControl() {
       updateGuessInfo(sl);
     } else {
       $('#score-title').textContent = '¿Quién acertó?';
-      box.innerHTML = `<div class="players">${P.map((p, i) => `<button class="pbtn ${(res.ok || []).includes(i) ? 'on' : ''}" data-p="${i}">${(res.ok || []).includes(i) ? '✓ ' : ''}${esc(p.nombre)}</button>`).join('')}</div>`;
+      box.innerHTML = `<div class="players">${P.map((p, i) => `<button class="pbtn ${(res.ok || []).includes(i) ? 'on' : ''}" data-p="${i}">${(res.ok || []).includes(i) ? '✓ ' : ''}${esc(p.nombre)}</button>`).join('')}<button class="pbtn ${res.nadie ? 'on' : ''}" data-nadie="1">${res.nadie ? '✓ ' : ''}Nadie</button></div>`;
       box.querySelectorAll('.pbtn').forEach(b => b.addEventListener('click', () => {
-        const i = +b.dataset.p;
         const r = S.results[sl.id] = S.results[sl.id] || { ok: [] };
         r.ok = r.ok || [];
-        r.ok = r.ok.includes(i) ? r.ok.filter(x => x !== i) : [...r.ok, i].sort();
+        if (b.dataset.nadie) { r.nadie = !r.nadie; if (r.nadie) r.ok = []; }
+        else { const i = +b.dataset.p; r.ok = r.ok.includes(i) ? r.ok.filter(x => x !== i) : [...r.ok, i].sort(); if (r.ok.length) r.nadie = false; }
         commit();
       }));
       scoringFor = sl.id;

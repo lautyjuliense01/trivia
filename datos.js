@@ -137,8 +137,9 @@ window.TRIVIA = {
     previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
     cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false, credito: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
-    presentacion: { id: '7EhnvUTkBZM', archivo: 'presentacion.mp3', nombre: 'The Good, the Bad and the Ugly', bucle: [67.65, 131.642], fundido: 0.15 },
+    presentacion: { id: '7EhnvUTkBZM', archivo: 'presentacion.mp3', nombre: 'The Good, the Bad and the Ugly', inicio: 26.3, bucle: [67.65, 131.642], fundido: 0.15 },
                   // bucle: del 131,64 vuelve al 67,65 (la segunda vuelta del tema, medida en el audio) · fundido: segundos de mezcla en el salto
+    ronda:        { id: 'usLbaOEjqV4', archivo: 'pregunta.mp3', nombre: 'Presentación de ronda (¿Quién quiere ser millonario?)', inicio: 8.19, bucle: [8.1857, 36] },   // solo el tramo del medio, en bucle
     pregunta:     { id: 'usLbaOEjqV4', archivo: 'pregunta.mp3', nombre: '100-1000 Questions', bucle: [8.1857, 36], revela: 49, salida: 18.5 },
                   // salida: hasta este segundo, el tramo suena idéntico en la segunda pasada (36 a 46,3). Si pedís revelar
                   //   mientras suena el 8,2–18,5, salta al mismo punto de la segunda pasada sin que se note y la respuesta llega antes.
@@ -156,7 +157,8 @@ window.TRIVIA = {
                   // velocidad: 0.9 = 10 % más lenta (los textos atados a voz: siguen en el segundo del video) · pausa: segundos en negro y en silencio entre la voz y el tema
                   // fin: en el segundo 19 del video termina la voz (los últimos 2 s son silencio)
                   // opcionales: fin: segundo en que se corta la voz · solape: segundos que se pisan voz y tema (0.3)
-    anfitrion:    { archivo: 'entrada.mp3', nombre: 'Going the Distance (Rocky, epic)', recorte: [7.01, 48.49] },   // tu entrada
+    anfitrion:    { archivo: 'entrada.mp3', nombre: 'Going the Distance (Rocky, epic)', recorte: [7.01, 48.49], bucle: [67.77, 91.47], fundido: 0.15 },   // tu entrada
+                  // bucle (contado ya recortado): después de la explosión repite 8 compases, así sigue sonando mientras hablás con el logo de fondo
                   // recorte: a los 7,01 s salta al 48,49 (mismo pasaje de la música, medido en el audio) para que la explosión llegue antes.
                   //   Los segundos de los textos y del golpe están contados con el tema ya recortado: la explosión queda en el 56,95.
     redoble:      { id: '',            nombre: 'A definir: redoble' },                 // suena en un segundo reproductor, arranca al instante
@@ -167,7 +169,8 @@ window.TRIVIA = {
     enjuego:      { id: 'BuYf0taXoNw', nombre: 'Presentación de premios' },   // mientras se dan vuelta los premios
     ticket:       { id: '',            nombre: 'A definir: aparece el ticket dorado' },  // cuando aparece el ticket
     muletilla:    { id: '',            nombre: 'A definir: muletilla del ticket', inicio: 0 },   // fragmento corto para el botón 🎫 (vacío = campanas)
-    gracias:      { id: '-QuVe-hjMs0', nombre: 'Cierre: palabras de agradecimiento', inicio: 20, volumen: 0.55, credito: false },   // suena más bajo (55 %) para hablar encima
+    gracias:      { id: '-QuVe-hjMs0', archivo: 'gracias.mp3', nombre: 'Cierre: palabras de agradecimiento', inicio: 17, recorte: [20.35, 22.45], bucle: [58.15, 124.36], fundido: 0.15, volumen: 0.55, credito: false },
+                  // recorte: saltea los 2 s de silencio del 20,4 · bucle (contado ya recortado): sigue sonando lo que dure tu discurso   // suena más bajo (55 %) para hablar encima
     cierre:       { id: '0T-if-Vj2Xs', nombre: 'Créditos finales', credito: false },   // el rodillo de créditos dura lo que la canción
   },
 
@@ -183,7 +186,7 @@ window.TRIVIA = {
   respuestaMs: 4000,
 
   /* Volumen durante la presentación de premios: al entrar, y después de cada premio (el último vale para el ticket). Al salir vuelve al de antes. */
-  enjuegoVolumen: [25, 35, 45, 60, 75, 100],
+  enjuegoVolumen: { titulo: 35, tapados: 35, premios: [40, 40, 60, 60, 80], ticket: 100 },   // el ticket sube a 100 un segundo antes de aparecer
 
   /* Bucle con YouTube (solo si una canción con bucle no tiene archivo): true = se pasan la canción entre los dos reproductores */
   bucleApoyo: true,
@@ -204,7 +207,7 @@ window.TRIVIA = {
     enjuego: 'enjuego',       // presentación de premios (si está vacío, sigue la que venía)
     enjuegoTicket: 'enjuego', // cuando aparece el ticket dorado sigue la misma (Piratas del Caribe)
     reglas: 'presentacion',
-    ronda: null,              // a definir (Quiz Time queda afuera)
+    ronda: 'ronda',           // el tema de las preguntas, solo el tramo del medio; la pregunta lo arranca de nuevo desde el principio
     pregunta: 'pregunta',     // cuando hacés la pregunta
     pizarras: 'pregunta',     // mientras escriben sigue la misma (no se reinicia)
     tension: 'pregunta',      // sigue la misma: la música de tensión queda para la cuenta final
@@ -359,7 +362,9 @@ window.TRIVIA = {
     ],
     // Golpe de entrada automático: segundo del tema en que cae (con la apertura en automático). null = siempre a mano.
     golpeTema: 56.95,
-    reflectoresAntes: 0.5,   // segundos antes del golpe en que los reflectores van al costado derecho (por donde entrás)
+    reflectoresAntes: 0.5,
+    reflectoresDerecha: 5,   // segundos que los reflectores quedan a la derecha después del golpe
+    logoTras: 7,             // segundos después del golpe en que aparece el logo   // segundos antes del golpe en que los reflectores van al costado derecho (por donde entrás)
     // Qué aparece en el golpe: 'logo' (el logo de la trivia, como en la tele) o 'nombre' (tu nombre y foto)
     revelar: 'logo',
     logoArriba: 'Segunda edición',
@@ -403,11 +408,15 @@ window.TRIVIA = {
 
   /* Título que presenta a los participantes: corte seco de tu tema, segundos a oscuras (corte) y entra la música western */
   presentamos: { titulo: 'Presentamos a los participantes' },
+  tituloShow: false,   // la pantalla del título del show antes de presentar (ahora el logo ya queda de fondo después de tu golpe)
   fundidos: { presentamos: 5000, enjuego: 4000 },   // ms en que baja la música al entrar a esa parte, antes de que arranque la nueva
 
   /* ---------- Presentación del programa ----------
      Va después de tu golpe de entrada, antes de "Presentamos a los contendientes". Cada toque del celu saca la frase siguiente. */
+  /* NOTA (no sale en pantalla): ideas para decir en vivo con el logo de fondo y el Rocky en bucle.
+     Para volver a mostrarlas como placas: activo: true. */
   programa: {
+    activo: false,
     frases: [
       'Un programa que premia el conocimiento',
       'La memoria',
