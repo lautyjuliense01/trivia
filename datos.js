@@ -189,6 +189,24 @@ window.TRIVIA = {
   /* Cuánto dura el golpe de respuesta antes de pasar a la música de datos curiosos (ms) */
   respuestaMs: 4000,
 
+  /* ---------- Calibraciones de fábrica ----------
+     Lo que se copia en el celu con "📋 Copiar todas las calibraciones" (pegalo acá tal cual).
+     Valen en cualquier celu que todavía no haya calibrado esa parte; si calibrás algo en el celu, manda lo del celu.
+     (Calibradas el 05/11 con la v66) */
+  calibraciones: {
+    volumenPorPista_dB: { ronda: 11, locu_voz: -6, corto: -8, cine: 4, intro: -4, anfitrion: 9, presentacion: 12, enjuego: -5, pregunta: 9, final: 9,
+      gracias: 4, pista0: -3, pista1: -3, tension: -3, datos: -3, anfitrionVoz: -3, ganador: -2, cierre: -3, avisos: -3, locu_cuenta: 4 },
+    ritmo: { bpm: 64.8, fase: 0.071, ajuste: 0, id: 'p3l7fgvrEKM' },
+    efectosMarcados: null,
+    frasesMarcadas: {
+      cuenta: [10.13, 12.34, 15.77, 18.26, 24.1, 26.07, 31.89, 35.89],
+      voz: [2.83, 7.03, 11.58],
+    },
+    bucleAjustado: {},
+    demoraRevelarMs: 0,
+    volumenGeneral: 70,
+  },
+
   /* Volumen durante la presentación de premios: al entrar, y después de cada premio (el último vale para el ticket). Al salir vuelve al de antes. */
   enjuegoVolumen: { titulo: 35, tapados: 35, premios: [40, 40, 60, 60, 80], ticket: 100 },   // el ticket sube a 100 un segundo antes de aparecer
 

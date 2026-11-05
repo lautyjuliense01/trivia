@@ -528,6 +528,7 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 @keyframes faltaMarcar{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .guess.exacto{box-shadow:0 0 0 2px #f6dc93,0 0 18px rgba(246,220,147,.5);background:rgba(246,220,147,.14)}
 .res.exacto{box-shadow:0 0 0 2px #f6dc93,0 0 24px rgba(246,220,147,.55)}
+body .negro-fx{position:fixed;inset:0;background:#000;z-index:46;pointer-events:none;opacity:0}
 body.apagon::before{content:'';position:fixed;inset:0;background:#000;z-index:45;pointer-events:none;animation:fadeIn .8s ease both}
 .v-cd{transition:opacity 1.2s ease}
 /* v34: "El ganador de El Ticket Dorado es…" — suspenso épico hasta tu toque */
@@ -1326,7 +1327,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v66 · 04/11 12:00';
+const VERSION = 'v67 · 05/11 00:00';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -4199,7 +4200,7 @@ function initScreen() {
         if (!window.__verAviso || Date.now() - window.__verAviso > 20000) { window.__verAviso = Date.now(); link.send({ type: 'log', text: `⚠️ La tele tiene ${VERSION} y el celu ${msg.ver || '?'}: recargá las dos páginas (en la tele, Ctrl+Shift+R) para que coincidan`, kind: 'e' }); }
         if (msg.sid && msg.sid !== sid) return;   // no muestra ni hace sonar una parte equivocada
       }
-      if (msg.state.rev !== curRev) { curRev = msg.state.rev; const pc = $('#previa-code'); if (pc) pc.hidden = true; render(msg.state); }
+      if (msg.state.rev !== curRev) { curRev = msg.state.rev; const pc = $('#previa-code'); if (pc) pc.hidden = true; renderNegro(msg.state); }
     }
   }, (st, text) => {
     $('#scr-dot').className = 'dot ' + (st === 'ok' ? 'ok' : 'bad');
@@ -4221,6 +4222,24 @@ function initScreen() {
 
   render({ slide: 0, step: null, overlay: null, results: {} });
 
+  /* De la última pregunta a la cuenta final: la pantalla baja a negro junto con la música (desvanecerMs)
+     y la cuenta aparece desde el negro. Lo que llega mientras tanto se aplica al final. */
+  let negroHold = null;
+  function renderNegro(st) {
+    if (negroHold) { negroHold.st = st; return; }
+    const from = SCRIPT[cur.slide], to = SCRIPT[st.slide] || {};
+    if (!(from && isQ(from) && to.k === 'cuenta' && st.slide !== cur.slide)) return render(st);
+    const XF = D.desvanecerMs == null ? 5000 : D.desvanecerMs;
+    negroHold = { st };
+    direct(st);   // la música empieza a apagarse ya
+    const capa = document.createElement('div'); capa.className = 'negro-fx'; document.body.appendChild(capa);
+    void capa.offsetWidth; capa.style.transition = `opacity ${Math.max(400, XF - 300)}ms ease-in`; capa.style.opacity = '1';
+    setTimeout(() => {
+      const h = negroHold; negroHold = null;
+      render(h.st);
+      setTimeout(() => { capa.style.transition = 'opacity 1400ms ease-out'; capa.style.opacity = '0'; setTimeout(() => capa.remove(), 1500); }, 250);
+    }, XF + 150);
+  }
   function render(st) {
     if (st.step === 'redoble' && revLocal === st.slide) st = { ...st, step: 'revelado' };   // ya se reveló acá en el segundo justo: no vuelve atrás
     if (st.slide !== revLocal) revLocal = null;
@@ -4755,6 +4774,12 @@ function initControl() {
   /* --- Estado de la partida (persistente) --- */
   const saved = store.get('game', null);
   let S = Object.assign({ slide: 0, step: null, overlay: null, results: {}, delayMs: 2000 }, saved || {});
+  // Calibraciones de fábrica (datos.js → calibraciones): valen en un celu que todavía no calibró esa parte; lo calibrado en el celu manda
+  const CAL = D.calibraciones || {}, hay = v => v != null && !(typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length);
+  [['volPistas', 'volumenPorPista_dB'], ['ritmo', 'ritmo'], ['acentos', 'efectosMarcados'], ['crEn', 'frasesMarcadas'], ['bucleAj', 'bucleAjustado']]
+    .forEach(([k, c]) => { if (!hay(S[k]) && hay(CAL[c])) S[k] = JSON.parse(JSON.stringify(CAL[c])); });
+  if ((!saved || saved.delayMs == null) && CAL.demoraRevelarMs != null) S.delayMs = CAL.demoraRevelarMs;
+  if (S.vol == null && CAL.volumenGeneral != null) S.vol = CAL.volumenGeneral;
   aplicarBucleAj(S);
   if (S.slide >= SCRIPT.length) S.slide = 0;
   $('#set-delay').value = String(S.delayMs);
