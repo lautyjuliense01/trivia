@@ -954,6 +954,7 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 .rl-row.dos .rl-main{display:flex;flex-direction:column;align-items:flex-start;gap:clamp(6px,1vh,10px);min-width:0}
 .rl-row.dos .rl-t{text-align:left;font-size:clamp(16px,1.75vw,29px);padding-left:0}
 .rl-row.dos .rl-x{text-align:left;font-size:clamp(16px,1.6vw,26px)}
+.rl-x.solo{font-size:clamp(20px,2.2vw,36px);line-height:1.25}.rl-row.dos .rl-x.solo{font-size:clamp(18px,1.9vw,31px)}
 .rl-row.dos .av-div{width:70%;margin:0}
 .rl-row.dos .rl-back .rl-num{margin:auto}
 /* v31: misma estética que la apertura en todo el show */
@@ -1325,7 +1326,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v65 · 04/11 00:10';
+const VERSION = 'v66 · 04/11 12:00';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2728,7 +2729,7 @@ function buildScript() {
   s.push({ k: 'presentamos', label: 'Título: presentamos a los participantes' });
   P.forEach((p, i) => s.push({ k: 'presentacion', p: i, label: 'Presentación: ' + p.nombre }));
   s.push({ k: 'contendientes', label: 'Todos los participantes' });
-  s.push({ k: 'reglas', label: 'Reglas' });
+  s.push({ k: 'reglas', label: D.reglasTitulo || 'Cómo se juega' });
   if ((D.premiosEnJuego || []).length || D.ticketDorado) s.push({ k: 'enjuego', label: 'Lo que está en juego: premios y ticket dorado' });
   let n = 0;
   D.rondas.forEach((r, ri) => {
@@ -2897,15 +2898,11 @@ function fixPhotos(root) {
     img.onerror = () => { const s = document.createElement('span'); s.className = 'ini'; s.textContent = img.dataset.ini; img.replaceWith(s); };
   });
 }
-/* Reglas en tarjetas: la primera (rondas y preguntas) la arma la app; el resto viene de datos.js */
+/* Cómo se juega: tarjetas I, II, III… La I (rondas y preguntas) la arma la app; el resto viene de datos.js */
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 function rulesCards() {
-  const counts = {};
-  D.rondas.forEach(r => { counts[r.tipo] = (counts[r.tipo] || 0) + r.preguntas.length; });
-  const lab = t => { const l = TIPO_LABEL[t] || t; return /^¿/.test(l) ? l : l.toLowerCase(); };
-  const parts = Object.entries(counts).map(([t, c]) => `${c} de ${lab(t)}`);
-  const nR = D.rondas.length, words = ['', 'Una', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis'];
-  const first = { icono: 'rondas', titulo: `${words[nR] || nR} ronda${nR > 1 ? 's' : ''}`, texto: `${TOTAL_Q} preguntas: ` + (parts.length > 1 ? parts.slice(0, -1).join(', ') + ' y ' + parts.slice(-1) : parts[0]) + '.' };
+  const nR = D.rondas.length, words = ['', 'una', 'dos', 'tres', 'cuatro', 'cinco', 'seis'];
+  const first = { icono: 'rondas', texto: `El juego consta de ${words[nR] || nR} ronda${nR > 1 ? 's' : ''} y ${TOTAL_Q} preguntas.` };
   return [first, ...(D.reglas || []).map(r => typeof r === 'string' ? { texto: r } : r)];
 }
 function rulesList() { return rulesCards().map(r => (r.titulo ? r.titulo + ': ' : '') + r.texto); }
@@ -3412,7 +3409,6 @@ function createDirector(music, fx) {
       } else if (after && TRACKS[after]) music.play(after);
     } else {
       if (fx && lastMoment === 'redoble') fx.stop(150);
-      if (m === 'cine' && (SCRIPT[st.slide] || {}).parte === 'avisos') { lastKey = key; lastMoment = m; return; }   // en los avisos nunca suena la de Dolby
       const fd = FUNDIDOS[m] && lastMoment !== m ? FUNDIDOS[m] : 0;   // ej.: antes de presentar a los participantes, tu tema baja en 5 s
       key ? music.play(key, { ...(st.desde && st.desde.k === key ? { from: st.desde.t } : {}), xfade: desdeQ ? XF : fd }) : music.stop(desdeQ ? XF : (fd || 900));
     }
@@ -4491,7 +4487,7 @@ function initScreen() {
       h = `<div class="v v-rules2 enter"><div class="rl-eyebrow">${esc(D.reglasTitulo || 'Cómo se juega')}</div>
         <div class="rl-row ${RC.length > 5 ? 'dos' : ''}" style="--n:${RC.length};--c:${Math.ceil(RC.length / 2)}">${RC.map((r, i) => `<div class="rl-card" data-i="${i}" style="animation-delay:${0.3 + i * 0.12}s"><div class="rl-inner">
           <div class="rl-face rl-back"><div class="rl-num">${ROMAN[i] || i + 1}</div></div>
-          <div class="rl-face rl-front"><div class="rl-side"><div class="rl-num sm">${ROMAN[i] || i + 1}</div>${avIconHTML(r.icono || 'estrella')}</div><div class="rl-main">${r.titulo ? `<div class="rl-t">${esc(r.titulo)}</div><div class="av-div"></div>` : ''}<div class="rl-x">${esc(r.texto || '')}</div></div></div>
+          <div class="rl-face rl-front"><div class="rl-side"><div class="rl-num sm">${ROMAN[i] || i + 1}</div>${avIconHTML(r.icono || 'estrella')}</div><div class="rl-main">${r.titulo ? `<div class="rl-t">${esc(r.titulo)}</div><div class="av-div"></div>` : ''}<div class="rl-x${r.titulo ? '' : ' solo'}">${esc(r.texto || '')}</div></div></div>
         </div></div>`).join('')}</div></div>`;
     } else if (sl.k === 'ronda') {
       const r = D.rondas[sl.r];
@@ -5789,7 +5785,7 @@ function initControl() {
       if (S.step === 'pregunta' && PASOS_Q.length === 1) return '✨ Revelar respuesta';
       if (S.step === 'pregunta') return '🔄 Den vuelta las pizarras ▶';
       if (S.step === 'pizarras' && sl.k === 'desempate' && (tieSlot(sl, S.results) || {}).pos === 1) return marcado(sl) ? '👑 Anunciar al ganador ▶' : '⚠️ Cargá los números';
-      if (S.step === 'pizarras' && PASOS_Q[PASOS_Q.length - 1] === 'pizarras') { const e = revelaEta(); return marcado(sl) ? `✨ Revelar${e != null ? ` · sale en ${Math.ceil(e)} s` : ''}` : '⚠️ Marcá quién acertó'; }
+      if (S.step === 'pizarras' && PASOS_Q[PASOS_Q.length - 1] === 'pizarras') { const e = revelaEta(); return marcado(sl) ? `✨ Revelar${e != null ? ` · sale en ${Math.ceil(e)} s` : ''}` : `⚠️ Marcá quién acertó${e != null ? ` · revelar en ${Math.ceil(e)} s` : ''}`; }
       if (S.step === 'pizarras') return '⏳ Tensión ▶';
       if (S.step === 'tension') return '🎉 Revelar';
       if (S.step === 'redoble') return revPlan ? `⏳ Sale sola en el segundo ${revPlan.en}` : '🥁 …';
@@ -5806,7 +5802,7 @@ function initControl() {
     if (sl.k === 'ganador' && S.step === 'redoble') return '🥁 …';
     if (sl.k === 'ganador' && S.step === 'suspenso') return '💥 ¡Explosión! (al decir el nombre)';
     if (sl.k === 'presentador' && S.step !== 'golpe') return '💥 ¡Golpe de entrada!';
-    if (sl.k === 'reglas' && (S.sub || 0) < rulesCards().length) return `📜 Regla ${ROMAN[S.sub || 0] || (S.sub || 0) + 1} ▶`;
+    if (sl.k === 'reglas' && (S.sub || 0) < rulesCards().length) return `📜 ${ROMAN[S.sub || 0] || (S.sub || 0) + 1} ▶`;
     if (sl.k === 'programa' && (S.sub || 0) < PROGRAMA.length) return `📣 Frase ${(S.sub || 0) + 1} de ${PROGRAMA.length} ▶`;
     if (sl.k === 'enjuego' && !(S.sub || 0)) return '🎁 Mostrar los premios (tapados) ▶';
     if (sl.k === 'enjuego' && (S.sub || 0) <= ENJ().length) return `🎁 Premio ${S.sub} ▶`;
@@ -5890,7 +5886,7 @@ function initControl() {
         ${hiddenG.map(g => `<span>🔒 ${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}</span><b>${g.score}</b>`).join('')}</div>`;
     }
     else if (sl.k === 'enjuego') h = `<div class="now-title">Lo que está en juego</div><p class="muted">Cada toque da vuelta un premio; al final, el ticket dorado. Se eligen en orden: el primero elige primero.</p><ol class="muted" style="padding-left:22px;margin:6px 0">${ENJ().map((r, i) => `<li style="${i < (S.sub || 0) ? 'color:#9ff0b9' : ''}">${esc(r.nombre || 'Premio ' + (i + 1))}${i < (S.sub || 0) ? ' ✓' : ''}</li>`).join('')}${D.ticketDorado ? `<li style="list-style:none;${(S.sub || 0) > ENJ().length ? 'color:#9ff0b9' : ''}">🎫 El ticket dorado${(D.ticketDorado.beneficios || []).length ? ': ' + esc(D.ticketDorado.beneficios.join(' + ')) : ''}</li>` : ''}</ol>`;
-    else if (sl.k === 'reglas') h = `<div class="now-title">${esc(D.reglasTitulo || 'Cómo se juega')}</div><p class="muted">Cada toque da vuelta una tarjeta, así explicás una regla por vez.</p><ol class="muted" style="padding-left:22px;margin:6px 0">${rulesList().map((r, i) => `<li style="${i < (S.sub || 0) ? 'color:#9ff0b9' : ''}">${esc(r)}${i < (S.sub || 0) ? ' ✓' : ''}</li>`).join('')}</ol>`;
+    else if (sl.k === 'reglas') h = `<div class="now-title">${esc(D.reglasTitulo || 'Cómo se juega')}</div><p class="muted">Cada toque da vuelta una tarjeta (I, II, III…), así explicás un punto por vez.</p><ol class="muted" style="padding-left:22px;margin:6px 0">${rulesList().map((r, i) => `<li style="${i < (S.sub || 0) ? 'color:#9ff0b9' : ''}">${esc(r)}${i < (S.sub || 0) ? ' ✓' : ''}</li>`).join('')}</ol>`;
     else if (sl.k === 'ronda') { const r = D.rondas[sl.r]; h = `<div class="now-title">Ronda ${sl.r + 1}: ${esc(r.titulo)}</div><p class="muted">${r.preguntas.length} preguntas</p>`; }
     else if (isQ(sl)) {
       const q = qOf(sl);

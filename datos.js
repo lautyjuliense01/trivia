@@ -439,9 +439,10 @@ window.TRIVIA = {
   // icono: 'marcador', 'pizarra', 'estrella', 'diana', 'ticket', 'corona', 'reloj', 'silencio', 'celular', 'salida', 'sonido', 'rondas', 'regalo'
   reglasTitulo: 'Cómo se juega',   // el título de esta parte (va más allá de las reglas: rondas, puntaje, desempate)
   reglas: [
-    { icono: 'pizarra',  titulo: 'Solo la respuesta', texto: 'En la pizarra, únicamente la respuesta de la pregunta actual.' },
-    { icono: 'estrella', titulo: 'Puntaje', texto: 'Opción múltiple y ¿Quién dijo?: 100 puntos. Aproximación: 150 al más cerca y 200 si es exacta.' },
-    { icono: 'ticket',   titulo: 'Desempate', texto: 'En caso de empate, se realiza una pregunta de aproximación de desempate.' },
+    // El I lo arma la app sola ("El juego consta de tres rondas y 18 preguntas."). Estos son II, III y IV.
+    { icono: 'pizarra',  texto: 'En la pizarra solo se escribe la respuesta de la pregunta en curso.' },
+    { icono: 'estrella', texto: 'Cada acierto otorga 100 puntos; en aproximación, 150 al más próximo y 200 a la respuesta exacta.' },
+    { icono: 'ticket',   texto: 'Todo empate se resuelve con una pregunta de aproximación.' },
   ],
 
   /* ---------- Rondas y preguntas ----------
