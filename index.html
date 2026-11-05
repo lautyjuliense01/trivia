@@ -528,6 +528,12 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 @keyframes faltaMarcar{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .guess.exacto{box-shadow:0 0 0 2px #f6dc93,0 0 18px rgba(246,220,147,.5);background:rgba(246,220,147,.14)}
 .res.exacto{box-shadow:0 0 0 2px #f6dc93,0 0 24px rgba(246,220,147,.55)}
+.q-juegan{display:flex;justify-content:center;align-items:center;gap:clamp(10px,1.4vw,22px);margin:clamp(6px,1vh,14px) 0 clamp(4px,.8vh,10px);flex-wrap:wrap}
+.q-juegan .qj{display:flex;align-items:center;gap:.5em;font-family:'Cinzel',serif;font-size:clamp(15px,1.6vw,26px);color:#f6e2b0}
+.q-juegan .qj .ini,.q-juegan .qj img{width:clamp(30px,3vw,48px);height:clamp(30px,3vw,48px);border-radius:50%;object-fit:cover;border:2px solid rgba(232,190,110,.6);display:grid;place-items:center;font-size:.8em}
+.q-juegan i{font-style:normal;font-family:'Cinzel',serif;color:var(--gold);opacity:.75;font-size:clamp(12px,1.1vw,18px);letter-spacing:.15em}
+.res-pos{font-style:normal;font-family:'Cinzel',serif;font-weight:700;color:var(--gold);margin-right:.5em}
+.res-again{flex-basis:100%;text-align:center;font-family:'Cinzel',serif;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-size:clamp(13px,1.2vw,19px);margin-top:6px}
 body .negro-fx{position:fixed;inset:0;background:#000;z-index:46;pointer-events:none;opacity:0}
 body.apagon::before{content:'';position:fixed;inset:0;background:#000;z-index:45;pointer-events:none;animation:fadeIn .8s ease both}
 .v-cd{transition:opacity 1.2s ease}
@@ -1327,7 +1333,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v67 · 05/11 00:00';
+const VERSION = 'v68 · 05/11 19:00';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2738,15 +2744,16 @@ function buildScript() {
     r.preguntas.forEach((q, qi) => { n++; s.push({ k: 'pregunta', r: ri, q: qi, n, id: `r${ri}q${qi}`, label: `Pregunta ${n} · ${TIPO_LABEL[r.tipo] || r.tipo}` }); });
     if (ri < D.rondas.length - 1) s.push({ k: 'marcador', r: ri, label: `Marcador tras ronda ${ri + 1}` });
   });
-  s.push({ k: 'cuenta', label: 'Cuenta final (del último al segundo)' });
+  s.push({ k: 'cuenta', label: 'Cuenta final (del último hacia arriba; se saltea si no hay nadie para revelar)' });
   // Desempates en cualquier puesto (definen el orden para elegir premios). Si el 1° no está empatado, primero el ganador
   // y después los desempates; si el 1° está empatado, los desempates van antes y el ganador queda para el final.
   // Siempre del desempate más bajo al más alto. Los que no hacen falta se saltean solos.
-  if (DESEMPATES.length) {
-    s.push({ k: 'ganador', cuando: 'antes', label: 'Ganador (si el 1° no está empatado)' });
-    DESEMPATES.forEach((q, i) => s.push({ k: 'desempate', s: i, id: 'des' + i, label: `Desempate ${i + 1} (solo si hace falta)` }));
-    s.push({ k: 'ganador', cuando: 'despues', label: 'Ganador (después del desempate)' });
-  } else s.push({ k: 'ganador', label: 'Ganador' });
+  // Lugar del ganador: g = cuántos desempates se juegan antes de anunciarlo (lo decide planFinal según el marcador).
+  //   Ganador · D1 · Ganador · D2 · Ganador … : de todos esos "Ganador" se usa uno solo y los desempates que no hacen falta se saltean.
+  for (let i = 0; i <= DESEMPATES.length; i++) {
+    s.push({ k: 'ganador', g: i, label: i === 0 ? 'Ganador (si el 1° no está empatado)' : `Ganador (después de ${i === 1 ? 'un desempate' : i + ' desempates'})` });
+    if (i < DESEMPATES.length) s.push({ k: 'desempate', s: i, id: 'des' + i, label: `Desempate ${i + 1} (solo si hace falta)` });
+  }
   s.push({ k: 'premios', label: 'Entrega de premios' });
   if (D.gracias !== false) s.push({ k: 'gracias', label: 'Palabras de cierre (agradecimiento)' });
   s.push({ k: 'cierre', label: 'Cierre: créditos finales' });
@@ -2808,29 +2815,64 @@ function rankGroups(results) {
   let pos = 1;
   return scores.map(v => { const players = sc.map((x, i) => (x === v ? i : -1)).filter(i => i >= 0); const g = { score: v, players, pos }; pos += players.length; return g; });
 }
-/* Los empates que hay que desempatar, en el orden en que se juegan: del puesto más bajo al más alto.
-   El desempate i (slide "des" + i) es el del grupo i de esta lista */
-function tieSlots(results) { return rankGroups(results).filter(g => g.players.length > 1).sort((a, b) => b.pos - a.pos); }
-function tieSlot(sl, results) { return sl && sl.k === 'desempate' ? (tieSlots(results)[sl.s || 0] || null) : null; }
-function tiedFor(sl, results) { const g = tieSlot(sl, results); return g ? g.players : null; }
-const posTxt = g => g.pos === 1 ? 'el primer puesto' : (g.players.length === 2 ? `el ${g.pos}° y ${g.pos + 1}° puesto` : `del ${g.pos}° al ${g.pos + g.players.length - 1}° puesto`);
-/* Ordena un grupo empatado con su desempate: el más cerca primero; iguales de cerca siguen empatados */
-function resolveGroup(g, s, results) {
-  const q = DESEMPATES[s], r = q && results && results['des' + s];
-  if (!q || !r || !r.g) return [{ ...g }];
+/* ---------- El final: cuenta, desempates y ganador ----------
+   planFinal arma todo el final a partir del marcador y de los desempates ya jugados:
+   · Si el 1° no está empatado: primero el ganador y después los desempates que haya, del puesto más bajo al más alto.
+   · Si el 1° está empatado: primero los desempates de más abajo (del más bajo al más alto), al final el del 1° y después el ganador.
+   · Cada desempate ordena a sus jugadores por cercanía. Si dos quedan igual de cerca, siguen empatados y se juega otro:
+       - si siguen empatados por el 1°, otro desempate enseguida (antes del ganador);
+       - si el del 1° deja empatados más abajo (ej.: entre 3, uno gana y dos quedan igual), esos se juegan después del ganador;
+       - si es un desempate de más abajo, otro enseguida.
+   · La pregunta j de desempates se usa en el j-ésimo desempate que se juegue (resultados en 'des' + j).
+   Devuelve { ties: [{ j, pos, players, score, again }], pre: desempates antes del ganador (null = todavía no se sabe),
+              groups: posiciones con lo jugado hasta ahora, falta: empates que quedaron sin pregunta } */
+function splitTie(g, j, results) {
+  const q = DESEMPATES[j], r = q && results && results['des' + j];
+  if (!q || !r || !r.g) return null;
   const d = p => { const n = parseNum(r.g[p]); return n === null ? Infinity : Math.abs(n - q.respuesta); };
-  const ord = g.players.slice().sort((a, b) => d(a) - d(b));
-  if (ord.every(p => d(p) === Infinity)) return [{ ...g }];
-  const out = []; let pos = g.pos;
-  ord.forEach(p => { const last = out[out.length - 1]; if (last && Math.abs(d(last.players[0]) - d(p)) < 1e-9) last.players.push(p); else out.push({ pos, players: [p], score: g.score, byTie: true }); pos++; });
+  if (g.players.every(p => d(p) === Infinity)) return null;   // todavía no se cargó ningún número
+  const ord = g.players.slice().sort((a, b) => d(a) - d(b) || a - b), out = [];
+  ord.forEach(p => { const last = out[out.length - 1]; if (last && (d(last.players[0]) === d(p) || Math.abs(d(last.players[0]) - d(p)) < 1e-9)) last.players.push(p); else out.push({ players: [p], score: g.score, byTie: true }); });
   let k = g.pos; out.forEach(o => { o.pos = k; k += o.players.length; });
   return out;
 }
-/* Posiciones finales, con los desempates que ya se jugaron */
-function finalRanking(results) {
-  const slots = tieSlots(results || {});
-  return rankGroups(results || {}).flatMap(g => g.players.length > 1 ? resolveGroup(g, slots.indexOf(slots.find(x => x.pos === g.pos)), results) : [g]);
+function planFinal(results) {
+  results = results || {};
+  let groups = rankGroups(results).map(g => ({ ...g }));
+  const ties = [], M = DESEMPATES.length;
+  let pre = groups[0] && groups[0].players.length > 1 ? null : 0;
+  const desc = arr => arr.sort((a, b) => b.pos - a.pos);
+  let queue = desc(groups.filter(g => g.players.length > 1)), post = [], j = 0, pend = false;
+  while (queue.length || post.length) {
+    if (!queue.length) { queue = desc(post); post = []; }
+    if (j >= M) break;
+    const G = queue.shift();
+    ties.push({ j, pos: G.pos, players: G.players.slice(), score: G.score, again: !!G.again });
+    const sub = splitTie(G, j, results);
+    j++;
+    if (!sub) { pend = true; break; }   // este desempate todavía no se jugó: lo que sigue depende de él
+    const i = groups.findIndex(x => x.pos === G.pos);
+    groups.splice(i, 1, ...sub);
+    const res = sub.filter(x => x.players.length > 1).map(x => ({ ...x, again: true }));
+    if (G.pos === 1) {
+      const top = res.find(x => x.pos === 1);
+      if (top) queue.unshift(top); else if (pre === null) pre = j;
+      post.push(...res.filter(x => x.pos !== 1));
+    } else queue.unshift(...desc(res));
+  }
+  if (pre === null && !pend) pre = j;   // no quedan preguntas: el ganador sale igual (comparten el 1°)
+  const falta = pend ? [] : [...queue, ...post].map(g => ({ pos: g.pos, players: g.players.slice(), score: g.score }));
+  return { ties, pre, groups, falta };
 }
+function tieSlots(results) { return planFinal(results).ties; }
+function tieSlot(sl, results) { return sl && sl.k === 'desempate' ? (planFinal(results).ties[sl.s || 0] || null) : null; }
+function tiedFor(sl, results) { const g = tieSlot(sl, results); return g ? g.players : null; }
+const posTxt = g => g.pos === 1 ? 'el primer puesto' : (g.players.length === 2 ? `el ${g.pos}° y ${g.pos + 1}° puesto` : `del ${g.pos}° al ${g.pos + g.players.length - 1}° puesto`);
+const desTxt = g => g.players.length > 2 && g.pos > 1 ? posTxt(g) : 'por ' + posTxt(g);   // "Desempate por el 2° y 3° puesto" / "Desempate del 2° al 4° puesto"
+/* Ordena un grupo empatado con su desempate (para el celu): el más cerca primero; iguales de cerca siguen empatados */
+function resolveGroup(g, s, results) { return splitTie(g, s, results) || [{ ...g }]; }
+/* Posiciones finales, con los desempates que ya se jugaron */
+function finalRanking(results) { return planFinal(results).groups; }
 function standing(results) {
   results = results || {};
   const sc = computeScores(results), max = Math.max(0, ...sc);
@@ -2838,11 +2880,25 @@ function standing(results) {
   const fr = finalRanking(results), top = fr[0] ? fr[0].players : tied;
   return { sc, max, tied, top, byTie: tied.length > 1 && top.length === 1, decided: top.length === 1 };
 }
-/* Lo que se revela en la cuenta final: todos menos los de arriba, del último hacia arriba */
+/* La cuenta final: se revela del último hacia arriba y quedan ocultos los que pelean arriba, para que el ganador
+   nunca se sepa por descarte:
+   · 1° solo → quedan ocultos el 1° y todo el grupo del 2° (si el 2° está empatado entre 3, quedan 4 ocultos);
+   · 1° empatado → quedan ocultos solo los empatados en el 1°.
+   Si no queda nadie para revelar, la cuenta se saltea (se va directo al ganador o al desempate del 1°). */
 function countdownGroups(results) {
-  // Se revela del último hacia arriba, dejando ocultos los dos mejores puestos (el ganador se anuncia aparte, nunca "por descarte")
   const g = rankGroups(results);
   return g.slice(g[0] && g[0].players.length > 1 ? 1 : 2).reverse();
+}
+function cuentaOculta(results) {
+  const g = rankGroups(results), n = g[0] && g[0].players.length > 1 ? 1 : 2;
+  return g.slice(0, n).reduce((a, x) => a + x.players.length, 0);
+}
+const NUM_TXT = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho'];
+function cuentaBanner(results) {
+  const g = rankGroups(results), k1 = g[0] ? g[0].players.length : 0;
+  if (k1 > 1) return { 2: '¡Empate en el primer puesto!', 3: '¡Triple empate en el primer puesto!', 4: '¡Cuádruple empate en el primer puesto!' }[k1] || `¡Empate de ${k1} en el primer puesto!`;
+  const h = cuentaOculta(results);
+  return `Quedan los ${NUM_TXT[h] || h} mejores…`;
 }
 
 function momentOf(st) {
@@ -4222,13 +4278,14 @@ function initScreen() {
 
   render({ slide: 0, step: null, overlay: null, results: {} });
 
-  /* De la última pregunta a la cuenta final: la pantalla baja a negro junto con la música (desvanecerMs)
+  /* De la última pregunta a la cuenta final (o a lo que venga si se saltea): la pantalla baja a negro junto con la música (desvanecerMs)
      y la cuenta aparece desde el negro. Lo que llega mientras tanto se aplica al final. */
   let negroHold = null;
   function renderNegro(st) {
     if (negroHold) { negroHold.st = st; return; }
     const from = SCRIPT[cur.slide], to = SCRIPT[st.slide] || {};
-    if (!(from && isQ(from) && to.k === 'cuenta' && st.slide !== cur.slide)) return render(st);
+    // de la última pregunta a lo que siga (la cuenta; o, si la cuenta se saltea, el ganador o el desempate del 1°)
+    if (!(from && from.k === 'pregunta' && from.n === TOTAL_Q && ['cuenta', 'ganador', 'desempate'].includes(to.k) && st.slide !== cur.slide)) return render(st);
     const XF = D.desvanecerMs == null ? 5000 : D.desvanecerMs;
     negroHold = { st };
     direct(st);   // la música empieza a apagarse ya
@@ -4520,10 +4577,11 @@ function initScreen() {
            <div class="round-sub" style="margin-top:6px">${final ? '¿Quién se lleva ' + esc(PREMIO) + '?' : 'Después de la ronda ' + (sl.r + 1)}</div>
            <div class="bars">${scoreRowsHTML(st.results || {})}</div></div>`;
     } else if (sl.k === 'premios') {
-      const order = finalRanking(st.results || {}).flatMap(g => g.players);   // con los desempates: el orden en que eligen
+      // con los desempates: el orden en que eligen (si quedó un empate sin pregunta, comparten el número y lo definen entre ellos)
+      const order = finalRanking(st.results || {}).flatMap(g => g.players.map(i => ({ i, pos: g.pos, tie: g.players.length > 1 })));
       h = `<div class="v v-premios enter"><div class="marquee" style="display:inline-block"><h2 class="script">Entrega de premios</h2></div>
         <div class="round-sub" style="margin-top:22px">Eligen en este orden</div>
-        <div class="pz-list">${order.map((i, k) => `<div class="pz" style="animation-delay:${0.5 + k * 0.25}s"><span class="pz-n">${k + 1}</span><span class="br-av">${photoHTML(P[i])}</span><span>${esc(P[i].nombre)}</span></div>`).join('')}</div>
+        <div class="pz-list">${order.map((o, k) => `<div class="pz" style="animation-delay:${0.5 + k * 0.25}s"><span class="pz-n">${o.pos}${o.tie ? ' ⚔️' : ''}</span><span class="br-av">${photoHTML(P[o.i])}</span><span>${esc(P[o.i].nombre)}</span></div>`).join('')}</div>
         <div class="pz-gift">${avIconHTML('regalo')}</div></div>`;
     } else if (sl.k === 'gracias') {
       const G = D.gracias || {};
@@ -4618,7 +4676,8 @@ function initScreen() {
 
   function questionHTML(sl, st = {}) {
     const q = qOf(sl);
-    const tg = tieSlot(sl, st.results || {}), title = sl.k === 'desempate' ? (tg ? 'Desempate por ' + posTxt(tg) : 'Desempate') : q.ronda;
+    const tg = tieSlot(sl, st.results || {}), title = sl.k === 'desempate' ? (tg ? (tg.again ? 'Siguen empatados · ' : '') + 'Desempate ' + desTxt(tg) : 'Desempate') : q.ronda;
+    const juegan = sl.k === 'desempate' && tg ? `<div class="q-juegan">${tg.players.map(i => `<span class="qj">${photoHTML(P[i])}<b>${esc(P[i].nombre)}</b></span>`).join('<i>vs</i>')}</div>` : '';
     const num = sl.k === 'desempate' ? '★' : sl.n;
     const hasOpts = q.tipo === 'opciones' && Array.isArray(q.opciones) && q.opciones.length;
     let body = '';
@@ -4634,7 +4693,7 @@ function initScreen() {
       body = `<div class="q-text">${esc(q.texto)}</div><div><div class="ticket show ans" data-ans="${q.tipo === 'aprox' ? fmtNum(q.respuesta) : esc(q.respuesta)}"><span class="ans-eye">Respuesta</span><span class="ans-v">?</span></div></div>`;
     }
     return `<div class="v v-q enter stage-pulse ${hasOpts ? 'has-opts' : ''}" id="vq">
-      <div class="q-head"><div class="q-num">${num}</div></div><div class="q-round">${esc(title)}${sl.k !== 'desempate' ? `<span class="q-pts"><i>◆</i>${fmtPts(ptsOf(q))} puntos${q.tipo === 'aprox' ? ` · ${fmtPts(exactoOf(q))} si es exacta` : ''}</span>` : ''}</div>
+      <div class="q-head"><div class="q-num">${num}</div></div><div class="q-round">${esc(title)}${sl.k !== 'desempate' ? `<span class="q-pts"><i>◆</i>${fmtPts(ptsOf(q))} puntos${q.tipo === 'aprox' ? ` · ${fmtPts(exactoOf(q))} si es exacta` : ''}</span>` : ''}</div>${juegan}
       ${body}
 
       <div class="hint q-hint h-ten">Últimos segundos</div>
@@ -4653,6 +4712,11 @@ function initScreen() {
       const rows = Object.entries(res.g || {}).map(([p, v]) => ({ p: +p, n: parseNum(v) }))
         .filter(r => r.n !== null && (!onlyTied || onlyTied.includes(r.p)))
         .sort((a, b) => Math.abs(a.n - q.respuesta) - Math.abs(b.n - q.respuesta));
+      const tg = sl.k === 'desempate' ? tieSlot(sl, st.results || {}) : null, orden = tg ? resolveGroup(tg, sl.s || 0, st.results || {}) : null;
+      if (orden) return rows.map(r => {   // desempate: el puesto en que queda cada uno (⚔️ si quedaron igual de cerca)
+        const o = orden.find(x => x.players.includes(r.p)), d = Math.abs(r.n - q.respuesta), dif = r.n - q.respuesta;
+        return `<div class="res ${o && o.pos === tg.pos && o.players.length === 1 ? 'win' : ''} ${d === 0 ? 'exacto' : ''}"><span><i class="res-pos">${o ? o.pos + '°' : ''}${o && o.players.length > 1 ? ' ⚔️' : ''}</i>${esc(P[r.p].nombre)}</span><span class="rd">${d === 0 ? '¡exacto!' : (dif > 0 ? '+' : '−') + fmtNum(Math.round(d * 100) / 100)}</span></div>`;
+      }).join('') + (orden.some(o => o.players.length > 1) ? '<div class="res-again">Siguen empatados: va otro desempate</div>' : '');
       return rows.map(r => {
         const w = win.includes(r.p), d = Math.abs(r.n - q.respuesta);
         const dif = r.n - q.respuesta;   // en la tele, solo la diferencia con la respuesta (ni lo que dijo ni los puntos)
@@ -4665,7 +4729,7 @@ function initScreen() {
   function winnerHTML(st) {
     const s = standing(st.results || {});
     const names = s.top.map(i => `<div class="win-card"><div class="pl-photo">${photoHTML(P[i])}</div><h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
-    const extra = s.decided ? `${ptsTxt(s.max)}${s.byTie ? ' · ganó el desempate' : ''}` : `${ptsTxt(s.max)} cada uno · ¡Vamos al desempate!`;
+    const extra = s.decided ? `${ptsTxt(s.max)}${s.byTie ? ' · ganó el desempate' : ''}` : `${ptsTxt(s.max)} cada uno · comparten el primer puesto`;
     const medal = { 2: '🥈', 3: '🥉' };
     const rest = s.decided ? finalRanking(st.results || {}).filter(g => g.pos > 1).flatMap(g => g.players.map(i => `<span class="${g.pos <= 3 ? 'pod' : ''}">${g.players.length > 1 ? '⚔️' : (medal[g.pos] || '')} ${g.players.length > 1 ? g.pos + '°–' + (g.pos + g.players.length - 1) + '°' : g.pos + '°'} ${esc(P[i].nombre)} · ${fmtPts(g.score)} pts</span>`)).join('') : '';
     const sub = s.decided ? `<div class="win-sub">${P[s.top[0]].genero === 'f' ? 'Ganadora' : 'Ganador'} ${esc(deTitulo())} · ${esc((D.edicion.match(/\d{4}/) || [''])[0])}</div>` : '';
@@ -4698,11 +4762,11 @@ function initScreen() {
         row.classList.toggle('shown', on);
       });
       if (fresh && !changed) { const g = cg[(st.sub || 1) - 1]; SFX.puesto(g ? g.pos : 5); }
-      const all = (st.sub || 0) >= cg.length, tied = standing(st.results || {}).tied.length;
+      const all = (st.sub || 0) >= cg.length;
       const bn = $('#cd-banner');
-      if (bn) { bn.textContent = !all ? '' : (tied > 1 ? (tied === 2 ? '¡Empate en el primer puesto!' : `¡Empate ${tied === 3 ? 'triple' : 'de ' + tied} en el primer puesto!`) : 'Quedan los dos mejores…'); bn.classList.toggle('on', all); }
+      if (bn) { bn.textContent = all ? cuentaBanner(st.results || {}) : ''; bn.classList.toggle('on', all); }
       // empates más abajo: se marcan con ⚔️ (se definen después, con su desempate)
-      const tg = new Set(tieSlots(st.results || {}).map(g => g.pos));
+      const tg = new Set(rankGroups(st.results || {}).filter(g => g.players.length > 1).map(g => g.pos));
       stage.querySelectorAll('.cd-row[data-g]').forEach(row => row.classList.toggle('tie', tg.has(+row.dataset.g)));
     } else if (sl.k === 'ganador') {
       const box = $('#win-box');
@@ -5592,8 +5656,9 @@ function initControl() {
   // qué partes del final hacen falta según cómo quedó el marcador
   function hace(sl) {
     if (!sl) return false;
-    if (sl.k === 'desempate') return tieSlots(S.results).length > (sl.s || 0);
-    if (sl.k === 'ganador' && sl.cuando) { const g = rankGroups(S.results)[0]; const top1 = !g || g.players.length === 1; return sl.cuando === 'antes' ? top1 : !top1; }
+    if (sl.k === 'cuenta') return countdownGroups(S.results).length > 0;   // si no queda nadie para revelar, se saltea
+    if (sl.k === 'desempate') return (sl.s || 0) < planFinal(S.results).ties.length;
+    if (sl.k === 'ganador' && sl.g != null) { const pl = planFinal(S.results); return sl.g === (pl.pre != null ? pl.pre : pl.ties.length); }
     return true;
   }
   function nextIndex(from, dir) {
@@ -5651,7 +5716,7 @@ function initControl() {
   function marcado(sl = SCRIPT[S.slide]) {
     if (!isQ(sl)) return true;
     const r = S.results[sl.id] || {};
-    if (r.nadie) return true;
+    if (r.nadie && sl.k !== 'desempate') return true;
     if (qOf(sl).tipo === 'aprox') { const t = tiedFor(sl, S.results); return Object.entries(r.g || {}).some(([p, v]) => parseNum(v) !== null && (!t || t.includes(+p))); }
     return (r.ok || []).length > 0;
   }
@@ -5809,7 +5874,7 @@ function initControl() {
     if (isQ(sl)) {
       if (S.step === 'pregunta' && PASOS_Q.length === 1) return '✨ Revelar respuesta';
       if (S.step === 'pregunta') return '🔄 Den vuelta las pizarras ▶';
-      if (S.step === 'pizarras' && sl.k === 'desempate' && (tieSlot(sl, S.results) || {}).pos === 1) return marcado(sl) ? '👑 Anunciar al ganador ▶' : '⚠️ Cargá los números';
+      if (S.step === 'pizarras' && sl.k === 'desempate' && (tieSlot(sl, S.results) || {}).pos === 1) return !marcado(sl) ? '⚠️ Cargá los números' : ((SCRIPT[nextIndex(S.slide, 1)] || {}).k === 'desempate' ? '⚔️ Siguen empatados: otro desempate ▶' : '👑 Anunciar al ganador ▶');
       if (S.step === 'pizarras' && PASOS_Q[PASOS_Q.length - 1] === 'pizarras') { const e = revelaEta(); return marcado(sl) ? `✨ Revelar${e != null ? ` · sale en ${Math.ceil(e)} s` : ''}` : `⚠️ Marcá quién acertó${e != null ? ` · revelar en ${Math.ceil(e)} s` : ''}`; }
       if (S.step === 'pizarras') return '⏳ Tensión ▶';
       if (S.step === 'tension') return '🎉 Revelar';
@@ -5820,7 +5885,7 @@ function initControl() {
     if (sl.k === 'corto') return '⏭ Saltar el corto';
     if (sl.k === 'cuenta') {
       const cg = countdownGroups(S.results), k = S.sub || 0;
-      if (k < cg.length) return `Revelar ${cg[k].pos}° puesto ▶`;
+      if (k < cg.length) return cg[k].players.length > 1 ? `Revelar ${posTxt(cg[k])} (empate) ▶` : `Revelar ${cg[k].pos}° puesto ▶`;
       const nx = SCRIPT[nextIndex(S.slide, 1)] || {};
       return nx.k === 'desempate' ? '⚔️ Desempate ▶' : '👑 ¡Anunciar al ganador! ▶';
     }
@@ -5835,7 +5900,7 @@ function initControl() {
     const n = SCRIPT[nextIndex(S.slide, 1)];
     if (!n) return 'Fin';
     if (n.k === 'presentacion' && PRES_NUEVA) return `🎤 ${P[n.p].nombre} ▶`;
-    return { gracias: '🙏 Palabras de cierre ▶', enjuego: '🎁 Lo que está en juego ▶', premios: '🎁 Premios ▶', cierre: '🎬 Cierre ▶', intro: 'Intro ▶', presentamos: 'Presentamos ▶', presentacion: 'Participante ▶', contendientes: 'Todos juntos ▶', presentador: '🎤 Presentador ▶', reglas: 'Reglas ▶', ronda: 'Ronda ▶', pregunta: 'Pregunta ▶', marcador: 'Marcador ▶', cuenta: 'Cuenta final ▶', desempate: '⚔️ Desempate ▶', ganador: '👑 Ganador ▶' }[n.k] || 'Siguiente ▶';
+    return { gracias: '🙏 Palabras de cierre ▶', enjuego: '🎁 Lo que está en juego ▶', premios: '🎁 Premios ▶', cierre: '🎬 Cierre ▶', intro: 'Intro ▶', presentamos: 'Presentamos ▶', presentacion: 'Participante ▶', contendientes: 'Todos juntos ▶', presentador: '🎤 Presentador ▶', reglas: '📜 Cómo se juega ▶', ronda: 'Ronda ▶', pregunta: 'Pregunta ▶', marcador: 'Marcador ▶', cuenta: 'Cuenta final ▶', desempate: '⚔️ Desempate ▶', ganador: '👑 Ganador ▶' }[n.k] || 'Siguiente ▶';
   }
 
   function renderControl() {
@@ -5845,7 +5910,10 @@ function initControl() {
     const body = $('#now-body');
     let h = '';
     if (sl.k === 'logo') h = `<div class="now-title">Pantalla de espera</div><p class="muted">Muestra el código. Tocá <b>Empezar</b> para lanzar la intro.</p>`;
-    else if (sl.k === 'premios') h = `<div class="now-title">Entrega de premios</div><p class="muted">Muestra el orden en que eligen (ganador primero) con música de fondo y luz cálida.</p>`;
+    else if (sl.k === 'premios') { const pl = planFinal(S.results);
+      h = `<div class="now-title">Entrega de premios</div><p class="muted">Muestra el orden en que eligen (ganador primero) con música de fondo y luz cálida.</p>
+        <div class="mini-score">${pl.groups.map(g => `<span>${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}${g.players.length > 1 ? ' ⚔️' : ''}</span><b>${fmtPts(g.score)}</b>`).join('')}</div>
+        ${pl.falta.length ? `<p class="warn-big">⚠️ Empate sin pregunta de desempate: ${pl.falta.map(g => posTxt(g) + ' (' + g.players.map(i => esc(P[i].nombre)).join(', ') + ')').join('; ')}. Lo definen entre ellos (o agregá preguntas en datos.js).</p>` : ''}`; }
     else if (sl.k === 'gracias') h = `<div class="now-title">🙏 Tus palabras de cierre</div><p class="muted">Suena ${esc(TRACKS.gracias ? TRACKS.gracias.name : 'la música de cierre')} más bajo para que hables encima. En la tele: el logo, "Gracias" y el equipo. Cuando termines, tocá Siguiente para los créditos.</p>`;
     else if (sl.k === 'cierre') h = `<div class="now-title">Créditos finales</div><p class="muted">Créditos que suben como en el cine, con la música de cierre y luz ambiente.</p>`;
     else if (sl.k === 'previa') h = `${CORTO && CORTO.local && cortoTele === false ? '<p class="warn-big">⚠️ Falta elegir el video del corto en la tele (botón 🎞️ en su pantalla de inicio).</p>' : ''}<div class="now-title">Previa</div><p class="muted">No adelanta nada del show. Elegí cómo se ve la tele:</p>
@@ -5906,7 +5974,8 @@ function initControl() {
     else if (sl.k === 'cuenta') {
       const cg = countdownGroups(S.results), k = S.sub || 0, st2 = standing(S.results);
       const hiddenG = rankGroups(S.results).slice(0, rankGroups(S.results).length - cg.length);
-      h = `<div class="now-title">Cuenta final</div><p class="muted">Se revela del último hacia arriba. Los dos mejores quedan ocultos: el 1° se anuncia aparte${st2.tied.length > 1 ? ', después del desempate' : ''}.</p>
+      const ocu = cuentaOculta(S.results);
+      h = `<div class="now-title">Cuenta final</div><p class="muted">Se revela del último hacia arriba. Quedan ocultos ${NUM_TXT[ocu] || ocu} (${st2.tied.length > 1 ? 'los empatados en el 1°' : 'el 1° y ' + (ocu > 2 ? 'los empatados en el 2°' : 'el 2°')}), así el ganador no se sabe por descarte. Al final el cartel dice: <b>${esc(cuentaBanner(S.results))}</b></p>
         <div class="mini-score">${cg.map((g, i) => `<span style="${i < k ? '' : 'opacity:.45'}">${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}${i < k ? ' ✓' : ''}</span><b>${g.score}</b>`).join('')}
         ${hiddenG.map(g => `<span>🔒 ${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}</span><b>${g.score}</b>`).join('')}</div>`;
     }
@@ -5922,7 +5991,10 @@ function initControl() {
       if (q.tipo === 'opciones' && q.opciones && q.opciones.length) opts = `<div class="q-opts">${q.opciones.map((o, i) => `<div class="${(q.correctas || []).includes(i) ? 'ok' : ''}"><b>${'ABCDEF'[i]}</b><span>${esc(o)}</span></div>`).join('')}</div>`;
       const ans = q.tipo === 'opciones' && q.opciones && q.opciones.length ? (q.correctas || []).map(i => q.opciones[i]).join(' / ') : (q.tipo === 'aprox' ? fmtNum(q.respuesta) : q.respuesta);
       let tieInfo = '';
-      if (sl.k === 'desempate') { const g = tieSlot(sl, S.results), t = g ? g.players : []; tieInfo = `<p class="muted">Desempate por <b>${g ? posTxt(g) : '?'}</b> (${g ? fmtPts(g.score) : '?'} pts). Empatados: <b>${t.map(i => esc(P[i].nombre)).join(', ')}</b>. El más cerca queda adelante; si dos quedan igual de cerca, cambiá sus números (pediles otro) y se recalcula.</p>`; }
+      if (sl.k === 'desempate') { const g = tieSlot(sl, S.results), t = g ? g.players : [], quedan = DESEMPATES.length - (sl.s || 0) - 1;
+        tieInfo = `<p class="muted">${g && g.again ? '<b>Siguen empatados.</b> ' : ''}Desempate <b>${g ? desTxt(g) : '?'}</b> (${g ? fmtPts(g.score) : '?'} pts). Juegan: <b>${t.map(i => esc(P[i].nombre)).join(', ')}</b>.
+          El más cerca queda adelante${t.length > 2 ? ' y el resto se ordena por cercanía' : ''}; el que no escribió nada queda atrás. Si dos quedan igual de cerca, sigue otro desempate solo entre ellos
+          (${quedan > 0 ? `quedan ${quedan} pregunta${quedan > 1 ? 's' : ''} de reserva` : '⚠️ no quedan más preguntas: comparten el puesto'}).${g && g.pos === 1 ? ' El resultado no sale en la tele: se ve con el ganador.' : ''}</p>`; }
       else if (isQ(sl)) tieInfo = `<p class="muted">Vale <b>${fmtPts(ptsOf(q))}</b>${q.tipo === 'aprox' ? ` al más cerca · <b>${fmtPts(exactoOf(q))}</b> si es exacto` : ''}.</p>`;
       const ansHTML = q.tipo === 'opciones' && q.opciones && q.opciones.length
         ? (q.correctas || []).map(i => `<div class="ans-op"><span class="ans-l">${'ABCDEF'[i]}</span><span>${esc(q.opciones[i])}</span></div>`).join('')
@@ -5948,8 +6020,12 @@ function initControl() {
     } else if (sl.k === 'marcador' || sl.k === 'ganador') {
       const s = standing(S.results);
       h = `<div class="now-title">${sl.k === 'ganador' ? winnerWord(s.top) + ' ' + s.top.map(i => P[i].nombre).join(', ') : 'Marcador'}</div>`;
-      if (sl.k === 'ganador' && !s.decided) h += `<p class="muted">Hay empate en el primer puesto. Volvé con ◀ al desempate y cargá las respuestas.</p>`;
-      if (sl.k === 'ganador') { const ts = tieSlots(S.results).filter(g => g.pos > 1); if (ts.length && sl.cuando === 'antes') h += `<p class="muted">Después vienen ${ts.length === 1 ? 'el desempate' : 'los ' + ts.length + ' desempates'}: ${ts.map(g => posTxt(g)).join(' y después ')}.</p>`; }
+      if (sl.k === 'ganador' && !s.decided) h += `<p class="warn-big">⚠️ No quedan preguntas de desempate: ${s.top.map(i => esc(P[i].nombre)).join(' y ')} comparten el 1° puesto. Para la próxima, agregá preguntas en datos.js (desempates).</p>`;
+      if (sl.k === 'ganador') {
+        const pl = planFinal(S.results), desp = pl.ties.filter(t => t.j >= (sl.g || 0));
+        if (desp.length) h += `<p class="muted">Después: desempate ${desp.map(g => `<b>${desTxt(g)}</b> (${g.players.map(i => esc(P[i].nombre)).join(', ')})`).join(', después ')}. Si alguno vuelve a empatar, sigue otro.</p>`;
+        else if (pl.falta.length) h += `<p class="warn-big">⚠️ Quedan empates sin pregunta de desempate: ${pl.falta.map(g => posTxt(g) + ' (' + g.players.map(i => esc(P[i].nombre)).join(', ') + ')').join('; ')}. Lo definen entre ellos.</p>`;
+      }
     }
 
     if (enApertura() || sl.k === 'previa') h = `<div class="modo-bar"><div class="seg"><button data-modo="1" class="${S.auto !== false ? 'on' : ''}">🤖 Automático</button><button data-modo="0" class="${S.auto === false ? 'on' : ''}">✋ Manual</button></div>
@@ -6065,7 +6141,7 @@ function initControl() {
       row.classList.toggle('win', win.includes(i));
       const dif = n === null ? 0 : n - q.respuesta, dtx = n === null ? '' : (dif === 0 ? '0' : (dif > 0 ? '+' : '−') + fmtNum(Math.round(Math.abs(dif) * 100) / 100));
       row.classList.toggle('exacto', n !== null && dif === 0);
-      if (orden) { const o = orden.find(x => x.players.includes(i)); row.querySelector('.gd').textContent = n === null ? '' : `${o ? o.pos + '°' : ''}${o && o.players.length > 1 ? ' (siguen empatados)' : ''} · ${dtx}`; }
+      if (orden) { const o = orden.find(x => x.players.includes(i)); row.querySelector('.gd').textContent = n === null ? '' : `${o ? o.pos + '°' : ''}${o && o.players.length > 1 ? ' (siguen empatados: va otro desempate)' : ''} · ${dtx}`; }
       else row.querySelector('.gd').textContent = n === null ? '' : (a ? (a.exacto ? '★ ¡exacto!' : `★ ${dtx}`) : dtx);
     });
   }

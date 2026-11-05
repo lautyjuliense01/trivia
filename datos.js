@@ -519,13 +519,21 @@ window.TRIVIA = {
 
   /* ---------- Desempates (aproximación) ----------
      Hay desempate en CUALQUIER puesto empatado, porque el puesto define el orden para elegir premios.
-     Se juegan del empate más bajo al más alto: el primero de la lista se usa para el primer desempate que se juegue.
-     Si el 1° no está empatado, primero se anuncia al ganador y después vienen los desempates; si el 1° está empatado,
-     su desempate es el último y el ganador sale después. Los que no hacen falta se saltean solos. */
+     Las preguntas se usan en orden: la primera en el primer desempate que se juegue, la segunda en el segundo, etc.
+     · 1° sin empate: primero el ganador y después los desempates, del puesto más bajo al más alto.
+     · 1° empatado: primero los de más abajo, al final el del 1° y después el ganador.
+     · Si en un desempate dos quedan igual de cerca, se juega otro solo entre ellos (por eso conviene tener de reserva:
+       con 5 jugadores puede haber 2 empates de entrada, más los que vuelvan a empatar).
+     Los que no hacen falta se saltean solos. */
   desempates: [
     { texto: '¿Cuántos kilómetros recorrió el equipo de Bioingeniería entre sedes en 2025?', respuesta: 1500,
       nota: '⚠️ Pregunta de ejemplo: reemplazar.' },
     { texto: '¿Cuántas horas de mantenimiento preventivo se cargaron en GLPI en 2025?', respuesta: 800,
       nota: '⚠️ Pregunta de ejemplo: reemplazar.' },
+    // de reserva (por si alguno vuelve a empatar)
+    { texto: '¿Cuántas órdenes de trabajo se abrieron en GLPI en 2025?', respuesta: 3000,
+      nota: '⚠️ Pregunta de ejemplo (reserva): reemplazar.' },
+    { texto: '¿Cuántos equipos tiene cargados el inventario de Bioingeniería?', respuesta: 2500,
+      nota: '⚠️ Pregunta de ejemplo (reserva): reemplazar.' },
   ],
 };
