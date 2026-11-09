@@ -714,6 +714,15 @@ body.has-curtain .intro-curtain.r{background:var(--curtain-r) center/100% 100% n
 @keyframes curtGatherR{0%{transform:scaleX(1);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}100%{transform:scaleX(.17);clip-path:polygon(0 0,100% 0,100% 100%,0 16%)}}
 /* v31: telón a la americana (pliegues en tiras) */
 .trav{position:fixed;top:0;bottom:0;width:50vw;z-index:5;pointer-events:none}
+/* v69: telón y reflectores en WebGL */
+#telon-gl{position:fixed;left:0;top:0;width:100vw;height:100vh;display:block;pointer-events:none}
+#telon-gl.back{z-index:-1}
+#telon-gl.front{z-index:5}
+html.telon-gl{background:#070102}
+body.telon-gl{background:transparent!important}
+body.telon-gl .trav,body.telon-gl .intro-valance{display:none}
+#beams canvas.beams-gl{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+#grano{position:fixed;inset:0;z-index:70;pointer-events:none;background-repeat:repeat;background-size:256px 256px}
 .trav.l{left:0}.trav.r{right:0;transform:scaleX(-1)}
 .tv-s{position:absolute;top:0;left:0;height:100%;transform-origin:0 0;will-change:transform;background-repeat:no-repeat;background-color:#160204}
 .tv-o{position:absolute;inset:0;opacity:0;background:linear-gradient(90deg,rgba(0,0,0,.92),rgba(0,0,0,.35) 26%,rgba(0,0,0,0) 46%,rgba(0,0,0,0) 56%,rgba(0,0,0,.4) 76%,rgba(0,0,0,.95))}
@@ -1333,7 +1342,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v68 · 05/11 19:00';
+const VERSION = 'v69 · 09/11 20:00';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1533,9 +1542,13 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
           ready = true;
           try { player.unMute(); player.setVolume(lv()); } catch {}
           log('Reproductor de YouTube listo', 'o');
+          if (window.__onMusicReady) { try { window.__onMusicReady(); } catch {} }
         },
         onError: e => {
           if (e.target && e.target !== player) return;
+          if (current && tracks[current].lista && (tracks[current].saltos = (tracks[current].saltos || 0) + 1) < tracks[current].lista.length) {   // en una lista, el que falla se saltea
+            log(`YouTube no reproduce un tema de «${tracks[current].name}»: paso al siguiente`, 'e'); listaNext(current); return;
+          }
           if (current && retried !== current && [2, 5].includes(e.data)) {   // a veces YouTube falla al primer intento: un reintento limpio
             const k = current; retried = k; cued = null;
             setTimeout(() => { if (current === k) try { player.loadVideoById({ videoId: tracks[k].id, startSeconds: tracks[k].start || 0 }); } catch {} }, 600);
@@ -1550,13 +1563,21 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     });
     own = player;
   }).catch(err => log(err.message, 'e'));
+  // pista con lista de videos: pasa al siguiente (al terminar uno, o si YouTube no lo reproduce)
+  function listaNext(k) {
+    const tr = tracks[k]; if (!tr || !tr.lista) return;
+    tr.li = ((tr.li || 0) + 1) % tr.lista.length; tr.id = tr.lista[tr.li];
+    try { player.loadVideoById({ videoId: tr.id, startSeconds: 0 }); } catch {}
+  }
   // eventos del reproductor principal (después de un intercambio del bucle, puede ser cualquiera de los dos)
   function stateHandler(e) {
     if (e.target && player && e.target !== player) return;   // el reproductor de apoyo del bucle no manda
     if (e.data === S().ENDED && current) {
       if (tracks[current].loop === false) { const k = current; current = null; onLabel && onLabel('Música: —'); if (onEnded) { try { onEnded(k); } catch {} } }
+      else if (tracks[current].lista) listaNext(current);
       else { player.seekTo(tracks[current].start || 0, true); player.playVideo(); }
     }
+    if (e.data === S().PLAYING && current && tracks[current].lista) tracks[current].saltos = 0;
     if (e.data === S().PLAYING && current) {
       onLabel && onLabel('♪ ' + tracks[current].name);
       // velocidad propia de la pista (ej.: la voz de presentación al 0,9); las demás vuelven a la normal
@@ -1944,6 +1965,8 @@ function createBeams(host) {
   poolsBox.id = 'pools';
   host.insertBefore(poolsBox, host.querySelector('#stage') || host.firstChild);
   let beams = [], raf = null, preset = null;
+  let GLB = null;   // reflectores en WebGL (una sola capa); si no hay WebGL, un <div> por haz como antes
+  if (TELON_CFG.viejo !== true) { try { GLB = beamsGL(root); } catch { GLB = null; } }
   const PRESETS = {
     solo: [{ x: .42, y: -.12, from: 'top', strong: true }],
     top2: [{ x: .12, y: -.08, from: 'top' }, { x: .88, y: -.08, from: 'top' }],
@@ -1956,16 +1979,18 @@ function createBeams(host) {
     if (preset === name) return;
     preset = name;
     stop();
-    root.innerHTML = '';
-    beams = PRESETS[name].map(d => { const el = document.createElement('div'); el.className = 'beam ' + d.from + (d.strong ? ' strong' : ''); root.appendChild(el); return { ...d, el, ang: 0 }; });
+    root.querySelectorAll('.beam').forEach(e => e.remove());
+    beams = PRESETS[name].map(d => { let el; if (GLB) el = GLB.el(); else { el = document.createElement('div'); el.className = 'beam ' + d.from + (d.strong ? ' strong' : ''); root.appendChild(el); } return { ...d, el, ang: 0 }; });
     layout();
+    if (GLB) GLB.set(beams);
   }
   function layout() {
     beams.forEach(b => {
       b.ox = b.x * innerWidth; b.oy = b.y * innerHeight;
       const h = 1.45 * Math.max(innerHeight, innerWidth * .62), w = h * .75;
-      Object.assign(b.el.style, { width: w + 'px', height: h + 'px', left: (b.ox - w / 2) + 'px', top: (b.from === 'top' ? b.oy : b.oy - h) + 'px' });
+      if (!GLB) Object.assign(b.el.style, { width: w + 'px', height: h + 'px', left: (b.ox - w / 2) + 'px', top: (b.from === 'top' ? b.oy : b.oy - h) + 'px' });
     });
+    if (GLB) GLB.kick();
   }
   addEventListener('resize', layout);
   function set(b, a, ms, o) {
@@ -2032,7 +2057,7 @@ function createBeams(host) {
     chase: (t, i, b, n) => ({ a: angleTo(b, innerWidth * (0.2 + 0.6 * i / Math.max(1, n - 1)), innerHeight * .5), o: (Math.floor(t * 7) % n) === i ? 1 : .08 }),
   };
   function play(name) { motion(patterns[name]); }
-  function level(v) { root.style.opacity = v; }
+  function level(v) { root.style.opacity = v; if (GLB) GLB.kick(1200); }
   function over(on) { root.classList.toggle('over', !!on); }
   function pools(els, spread) {
     poolsBox.innerHTML = '';
@@ -2156,7 +2181,358 @@ const locuSil = c => c ? Math.round((c.silencioAntes != null ? c.silencioAntes :
 const locuMs = c => c ? locuSil(c) + Math.round(((c.hasta || 55) - (c.desde || 0)) * 1000 / locuVel(c)) + 300 : 0;   // local: el video se elige de los archivos de la compu de la tele
 const cineOff = sl => (sl && sl.parte === 'creditos' ? CEL - 1200 : 0);                     // en la parte de créditos todo arranca a los 0,8 s
 const cineFin = sl => (sl && sl.parte === 'avisos' ? CEL + 700 : CRED_END - cineOff(sl));   // ms hasta que pasa sola a lo siguiente
-/* Telón de terciopelo dibujado una sola vez: pliegues irregulares, brillo de terciopelo, cenefa con flecos dorados */
+/* ================= Telón y reflectores en WebGL =================
+   El telón se calcula punto por punto en la placa de video: pliegues de tela con sombra propia, brillo de terciopelo,
+   un vaivén lento como con aire, y los paños que se corren juntando los pliegues. Queda nítido en cualquier resolución
+   (no es una foto estirada) y sin franjas en los oscuros (lleva un grano fino). Si la compu no tiene WebGL, queda el telón anterior. */
+const GLQ = {
+  vs: 'attribute vec2 p;varying vec2 v;void main(){v=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}',
+  make(cv, fsSrc, opts) {
+    let gl = null;
+    try { gl = cv.getContext('webgl', Object.assign({ alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'high-performance' }, opts || {})); } catch {}
+    if (!gl) return null;
+    const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) || 'shader'); return s; };
+    let prog;
+    try {
+      prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, GLQ.vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fsSrc)); gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog) || 'link');
+    } catch (e) { try { console.warn('WebGL:', e.message); } catch {} return null; }
+    gl.useProgram(prog);
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
+    const U = {}; const u = n => (n in U ? U[n] : (U[n] = gl.getUniformLocation(prog, n)));
+    return { gl, u, draw() { gl.viewport(0, 0, cv.width, cv.height); gl.drawArrays(gl.TRIANGLES, 0, 3); } };
+  },
+};
+const TELON_FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2 v;
+uniform vec2 uRes;      // tamaño en píxeles
+uniform float uT;       // segundos
+uniform float uK;       // 1 = cerrado · hasta "pack" = recogido contra el costado
+uniform float uLag;     // lo de abajo del paño se atrasa al correrse (y hace vaivén al frenar)
+uniform float uDim;     // brillo general
+uniform float uFront;   // 1 = adelante de la escena (lo que no es tela queda transparente)
+uniform float uSway;    // vaivén de aire
+uniform float uRip;     // onda mientras se corre
+float hash(float n){ return fract(sin(n)*43758.5453123); }
+float hash2(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453123); }
+float vn(float x){ float i=floor(x), f=fract(x); f=f*f*(3.-2.*f); return mix(hash(i), hash(i+1.), f); }
+float vn2(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(hash2(i), hash2(i+vec2(1.,0.)), f.x), mix(hash2(i+vec2(0.,1.)), hash2(i+vec2(1.,1.)), f.x), f.y); }
+const float PI = 3.14159265;
+const float HEM = 0.957;       // altura del ruedo
+// Altura de la tela (0 = fondo del pliegue · 1 = cresta), en coordenadas del paño: c = a lo ancho (0 costado → 1 canto del centro), y = alto
+float fold(float c, float y, float seed, float comp){
+  float q = c*9.0;
+  q += 0.42*(vn(q*0.61+seed)-0.5) + 0.17*(vn(q*1.73+seed*2.3)-0.5);                      // pliegues de anchos distintos
+  float lo = smoothstep(0.10, 1.0, y);
+  q += (0.04+0.30*lo)*(vn2(vec2(q*0.42+seed, y*1.7+seed))-0.5)*(1.0-0.55*comp);           // más abajo caen más sueltos y se tuercen
+  q += uSway*lo*(0.062*sin(uT*0.52 + c*5.0 + seed) + 0.038*sin(uT*0.81 - c*8.3 + y*2.2 + seed*1.7));   // aire
+  q += uRip*lo*0.11*sin(uT*5.2 - c*13.0 + y*3.0);                                       // onda al correrse
+  float ph = 2.0*PI*q;
+  float m = 0.5+0.5*cos(ph);
+  float k = floor(q+0.5);                                                                // número de pliegue
+  float z = pow(m, 0.46+0.36*hash(k*1.31+seed));                                          // cresta redonda, fondo en arista
+  float sec = smoothstep(0.35, 0.8, hash(k*2.17+seed*1.9));                              // algunos pliegues con una arruga más
+  z += sec*0.16*lo*cos(2.0*ph + 1.4 + 3.0*hash(k+seed))*m;
+  z *= 0.80+0.20*vn2(vec2(q*0.9, y*2.3+seed*5.0));                                       // profundidad despareja
+  return z;
+}
+vec3 gold(float t){ return t < 0.45 ? mix(vec3(1.0,0.95,0.77), vec3(0.85,0.66,0.29), t/0.45) : mix(vec3(0.85,0.66,0.29), vec3(0.48,0.31,0.07), (t-0.45)/0.55); }
+// Tela de terciopelo: n = normal, z = altura del pliegue, lx = de dónde viene la luz
+vec3 velvet(vec3 n, float z, float lx, float light){
+  vec3 L = normalize(vec3(lx, -0.38, 0.86));
+  float nl = dot(n, L);
+  float dif = smoothstep(-0.30, 1.0, nl);
+  float ao = mix(0.13, 1.0, pow(clamp(z, 0., 1.), 0.80));
+  vec3 col = vec3(0.60, 0.020, 0.048) * (0.06 + 1.12*dif*dif) * ao;
+  float rim = pow(1.0 - clamp(n.z, 0., 1.), 1.7);
+  col += vec3(1.00, 0.22, 0.18) * rim * 0.62 * smoothstep(-0.05, 0.75, nl) * ao;            // el pelo de la tela brilla en el flanco que mira a la luz
+  col += vec3(1.00, 0.50, 0.40) * pow(max(nl, 0.), 26.0) * 0.10 * ao;                    // filo de luz en la cresta
+  return col * light;
+}
+void main(){
+  vec2 uv = v; float asp = uRes.x/uRes.y; vec2 px = 1.0/uRes;
+  vec3 col = vec3(0.0); float a = 0.0;
+  // ----- paños -----
+  float side = step(0.5, uv.x);
+  float x = mix(uv.x, 1.0-uv.x, side);                                   // 0 costado → 0.5 centro, igual para los dos paños
+  float seed = mix(3.7, 11.3, side);
+  float xe = 0.5*uK + uLag*pow(uv.y, 1.6) + side*0.0035*uK;               // canto del paño (el derecho monta apenas sobre el izquierdo)
+  float comp = clamp((1.0-uK)/0.78, 0., 1.);
+  float c = x/max(xe, 1e-4);
+  float inside = smoothstep(xe + px.x, xe - px.x, x);
+  if (c <= 1.02) {
+    float ec = 0.0016/max(uK, 0.2), ey = 0.004;
+    float z0 = fold(c, uv.y, seed, comp);
+    float dzx = (fold(c+ec, uv.y, seed, comp) - fold(c-ec, uv.y, seed, comp)) / (2.0*ec*xe*asp);
+    float dzy = (fold(c, uv.y+ey, seed, comp) - z0) / ey;
+    float depth = 0.050*(1.0+1.1*comp);
+    vec3 n = normalize(vec3(-dzx*depth*(side > 0.5 ? -1.0 : 1.0), -dzy*depth*0.6, 1.0));
+    float light = 0.34 + 0.66*exp(-pow((uv.y-0.44)/0.52, 2.0));
+    light *= 0.80 + 0.20*smoothstep(0.0, 0.5, x);                         // más luz hacia el centro del escenario
+    float lx = (0.5-uv.x)*1.7;
+    light *= 0.86 + 0.28*vn2(vec2(c*3.1+seed, uv.y*2.4));                 // la tela no cuelga perfecta: zonas apenas más tensas
+    vec3 t = velvet(n, z0, lx, light);
+    // pelo del terciopelo: vetas finas a lo alto y grano
+    float nap = vn2(vec2(uv.x*uRes.x*0.5, uv.y*uRes.y*0.045)) - 0.5;
+    t *= 1.0 + 0.055*nap;
+    // canto del paño: una vuelta de tela
+    float edge = smoothstep(0.972, 1.0, c);
+    t *= 1.0 - 0.72*edge; t += vec3(0.55,0.08,0.07)*light*0.16*smoothstep(0.955,0.975,c)*(1.0-edge);
+    // ruedo: galón dorado que sigue los pliegues y fleco corto
+    float hem = HEM + 0.0045*(z0-0.5);
+    float gh = 0.0085, fl = 0.020;
+    float below = uv.y - hem;
+    if (below > 0.0) {
+      vec3 Lg = normalize(vec3(lx, -0.3, 0.9)); float gdl = clamp(dot(n, Lg), 0., 1.), gao = mix(0.25, 1.0, z0);
+      if (below < gh) { float r = below/gh; t = gold(0.55 - 0.45*gdl*gao + 0.25*abs(r-0.5)) * (0.35+0.75*gdl) * gao * light * 1.25; }
+      else if (below < gh+fl) {
+        float fr = (below-gh)/fl, sx = uv.x*uRes.x/2.6, id = floor(sx);
+        float len = 0.72 + 0.28*hash(id*1.7+seed);
+        float strand = 0.62 + 0.38*cos(2.0*PI*fract(sx));
+        float aa = clamp(1.0/(uRes.x/1920.0*2.6), 0., 1.);                // en baja resolución los hilos se funden
+        strand = mix(strand, 0.80, 1.0-clamp(uRes.x/1500.0, 0., 1.));
+        float on = step(fr, len);
+        t = gold(0.35+0.6*fr) * strand * (0.30+0.70*gdl) * gao * light * on;
+        inside *= mix(on, 1.0, 1.0-uFront) ;
+        if (on < 0.5) t = vec3(0.012,0.003,0.004);
+      } else { t = vec3(0.012,0.003,0.004) * (1.0 - 0.6*smoothstep(0.0, 0.03, below-gh-fl)); inside *= 1.0-uFront; }
+      t *= 1.0 - 0.25*smoothstep(0.0, gh, below)*0.0;
+    } else t *= 1.0 - 0.30*smoothstep(-0.012, 0.0, below);               // el ruedo, más pesado y oscuro
+    col = t; a = inside;
+  }
+  // sombra del paño sobre el escenario (solo cuando va adelante)
+  if (uFront > 0.5) { float sh = 0.55*exp(-max(x-xe, 0.)/0.022)*(1.0-inside)*step(uK, 0.995); col = mix(vec3(0.0)*sh, col, inside); a = max(a, sh*(1.0-inside)); }
+  else a = 1.0;
+  // ----- cenefa: drapeados con pliegues que siguen la caída, cordón, flecos y borlas -----
+  float Hv = 0.115, nS = max(4.0, floor(asp/0.352+0.5)), base = Hv*0.50, sag = Hv*0.47;
+  float fx = fract(uv.x*nS), sid = floor(uv.x*nS);
+  float e = base + sag*sin(PI*fx);
+  float cord = 0.0042, frL = Hv*0.15;
+  // sombra de la cenefa sobre los paños
+  col *= 1.0 - 0.62*smoothstep(0.075, 0.0, uv.y-e)*step(e, uv.y);
+  if (uv.y < e + frL + cord) {
+    vec3 t; float ta = 1.0;
+    if (uv.y <= e) {
+      float tt = uv.y/e;
+      float w = 0.30*(vn(fx*2.6+sid*7.3)-0.5);
+      float q0 = 3.15*tt + w*tt*(1.0-0.5*tt);
+      float ey2 = 0.0030;
+      float t1 = (uv.y+ey2)/e, q1 = 3.15*t1 + w*t1*(1.0-0.5*t1);
+      float z0 = pow(0.5+0.5*cos(2.0*PI*q0), 0.70), z1 = pow(0.5+0.5*cos(2.0*PI*q1), 0.70);
+      float amp = 0.25+0.75*smoothstep(0.0, 0.5, tt);
+      float dzy = (z1-z0)/ey2*amp;
+      float dex = sag*PI*cos(PI*fx)*nS;                                   // pendiente del borde: los pliegues se inclinan hacia las borlas
+      vec3 n = normalize(vec3(dzy*0.020*dex*tt*0.55, -dzy*0.020, 1.0));
+      float light = (0.52 + 0.48*smoothstep(0.0, 1.0, tt)) * (0.86+0.14*sin(PI*fx));
+      t = velvet(n, mix(1.0, z0, amp), (0.5-uv.x)*1.7, light*1.05);
+      t *= 1.0 + 0.055*(vn2(vec2(uv.x*uRes.x*0.045, uv.y*uRes.y*0.5))-0.5);
+      t *= 1.0 - 0.55*smoothstep(0.016, 0.0, uv.y);                        // sombra bajo el riel
+      t *= 1.0 - 0.35*smoothstep(0.92, 1.0, tt);                          // dobladillo
+      if (uv.y < 0.0042) t = gold(uv.y/0.0042*0.9)*1.05;                   // filo dorado de arriba
+    } else if (uv.y <= e + cord) {
+      float r = (uv.y-e)/cord; t = gold(0.15+0.7*r) * (0.75+0.45*sin(PI*r)) * (0.9+0.1*sin(uv.x*uRes.x*0.9));
+    } else {
+      float fr = (uv.y-e-cord)/frL, sx = uv.x*uRes.x/2.4, id = floor(sx);
+      float len = 0.80 + 0.20*hash(id*1.3+2.0);
+      float strand = 0.60 + 0.40*cos(2.0*PI*fract(sx));
+      strand = mix(strand, 0.80, 1.0-clamp(uRes.x/1500.0, 0., 1.));
+      t = gold(0.10+0.85*fr) * strand * (0.86+0.14*hash(id));
+      ta = step(fr, len) * (0.78+0.22*hash(id*3.1));
+    }
+    col = mix(col, t, ta); a = max(a, ta);
+  }
+  // borlas en las uniones de los drapeados
+  { float kx = floor(uv.x*nS+0.5)/nS; vec2 d = vec2((uv.x-kx)*asp, uv.y-base); float r = Hv*0.085;
+    float head = length(d) - r;
+    float sy = (d.y - r*0.55)/(r*3.7), hw = mix(r*0.80, r*1.32, clamp(sy, 0., 1.));
+    float skirt = (sy >= 0.0 && sy <= 1.0) ? abs(d.x) - hw : 1.0;
+    float m = max(smoothstep(px.y*1.5, -px.y*1.5, head), smoothstep(px.y*1.5, -px.y*1.5, skirt));
+    if (m > 0.0) {
+      vec3 t = head < 0.0 ? gold(0.25 + 0.6*clamp(length(d + vec2(r*0.3, r*0.35))/(r*1.4), 0., 1.)) * 1.08
+                          : gold(0.12+0.80*sy) * (0.66+0.34*cos(abs(d.x)/hw*1.45)) * (0.84+0.16*cos(d.x/r*26.0));
+      if (head >= 0.0 && sy < 0.09) t *= 0.55;                            // atadura
+      col = mix(col, t, m); a = max(a, m);
+    } }
+  col *= uDim;
+  col += (hash2(gl_FragCoord.xy + fract(uT)*61.0) - 0.5) * (1.6/255.0);    // grano: sin franjas en los oscuros
+  gl_FragColor = vec4(max(col, 0.0)*a, a);
+}`;
+function createTelon(cfg) {
+  cfg = cfg || {};
+  const cv = document.createElement('canvas'); cv.id = 'telon-gl';
+  const G = GLQ.make(cv, TELON_FS); if (!G) return null;
+  const { gl, u } = G;
+  const PACK = 0.22;
+  const st = { k: 1, lag: 0, lagV: 0, dim: 0.6, dimTo: 0.6, front: 0, rip: 0, anim: null, visible: true, parent: null, t0: performance.now() };
+  // calidad: escala de la resolución interna. En 'auto' baja sola si la compu no llega; con movimiento: false queda quieto.
+  const Q = { scale: cfg.calidad === 'baja' ? 0.5 : cfg.calidad === 'media' ? 0.75 : 1, auto: !cfg.calidad || cfg.calidad === 'auto', mover: cfg.movimiento !== false, acc: 0, n: 0, lastRaf: 0, skip: false };
+  const MAXPX = 2560 * 1440;
+  function size() {
+    const dpr = Math.min(3, window.devicePixelRatio || 1), W0 = Math.max(2, innerWidth * dpr), H0 = Math.max(2, innerHeight * dpr);
+    const s = Q.scale * Math.min(1, Math.sqrt(MAXPX / (W0 * H0)));
+    const W = Math.round(W0 * s), H = Math.round(H0 * s);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    dirty = true;
+  }
+  let dirty = true, raf = null;
+  function draw(now) {
+    gl.uniform2f(u('uRes'), cv.width, cv.height);
+    gl.uniform1f(u('uT'), ((now - st.t0) / 1000) % 3600);
+    gl.uniform1f(u('uK'), st.k); gl.uniform1f(u('uLag'), st.lag); gl.uniform1f(u('uDim'), st.dim);
+    gl.uniform1f(u('uFront'), st.front); gl.uniform1f(u('uSway'), Q.mover ? 1 : 0); gl.uniform1f(u('uRip'), st.rip);
+    G.draw(); dirty = false;
+  }
+  const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    const dtRaf = Q.lastRaf ? now - Q.lastRaf : 16.7; Q.lastRaf = now;
+    const dt = Math.min(0.05, Math.max(0.001, dtRaf / 1000));
+    let busy = false;
+    if (st.anim) {   // abrir o cerrar: el canto tira y lo de abajo se atrasa; al frenar hace un vaivén corto
+      const A = st.anim, p = A.ms > 0 ? Math.min(1, (now - A.t0) / A.ms) : 1, k = A.from + (A.to - A.from) * ease(p);
+      const vel = (k - st.k) / dt; st.k = k;
+      const target = Math.max(-0.035, Math.min(0.035, -vel * 0.030));
+      st.lagV += (60 * (target - st.lag) - 8.5 * st.lagV) * dt; st.lag += st.lagV * dt;
+      st.rip += (Math.min(1, Math.abs(vel) * 2.2) - st.rip) * Math.min(1, dt * 5);
+      if (A.ms <= 0) { st.lag = 0; st.lagV = 0; st.rip = 0; }
+      if (p >= 1 && Math.abs(st.lag) < 0.0004 && Math.abs(st.lagV) < 0.002 && st.rip < 0.01) { st.lag = 0; st.lagV = 0; st.rip = 0; st.anim = null; if (A.done) { try { A.done(); } catch {} } }
+      busy = true;
+    }
+    if (st.dim !== st.dimTo) { const d = st.dimTo - st.dim, s = dt * 0.9; st.dim = Math.abs(d) <= s ? st.dimTo : st.dim + Math.sign(d) * s; busy = true; }
+    if (!st.visible || document.hidden) { Q.lastRaf = 0; return; }
+    // con solo el vaivén alcanza con 30 cuadros por segundo; al correrse va a todos
+    Q.skip = !busy && !Q.skip;
+    if (busy || dirty || (Q.mover && !Q.skip)) {
+      draw(now);
+      if (Q.auto && (busy || Q.mover)) {   // si la compu no llega, primero baja la resolución interna y por último deja el telón quieto
+        Q.acc += dtRaf; Q.n++;
+        if (Q.n >= 90) {
+          const avg = Q.acc / Q.n; Q.acc = 0; Q.n = 0;
+          if (avg > 25) { if (Q.scale > 0.5) { Q.scale = Q.scale > 0.75 ? 0.75 : 0.5; size(); } else if (Q.mover && avg > 30) { Q.mover = false; dirty = true; } if (cfg.onCalidad) cfg.onCalidad(Q.scale, Q.mover, avg); }
+        }
+      }
+    }
+  }
+  addEventListener('resize', size);
+  function attach(parent, front) {
+    st.front = front ? 1 : 0; cv.className = front ? 'front' : 'back';
+    if (front) { if (cv.parentNode !== parent) parent.insertBefore(cv, parent.firstChild); }
+    else if (cv.parentNode !== document.body || document.body.firstChild !== cv) document.body.insertBefore(cv, document.body.firstChild);
+    size(); if (!raf) raf = requestAnimationFrame(frame);
+  }
+  return {
+    canvas: cv, state: st, quality: Q,
+    back(instant) { st.anim = null; st.k = 1; st.lag = 0; st.lagV = 0; st.rip = 0; st.dimTo = 0.6; if (instant !== false) st.dim = 0.6; attach(null, false); },
+    front(parent, k) { st.anim = null; if (k != null) st.k = k; st.lag = 0; st.lagV = 0; st.dim = st.dimTo = 1; st.visible = true; attach(parent, true); },
+    isFront() { return st.front === 1; },
+    isOpen() { return st.k < 0.999 || (st.anim && st.anim.to < 0.999); },
+    open(ms, pack, done) { st.anim = { from: st.k, to: pack != null ? pack : PACK, t0: performance.now(), ms: ms || 0, done }; if (!(ms > 0)) { st.k = st.anim.to; dirty = true; } },
+    close(ms, done) { st.anim = { from: st.k, to: 1, t0: performance.now(), ms: ms || 0, done }; if (!(ms > 0)) { st.k = 1; dirty = true; } },
+    dim(v, instant) { st.dimTo = v; if (instant) st.dim = v; dirty = true; },
+    visible(on) { on = !!on; if (on && !st.visible) dirty = true; st.visible = on; },   // tapado por otra cosa: deja de dibujar (queda el último cuadro)
+    redraw() { dirty = true; },
+  };
+}
+
+/* Reflectores: todos los haces en una sola pasada (antes eran capas enormes con máscara, una por haz, y eso trababa).
+   Cada haz: origen, ángulo y opacidad. La forma y los colores son los mismos de antes. */
+const BEAMS_FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2 v;
+uniform vec2 uRes;       // tamaño de la pantalla en px de CSS
+uniform float uH, uT;    // largo del haz · tiempo (para el grano)
+uniform vec4 uB[6];      // x, y, ángulo (rad), opacidad
+uniform float uKind[6];  // 0 = de arriba · 1 = de arriba, fuerte · 2 = de abajo (frío)
+float hash2(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453123); }
+float seg(float x, float a, float b){ return clamp((x-a)/(b-a), 0., 1.); }
+void main(){
+  vec2 p = v*uRes; vec3 C = vec3(0.0); float A = 0.0;
+  for (int i = 0; i < 6; i++) {
+    vec4 b = uB[i]; if (b.w <= 0.001) continue;
+    float kind = uKind[i], sn = sin(b.z), cs = cos(b.z);
+    vec2 ax = kind > 1.5 ? vec2(sn, -cs) : vec2(-sn, cs);
+    vec2 d = p - b.xy; float al = dot(d, ax); if (al <= 0.0) continue;
+    float pe = abs(dot(d, vec2(ax.y, -ax.x)));
+    float dg = degrees(atan(pe, al)), t = al/uH;
+    float a; vec3 c;
+    if (kind < 0.5) { if (dg >= 19.0) continue;
+      a = dg < 8.0 ? mix(0.26, 0.16, dg/8.0) : dg < 14.0 ? mix(0.16, 0.05, (dg-8.0)/6.0) : mix(0.05, 0.0, (dg-14.0)/5.0);
+      c = mix(vec3(1.0,0.910,0.745), vec3(1.0,0.769,0.471), seg(dg, 0.0, 14.0));
+      a *= t < 0.45 ? mix(0.95, 0.60, t/0.45) : mix(0.60, 0.0, seg(t, 0.45, 0.92));
+    } else if (kind < 1.5) { if (dg >= 17.0) continue;
+      a = dg < 7.0 ? mix(0.46, 0.30, dg/7.0) : dg < 13.0 ? mix(0.30, 0.10, (dg-7.0)/6.0) : mix(0.10, 0.0, (dg-13.0)/4.0);
+      c = mix(vec3(1.0,0.965,0.894), vec3(1.0,0.925,0.784), seg(dg, 0.0, 13.0));
+      a *= t < 0.45 ? mix(0.95, 0.60, t/0.45) : mix(0.60, 0.0, seg(t, 0.45, 0.92));
+    } else { if (dg >= 18.0) continue;
+      a = dg < 7.0 ? mix(0.30, 0.16, dg/7.0) : dg < 13.0 ? mix(0.16, 0.05, (dg-7.0)/6.0) : mix(0.05, 0.0, (dg-13.0)/5.0);
+      c = mix(vec3(0.863,0.910,1.0), vec3(0.706,0.784,1.0), seg(dg, 0.0, 13.0));
+      a *= t < 0.50 ? mix(0.95, 0.55, t/0.50) : mix(0.55, 0.0, seg(t, 0.50, 0.95));
+    }
+    a *= b.w;
+    C = c*a + C*(1.0-a); A = a + A*(1.0-a);
+  }
+  float n = (hash2(gl_FragCoord.xy + fract(uT)*37.0) - 0.5) * (2.0/255.0);     // grano: el degradé del haz sin escalones
+  gl_FragColor = vec4(max(C + n*A, 0.0), clamp(A + n*A, 0., 1.));
+}`;
+function beamsGL(root) {
+  const cv = document.createElement('canvas'); cv.className = 'beams-gl';
+  const G = GLQ.make(cv, BEAMS_FS); if (!G) return null;
+  const { gl, u } = G;
+  root.appendChild(cv);
+  // curva de una transición CSS: cubic-bezier(x1,y1,x2,y2)
+  const bez = (x1, y1, x2, y2) => t => { let s = t; for (let i = 0; i < 6; i++) { const x = 3 * (1 - s) * (1 - s) * s * x1 + 3 * (1 - s) * s * s * x2 + s * s * s - t, dx = 3 * (1 - s) * (1 - s) * x1 + 6 * (1 - s) * s * (x2 - x1) + 3 * s * s * (1 - x2); if (Math.abs(dx) < 1e-5) break; s -= x / dx; } s = Math.max(0, Math.min(1, s)); return 3 * (1 - s) * (1 - s) * s * y1 + 3 * (1 - s) * s * s * y2 + s * s * s; };
+  const E_AIM = bez(.35, .85, .3, 1), E_OP = bez(.25, .1, .25, 1);
+  let list = [], raf = null, until = 0, cleared = true;
+  const angNow = (o, now) => (o.aMs > 0 && now < o.aT0 + o.aMs ? o.aFrom + (o.aTo - o.aFrom) * E_AIM((now - o.aT0) / o.aMs) : o.aTo);
+  const opNow = (o, now) => (now < o.oT0 + 500 ? o.oFrom + (o.oTo - o.oFrom) * E_OP((now - o.oT0) / 500) : o.oTo);
+  function kick(ms) { until = Math.max(until, performance.now() + (ms || 700)); if (!raf) raf = requestAnimationFrame(frame); }
+  // Reemplaza al <div> de cada haz: recibe las mismas órdenes (transition, transform, opacity) y las anima acá
+  function el() {
+    const o = { aFrom: 0, aTo: 0, aT0: 0, aMs: 0, oFrom: 1, oTo: 1, oT0: -1e9, trMs: 0, x: 0, y: 0, kind: 0 };
+    o.style = {
+      set transition(val) { const m = /transform\s+(\d+)ms/.exec(String(val)); o.trMs = m ? +m[1] : 0; },
+      set transform(val) { const m = /rotate\((-?[\d.]+)deg\)/.exec(String(val)); if (!m) return; const a = +m[1], now = performance.now();
+        if (o.trMs > 0) { o.aFrom = angNow(o, now); o.aTo = a; o.aT0 = now; o.aMs = o.trMs; kick(o.trMs + 200); } else { o.aFrom = o.aTo = a; o.aMs = 0; kick(); } },
+      set opacity(val) { const now = performance.now(), to = Math.max(0, Math.min(1, +val)); if (to === o.oTo) return; o.oFrom = opNow(o, now); o.oTo = to; o.oT0 = now; kick(900); },
+    };
+    return o;
+  }
+  function size() { const s = Math.min(1, 1280 / Math.max(1, innerWidth)), W = Math.max(2, Math.round(innerWidth * s)), H = Math.max(2, Math.round(innerHeight * s)); if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; } }
+  function frame(now) {
+    raf = null;
+    const bx = new Float32Array(24), kd = new Float32Array(6); let any = false;
+    list.slice(0, 6).forEach((b, i) => { const o = b.el, op = opNow(o, now); if (op > 0.001) any = true;
+      bx[i * 4] = b.ox; bx[i * 4 + 1] = b.oy; bx[i * 4 + 2] = angNow(o, now) * Math.PI / 180; bx[i * 4 + 3] = op; kd[i] = b.from === 'bottom' ? 2 : (b.strong ? 1 : 0); });
+    const visible = any && root.style.opacity !== '0' && !document.hidden;
+    if (visible || !cleared) {
+      size();
+      gl.uniform2f(u('uRes'), innerWidth, innerHeight); gl.uniform1f(u('uH'), 1.45 * Math.max(innerHeight, innerWidth * .62)); gl.uniform1f(u('uT'), (now / 1000) % 60);
+      gl.uniform4fv(u('uB[0]'), bx); gl.uniform1fv(u('uKind[0]'), kd);
+      G.draw(); cleared = !visible;
+    }
+    if (now < until) raf = requestAnimationFrame(frame);
+  }
+  addEventListener('resize', () => kick());
+  return { el, set(beams) { list = beams; kick(); }, kick };
+}
+let TELON = null;   // el telón en WebGL (null = se usa el dibujado de abajo)
+const TELON_CFG = Object.assign({}, D.telon || {});
+{ const q = new URLSearchParams(location.search).get('telon');   // para probar o salir de un apuro: ...&telon=quieto · baja · media · alta · viejo
+  if (q === 'quieto') TELON_CFG.movimiento = false; else if (q === 'viejo') TELON_CFG.viejo = true; else if (['baja', 'media', 'alta'].includes(q)) TELON_CFG.calidad = q; }
+
+/* Telón dibujado una sola vez (el anterior): queda de respaldo para compus sin WebGL o con telon.viejo: true */
 function renderCurtain(W, H, opt = {}) {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
@@ -2275,7 +2651,7 @@ function renderTraveler(W, H, seed, N = 8) {
 let CURT = null;   // { url: [izq, der], widths: [izq, der], W, H }
 function curtainAssets(cb) {
   if (CURT) { cb && cb(CURT); return; }
-  const W = Math.min(1920, Math.round(innerWidth * Math.min(2, devicePixelRatio || 1))) || 1280, H = Math.round(W * (innerHeight / innerWidth || 9 / 16));
+  const W = Math.min(2560, Math.round(innerWidth * Math.min(2, devicePixelRatio || 1))) || 1280, H = Math.round(W * (innerHeight / innerWidth || 9 / 16));
   const half = Math.round(W / 2), Hv = Math.round(H * 0.11);
   const L = renderTraveler(half, H, 1101), R = renderTraveler(half, H, 2207);
   const Rm = document.createElement('canvas'); Rm.width = half; Rm.height = H;   // el paño derecho, espejado, para el fondo de las demás pantallas
@@ -2285,11 +2661,12 @@ function curtainAssets(cb) {
   const out = { url: [null, null], widths: [L.widths, R.widths], W: half, H };
   let pend = 4;
   const done = () => { if (--pend) return; CURT = out; document.body.classList.add('has-curtain'); cb && cb(CURT); };
-  const put = (cv, name, k) => cv.toBlob(b => { if (b) { const u = URL.createObjectURL(b); if (name) document.documentElement.style.setProperty(name, `url(${u})`); if (k != null) out.url[k] = u; } done(); }, name === '--valance' ? 'image/png' : 'image/jpeg', 0.93);
+  const put = (cv, name, k) => cv.toBlob(b => { if (b) { const u = URL.createObjectURL(b); if (name) document.documentElement.style.setProperty(name, `url(${u})`); if (k != null) out.url[k] = u; } done(); }, name === '--valance' ? 'image/png' : 'image/jpeg', 0.96);
   put(L.canvas, '--curtain-l', 0); put(Rm, '--curtain-r', null); put(R.canvas, null, 1); put(V, '--valance', null);
 }
 /* Arma los dos paños de la intro (cada pliegue es una tira) y los deja cerrados */
 function travBuild(stage, listo) {
+  if (TELON) { TELON.front(stage, 1); if (listo) listo(); return; }   // WebGL: el mismo telón pasa adelante de la escena, cerrado
   curtainAssets(C => {
     stage.querySelectorAll('.trav').forEach(el => {
       const k = el.classList.contains('r') ? 1 : 0, Wc = el.clientWidth || innerWidth / 2, ws = C.widths[k];
@@ -2303,6 +2680,7 @@ function travBuild(stage, listo) {
 /* Se corren: el canto de adentro tira y los pliegues se van juntando contra el costado, cada uno cuando le llega el empuje.
    Lo de abajo del paño se atrasa un poco al moverse y se acomoda con un vaivén cuando frena. */
 function travOpen(stage, ms = 3600, pack = 0.22, instant = false) {
+  if (TELON) { if (!TELON.isFront()) TELON.front(stage, 1); TELON.open(instant ? 0 : ms, pack); return; }
   const sides = [...stage.querySelectorAll('.trav')].map(el => {
     const Wc = el.clientWidth || innerWidth / 2, k = el.classList.contains('r') ? 1 : 0;
     const ws = (CURT ? CURT.widths[k] : []).map(w => w * Wc), x0 = []; let x = 0; ws.forEach(w => { x0.push(x); x += w; });
@@ -2523,11 +2901,12 @@ function neonRun(t0, dur, timers) {
   parts.forEach((p, i) => FLICK.forEach(([dt, on]) => ev.push([t0 + p[1] + dt, i, on])));
   ev.forEach(([at, i, on]) => timers.push(setTimeout(() => set(i, on), at)));
   timers.push(setTimeout(() => { [0, 1, 2].forEach(i => set(i, 0)); const r = root(); if (r) r.classList.add('apagado'); }, t0 + apaga));
-  timers.push(setTimeout(() => boomGrave(0.28), t0 + parts[2][1] + 620));   // cuando prende entero, un golpe chico (es una productora chica)
+  timers.push(setTimeout(() => FX('apertura', () => boomGrave(0.28)), t0 + parts[2][1] + 620));   // cuando prende entero, un golpe chico (es una productora chica)
   // sonido: zumbido de 100 Hz que crece con cada tubo encendido y un chasquido en cada tirón
   try {
-    const ctx = audioCtx(); if (!ctx) return;
-    const bus = sfxOut(ctx), T = ctx.currentTime + 0.03, at = ms => T + ms / 1000;
+    const ctx = audioCtx(); if (!ctx || !fxNivel('apertura')) return;
+    let bus; FX('apertura', () => { bus = sfxOut(ctx); });
+    const T = ctx.currentTime + 0.03, at = ms => T + ms / 1000;
     const hum = ctx.createOscillator(); hum.type = 'sawtooth'; hum.frequency.value = 100;
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; lp.Q.value = 2;
     const hg = ctx.createGain(); hg.gain.setValueAtTime(0, T);
@@ -2709,7 +3088,9 @@ const TRACKS = {};
 Object.entries(D.musica || {}).forEach(([k, v]) => {
   const t = typeof v === 'string' ? { id: v } : (v || {});
   const bucle = Array.isArray(t.bucle) && t.bucle.length === 2 && t.bucle[1] > t.bucle[0] ? t.bucle.map(Number) : null;
-  if (t.id || t.archivo) TRACKS[k] = { id: t.id, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, periodo: +t.periodo > 0 ? +t.periodo : null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, fundido: +t.fundido > 0 ? +t.fundido : 0, recorte: Array.isArray(t.recorte) && t.recorte[1] > t.recorte[0] ? t.recorte.map(Number) : null, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
+  const lista = Array.isArray(t.lista) ? t.lista.filter(x => typeof x === 'string' && x) : null;   // varios videos que van rotando (ej.: la previa)
+  if (lista && lista.length && !t.id) t.id = lista[0];
+  if (t.id || t.archivo) TRACKS[k] = { id: t.id, lista: lista && lista.length > 1 ? lista : null, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, periodo: +t.periodo > 0 ? +t.periodo : null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, fundido: +t.fundido > 0 ? +t.fundido : 0, recorte: Array.isArray(t.recorte) && t.recorte[1] > t.recorte[0] ? t.recorte.map(Number) : null, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
     loop: t.repetir != null ? !!t.repetir : (bucle ? false : !['redoble', 'respuesta', 'anfitrionVoz'].includes(k)) };
 });
 
@@ -3216,7 +3597,20 @@ function wideReverb(ctx) {
   }
   return b;
 }
+/* Efectos generados por la app, por grupo (datos.js → efectos): false = apagado · true = como siempre · número = volumen (0.6 = más bajo).
+   Por defecto solo queda el del ticket dorado, más bajo. FX('grupo', fn) corre fn con el volumen de ese grupo (o no la corre). */
+const EFECTOS = Object.assign({ ticket: 0.6, apertura: false, tarjetas: false, cuenta: false, respuesta: false, ajuste: false }, D.efectos || {});
+let fxVol = 1;
+const fxNivel = g => { const v = EFECTOS[g]; return v === true ? 1 : (+v > 0 ? +v : 0); };
+function FX(grupo, fn) { const v = fxNivel(grupo); if (!v) return; const prev = fxVol; fxVol = v; try { fn(); } finally { fxVol = prev; } }
+const fxLater = (fn, ms) => { const v = fxVol; return setTimeout(() => { const prev = fxVol; fxVol = v; try { fn(); } finally { fxVol = prev; } }, ms); };   // lo que suena un rato después conserva el volumen del grupo
 function sfxOut(ctx) {
+  const base = sfxBase(ctx);
+  if (fxVol === 1) return base;
+  const m = ctx.createGain(), r = ctx.createGain(); m.gain.value = fxVol; r.gain.value = fxVol; m.connect(base.master); r.connect(base.rev);
+  return { ctx, master: m, rev: r };
+}
+function sfxBase(ctx) {
   if (sfxBus && sfxBus.ctx === ctx) { sfxBus.master.gain.value = sfxLevel(); return sfxBus; }
   const lim = ctx.createDynamicsCompressor();
   lim.threshold.value = -4; lim.knee.value = 2; lim.ratio.value = 14; lim.attack.value = 0.003; lim.release.value = 0.3;
@@ -3289,11 +3683,11 @@ function sfxCoro(freqs, dur = 2.6, g = 0.07, when = 0) {   // colchón de voces 
 }
 const SFX = {
   // cada regla que se da vuelta: aire, timbal y un acorde de bronces que va subiendo
-  regla(i = 0) { whoosh(260); const r = [0, 2, 5, 7, 9][i % 5]; setTimeout(() => { sfxTimbal(semi(73.4, r / 2), 0.7); sfxBronces([semi(146.8, r), semi(220, r), semi(293.7, r)], 0.8, 0.12); }, 230); },
+  regla(i = 0) { whoosh(260); const r = [0, 2, 5, 7, 9][i % 5]; fxLater(() => { sfxTimbal(semi(73.4, r / 2), 0.7); sfxBronces([semi(146.8, r), semi(220, r), semi(293.7, r)], 0.8, 0.12); }, 230); },
   // aparecen los premios tapados: un golpe grave con un acorde menor que queda en suspenso
   tapados() { boomGrave(0.5); sfxBronces([110, 130.8, 164.8], 1.6, 0.09, 0.05, 1400); sfxCoro([220, 261.6, 329.6], 2.8, 0.05, 0.2); },
   // cada premio: aire, golpe, campanas brillantes (más agudas con cada premio)
-  premio(i = 0) { whoosh(320); setTimeout(() => { boomGrave(0.4); sfxTimbal(65, 0.5); sfxCampanas(semi(784, [0, 2, 4, 5, 7][i % 5]), [0, 7, 12, 16], 0.1, 0.06); sfxBronces([semi(196, [0, 2, 4, 5, 7][i % 5]), semi(293.7, [0, 2, 4, 5, 7][i % 5])], 0.7, 0.08); }, 260); },
+  premio(i = 0) { whoosh(320); fxLater(() => { boomGrave(0.4); sfxTimbal(65, 0.5); sfxCampanas(semi(784, [0, 2, 4, 5, 7][i % 5]), [0, 7, 12, 16], 0.1, 0.06); sfxBronces([semi(196, [0, 2, 4, 5, 7][i % 5]), semi(293.7, [0, 2, 4, 5, 7][i % 5])], 0.7, 0.08); }, 260); },
   // el ticket dorado: golpe enorme, acorde mayor de bronces, coro y lluvia de campanas
   ticket() { boomGrave(1.1); sfxTimbal(55, 1); sfxBronces([146.8, 220, 293.7, 370, 440], 2.4, 0.2, 0.02, 3200); sfxCoro([293.7, 370, 440, 587.3], 3.8, 0.08, 0.1); sfxCampanas(1174.7, [0, 4, 7, 12, 16, 19], 0.09, 0.09, 0.15); },
   // cuenta final: cada puesto que se revela pega más fuerte y más arriba a medida que se acerca al podio
@@ -3484,8 +3878,29 @@ function createDirector(music, fx) {
 function initScreen() {
   $('#pantalla').hidden = false;
   $('#unlock-title').textContent = D.titulo;
-  // Telón de terciopelo: dos paños con costura al centro y la cenefa arriba (se dibuja una vez, en segundo plano)
-  setTimeout(() => { try { curtainAssets(); } catch (e) { log('Telón: ' + e.message, 'e'); } }, 60);
+  // Telón: en WebGL (tela calculada punto por punto: se mueve y queda nítida en cualquier tele). Sin WebGL, el dibujado de antes.
+  if (TELON_CFG.viejo !== true) { try { TELON = createTelon({ calidad: TELON_CFG.calidad, movimiento: TELON_CFG.movimiento,
+    onCalidad: (esc, mov, ms) => log(`Telón: la compu va justa (${Math.round(ms)} ms por cuadro) → ${mov ? 'resolución interna al ' + Math.round(esc * 100) + ' %' : 'queda quieto'}`, 'o') }); } catch (e) { TELON = null; } }
+  if (TELON) {
+    document.documentElement.classList.add('telon-gl'); document.body.classList.add('telon-gl'); TELON.back();
+    // si algo lo tapa entero (negro de los avisos, el corto, los créditos), deja de dibujarse: no gasta placa de video
+    const opaco = e => { if (!e || e === document.body || e === document.documentElement || e.id === 'grano') return false;
+      if (e.tagName === 'VIDEO' || e.tagName === 'IFRAME') return true;
+      const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(e).backgroundColor); if (!m) return false;
+      const c = m[1].split(',').map(Number); if (c.length > 3 && c[3] < 0.98) return false;
+      for (let p = e; p && p !== document.body; p = p.parentElement) { const cs = getComputedStyle(p); if (+cs.opacity < 0.99 || cs.visibility === 'hidden' || cs.display === 'none') return false; }
+      return true; };
+    const tapado = () => [[.12, .3], [.5, .5], [.88, .3], [.3, .8], [.7, .8]].every(([fx, fy]) => document.elementsFromPoint(innerWidth * fx, innerHeight * fy).some(opaco));
+    window.__telonVer = () => { try { TELON.visible(TELON.isFront() || !tapado()); } catch {} };
+    setInterval(window.__telonVer, 700);
+  } else setTimeout(() => { try { curtainAssets(); } catch (e) { log('Telón: ' + e.message, 'e'); } }, 60);
+  // grano fino sobre toda la imagen: disimula las franjas de los degradés oscuros (imagen.grano: false lo saca)
+  if ((D.imagen || {}).grano !== false) { try {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), im = x.createImageData(256, 256);
+    for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() < 0.5 ? 0 : 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = Math.random() * 9; }
+    x.putImageData(im, 0, 0);
+    const g = document.createElement('div'); g.id = 'grano'; g.style.backgroundImage = `url(${c.toDataURL('image/png')})`; document.body.appendChild(g);
+  } catch {} }
   let code = ESPEJO || ENSAYO || store.get('screen_code');
   if (ESPEJO) { document.body.classList.add('espejo'); $('#unlock').hidden = true; }
   if (!/^\d{4}$/.test(code || '')) { code = String(Math.floor(1000 + Math.random() * 9000)); store.set('screen_code', code); }
@@ -3832,12 +4247,12 @@ function initScreen() {
         els[idx].classList.remove('off'); void els[idx].offsetWidth; els[idx].classList.add('on');
         active = idx; shownAt = now; fadedOut = false;
         if (tx[idx].clock === 'voz') {   // la parte de la voz: cada frase pega con un golpe grave y los reflectores la buscan
-          boomGrave(idx === 0 ? 0.45 : 0.6);
+          FX('apertura', () => boomGrave(idx === 0 ? 0.45 : 0.6));
           beams.setup('top4'); beams.level(.75); beams.play('scan');
           const sp = els[idx].querySelector('span');
           setTimeout(() => { if (sp && sp.isConnected) { beams.aimEls([sp], { ms: 420, spread: true }); } }, 650);
         }
-        if (tx[idx].clock === 'tema') { whoosh(); setTimeout(() => boomGrave(idx === tx.length - 1 ? 0.8 : 0.42), 330); }   // tráiler: el aire que se corta y el golpe cuando la frase se arma
+        if (tx[idx].clock === 'tema') FX('apertura', () => { whoosh(); fxLater(() => boomGrave(idx === tx.length - 1 ? 0.8 : 0.42), 330); });   // tráiler: el aire que se corta y el golpe cuando la frase se arma
         if (idx === tx.length - 1) { beams.setup('top5'); beams.level(.85); beams.play('scan'); }
       } else if (active >= 0 && active < tx.length - 1 && !fadedOut && now - shownAt > tx[active].dur) {
         els[active].classList.remove('on'); els[active].classList.add('off'); fadedOut = true;   // si el siguiente tarda, se va solo
@@ -3877,7 +4292,7 @@ function initScreen() {
     const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700);
     // sonido: un fragmento de canción (en el segundo reproductor) o, si no hay, un brillo de campanas
     if (fxPlayer && TRACKS.muletilla && !fxPlayer.isLent()) { music.duck(0.3, dur); fxPlayer.play('muletilla', { instant: true }); setTimeout(() => fxPlayer.stop(400), Math.max(800, dur - 400)); }
-    else { music.duck(0.45, 1900); chimeDorado(); }
+    else if (fxNivel('ticket')) { music.duck(0.45, 1900); FX('ticket', chimeDorado); }
     setTimeout(() => o.classList.add('out'), dur - 700);
     setTimeout(() => { o.remove(); tkBusy = false; }, dur);
   }
@@ -4274,7 +4689,15 @@ function initScreen() {
     keepAwake(); audioCtx();
     music.enableSound(false);
     if (fxPlayer) fxPlayer.enableSound(false);
+    previaMusica();
   });
+  // la música de la previa (mientras llega la gente) arranca apenas se activa la pantalla: antes el navegador no deja sonar nada
+  function previaMusica() {
+    if (!$('#unlock').hidden || (SCRIPT[cur.slide] || {}).k !== 'previa' || cur.manual) return;
+    const k = musicKeyOf(cur);
+    if (k && music.current() !== k) music.play(k);
+  }
+  window.__onMusicReady = previaMusica;
 
   render({ slide: 0, step: null, overlay: null, results: {} });
 
@@ -4332,7 +4755,7 @@ function initScreen() {
       const t = document.createElement('div'); t.className = 'aj-toast ' + (st.ajusteMsg.d > 0 ? 'mas' : 'menos');
       t.innerHTML = `<b>${st.ajusteMsg.d > 0 ? '+' : '−'}${fmtPts(Math.abs(st.ajusteMsg.d))}</b><span>${esc(P[st.ajusteMsg.p].nombre)}</span>`;
       document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
-      if (st.ajusteMsg.d > 0) boomGrave(0.4);
+      if (st.ajusteMsg.d > 0) FX('ajuste', () => boomGrave(0.4));
     } else if (st.ajusteMsg) lastAjuste = st.ajusteMsg.id;
     choreo(st, sl, changed);
     direct(st);
@@ -4399,7 +4822,7 @@ function initScreen() {
       h = `<div class="intro-stage"></div><div class="trav l abierto"></div><div class="trav r abierto"></div><div class="intro-valance"></div>
         <div class="v v-titulo"><div class="tit-in">${showLogoHTML('', 'static')}</div></div>`;
       setTimeout(() => travBuild(stage, () => travOpen(stage, 1, undefined, true)), 0);
-      boomGrave(1); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700);
+      FX('apertura', () => boomGrave(1)); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700);
       introTimer = setTimeout(() => { confetti(); }, 500);
     } else if (sl.k === 'programa') {
       // presentación del programa: vos hablás y cada toque saca la frase siguiente, con placa de tráiler
@@ -4434,12 +4857,12 @@ function initScreen() {
           if (son === 'envolvente') {
             const hitAt = at + avSubida(a);
             html = `<div class="cine-card env" style="animation-delay:${at}ms;animation-duration:${d - 200}ms;--hit:${hitAt}ms"><div class="env-glow" style="animation-duration:${hitAt - at}ms,1.8s;animation-delay:${at}ms,${hitAt}ms"></div>${a.icono ? `<div class="cel-ico">${esc(a.icono)}</div>` : ''}<div class="cel-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="cel-s">${esc(a.sub)}</div>` : ''}</div>`;
-            cineHits.push(setTimeout(() => swellEnvolvente(hitAt - at), at));
+            cineHits.push(setTimeout(() => FX('apertura', () => swellEnvolvente(hitAt - at)), at));
             cineHits.push(setTimeout(() => { const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }, hitAt + 30));
           } else {
             if (a.estilo === 'legal') html = `<div class="cine-card av-card" style="animation-delay:${at}ms;animation-duration:${d - 200}ms"><div class="av legal">${avIconHTML(a.icono || 'balanza')}<div class="av-eye">Aviso legal</div><div class="av-legal">${esc(a.texto || '')}</div></div></div>`;
             else html = `<div class="cine-card av-card" style="animation-delay:${at}ms;animation-duration:${d - 200}ms"><div class="av ${a.icono ? '' : 'solo'}">${avIconHTML(a.icono)}<div class="av-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="av-div"></div><div class="av-s">${esc(a.sub)}</div>` : ''}</div></div>`;
-            if (son === 'grave') cineHits.push(setTimeout(() => boomGrave(idx === AVISOS.findIndex(x => avSonido(x) === 'grave') ? 1 : 0.75), at + 120));
+            if (son === 'grave') cineHits.push(setTimeout(() => FX('apertura', () => boomGrave(idx === AVISOS.findIndex(x => avSonido(x) === 'grave') ? 1 : 0.75)), at + 120));
             else if (son) cineHits.push(setTimeout(() => playFile(son), at + 120));
           }
           if (a.audio) cineHits.push(setTimeout(() => playFile(a.audio), at + 350));
@@ -4458,12 +4881,12 @@ function initScreen() {
       const golpes = (D.apertura && D.apertura.golpes) || (TRACKS.cine ? 'extremos' : 'todos');
       if (conCred) CREDITS.forEach((c, i) => {
         if (c && c.estudio) {   // la intro de estudio: golpe grave cuando el emblema se asienta
-          if (!(D.apertura && D.apertura.graveEstudio === false)) cineHits.push(setTimeout(() => boomGrave(0.9), CAT[i] + Math.round(6000 * credDur(c, i) / IDENT_MS)));
+          if (!(D.apertura && D.apertura.graveEstudio === false)) cineHits.push(setTimeout(() => FX('apertura', () => boomGrave(0.9)), CAT[i] + Math.round(6000 * credDur(c, i) / IDENT_MS)));
           return;
         }
         const last = i === CREDITS.length - 1;
         if (golpes === 'ninguno' || (golpes === 'extremos' && !last)) return;
-        cineHits.push(setTimeout(() => boomGrave(last ? 1 : 0.55), CAT[i] + 200));
+        cineHits.push(setTimeout(() => FX('apertura', () => boomGrave(last ? 1 : 0.55)), CAT[i] + 200));
       });
     } else if (sl.k === 'cuentaReg') {
       const LC = locuCfg(sl), pl = LC.placas || [];
@@ -4478,7 +4901,7 @@ function initScreen() {
       const pres = CORTO.intro === false || CORTO.presenta === false ? null : { estudio: 'Bioingeniería Surround', texto: CORTO.introTexto || 'presenta', ...(CORTO.presenta || {}) };
       const MINI = pres ? (CORTO.introMs || 7200) : 0;
       h = `<div class="cine"><div class="cine-black" style="animation:none;opacity:1"></div>${MINI ? `<div class="cine-card ident-card mini" style="animation-delay:300ms;animation-duration:${MINI}ms">${neonHTML(pres)}</div>` : ''}</div>`;
-      if (MINI) setTimeout(() => neonRun(300, MINI, cineHits), 0);
+      if (MINI) setTimeout(() => neonRun(300, MINI, cineHits), 0);   // el zumbido del neón va con el grupo 'apertura' (ver neonRun)
       cineHits.push(setTimeout(() => cortoStart(st.slide), MINI ? MINI + 500 : 0));
     } else if (sl.k === 'intro') {
       const ed = esc(D.edicion).replace(/(\d{4})\s*$/, '').trim();
@@ -4622,6 +5045,13 @@ function initScreen() {
       h = '<div id="win-box" style="width:100%"></div>';
     }
     stage.innerHTML = h;
+    if (TELON && !stage.querySelector('.trav')) {
+      // veníamos con el telón abierto (título): se cierra adelante de lo nuevo y recién después vuelve al fondo
+      if (TELON.isFront() && TELON.isOpen()) { TELON.front(stage); TELON.close(TELON_CFG.cierraMs == null ? 1500 : TELON_CFG.cierraMs, () => TELON.back(false)); }
+      else TELON.back();
+      if (window.__telonVer) setTimeout(window.__telonVer, 60);
+    }
+    const gr = $('#grano'); if (gr) gr.hidden = sl.k === 'corto';
     fixPhotos(stage);
     if (sl.k === 'marcador') growBars(stage);
     requestAnimationFrame(bulbify);
@@ -4748,7 +5178,7 @@ function initScreen() {
       $('#q-results').innerHTML = resultsHTML(sl, st);
       if (st.step === 'revelado' && (changed || cur.step !== 'revelado')) {
         confetti();
-        if (!changed && D.sonidoRespuesta !== false) chimeDorado();
+        if (!changed && D.sonidoRespuesta !== false) FX('respuesta', chimeDorado);
         const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700);
       }
     } else if (sl.k === 'cuenta') {
@@ -4761,7 +5191,7 @@ function initScreen() {
         if (on && !row.classList.contains('shown')) fresh = true;
         row.classList.toggle('shown', on);
       });
-      if (fresh && !changed) { const g = cg[(st.sub || 1) - 1]; SFX.puesto(g ? g.pos : 5); }
+      if (fresh && !changed) { const g = cg[(st.sub || 1) - 1]; FX('cuenta', () => SFX.puesto(g ? g.pos : 5)); }
       const all = (st.sub || 0) >= cg.length;
       const bn = $('#cd-banner');
       if (bn) { bn.textContent = all ? cuentaBanner(st.results || {}) : ''; bn.classList.toggle('on', all); }
@@ -4784,7 +5214,7 @@ function initScreen() {
           box.innerHTML = winnerHTML(st);
           fixPhotos(box);
           confetti(); confettiLoop = setInterval(confetti, 3500);
-          if (!changed && cur.step === 'suspenso') { SFX.ticket(); const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); box.classList.remove('boom'); void box.offsetWidth; box.classList.add('boom'); }
+          if (!changed && cur.step === 'suspenso') { FX('ticket', SFX.ticket); const f = document.createElement('div'); f.className = 'flash duro'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); box.classList.remove('boom'); void box.offsetWidth; box.classList.add('boom'); }
         }
       }
     } else if (sl.k === 'presentador') {
@@ -4804,22 +5234,22 @@ function initScreen() {
       if (ve) {
         const tk = k > n + 1 && !!D.ticketDorado, was = ve.classList.contains('tk');
         ve.classList.toggle('tk', tk);
-        if (k === 1 && cur.sub === 0 && !changed) SFX.tapados();
-        if (tk && !was && !changed) { SFX.ticket(); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
-        else if (fresh && !changed) SFX.premio(k - 2);
+        if (k === 1 && cur.sub === 0 && !changed) FX('tarjetas', SFX.tapados);
+        if (tk && !was && !changed) { FX('ticket', SFX.ticket); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
+        else if (fresh && !changed) FX('tarjetas', () => SFX.premio(k - 2));
       }
     } else if (sl.k === 'programa') {
       const k = st.sub || 0, els = [...stage.querySelectorAll('.v-prog .hw')];
       els.forEach((e, i) => {
         const on = i === k - 1;
-        if (on && !e.classList.contains('on')) { e.classList.remove('off'); void e.offsetWidth; e.classList.add('on'); if (!changed) { whoosh(); setTimeout(() => boomGrave(i === els.length - 1 ? 0.7 : 0.4), 330); } }
+        if (on && !e.classList.contains('on')) { e.classList.remove('off'); void e.offsetWidth; e.classList.add('on'); if (!changed) FX('apertura', () => { whoosh(); fxLater(() => boomGrave(i === els.length - 1 ? 0.7 : 0.4), 330); }); }
         else if (!on && e.classList.contains('on')) { e.classList.remove('on'); e.classList.add('off'); }
       });
     } else if (sl.k === 'reglas') {
       const k = st.sub || 0;
       let fresh = false;
       stage.querySelectorAll('.rl-card').forEach((c, i) => { const on = i < k; if (on && !c.classList.contains('on')) fresh = true; c.classList.toggle('on', on); c.classList.toggle('cur', i === k - 1); });
-      if (fresh && !changed && D.reglasGrave !== false) SFX.regla(k - 1);
+      if (fresh && !changed && D.reglasGrave !== false) FX('tarjetas', () => SFX.regla(k - 1));
     } else if (sl.k === 'previa' && !changed && st.previaModo !== cur.previaModo) {
       buildSlide(st, sl);
     } else if (sl.k === 'marcador' && !changed && JSON.stringify(st.results) !== JSON.stringify(cur.results)) {

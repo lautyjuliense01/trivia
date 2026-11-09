@@ -136,7 +136,11 @@ window.TRIVIA = {
   /* Volúmenes: los mp3 están emparejados por sonoridad medida (todos a −15 LUFS con su "volumen"); los de YouTube no se pueden
      medir desde acá: se emparejan de oído en el celu (🎚️ Calibraciones). El volumen general va en dB: 70 = −9 dB, 100 = 0 dB. */
   musica: {
-    previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
+    previa:       { nombre: 'Swing de previa', volumen: 0.45, credito: false,
+                    lista: ['_CI-0E_jses', 'ZEcqHA7dbwM', 'r2S1I_ien6A', 'le1QF3uoQNg', 'Edwsf-8F3sI'] },
+                  // mientras llega la gente. lista: varios videos que van rotando (al terminar uno sigue el otro; si uno falla, lo saltea):
+                  //   In the Mood (Glenn Miller) · Fly Me to the Moon (Sinatra) · Sing, Sing, Sing (Benny Goodman) · New York, New York (Sinatra) · Feeling Good (Bublé)
+                  //   Para cambiarlos: el id es lo que va después de "watch?v=" en el link de YouTube. Con un solo tema, usá id: '...' y se repite.
     cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false, credito: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', archivo: 'presentacion.mp3', volumen: 0.93, nombre: 'The Good, the Bad and the Ugly', inicio: 26.3, bucle: [67.65, 131.642], fundido: 0.15 },
@@ -169,7 +173,7 @@ window.TRIVIA = {
     respuesta:    { id: '',            nombre: 'A definir: golpe de respuesta' },      // al revelar; después pasa a "datos"
 
     ganador:      { id: '32C0ohT-JFU', nombre: 'We Are the Champions (Queen)' },   // arranca con "El ganador de El Ticket Dorado es…" y sigue con la explosión (tu toque)
-    premios:      { id: '',            nombre: 'A definir: entrega de premios' },
+    premios:      { id: '3GwjfUFyY6M', nombre: 'Celebration (Kool & The Gang)', volumen: 0.7 },   // mientras eligen los premios (se repite)
     enjuego:      { id: 'BuYf0taXoNw', nombre: 'Presentación de premios' },   // mientras se dan vuelta los premios
     ticket:       { id: '',            nombre: 'A definir: aparece el ticket dorado' },  // cuando aparece el ticket
     muletilla:    { id: '',            nombre: 'A definir: muletilla del ticket', inicio: 0 },   // fragmento corto para el botón 🎫 (vacío = campanas)
@@ -185,6 +189,25 @@ window.TRIVIA = {
     { id: 'ZP69PLBqFUo', nombre: 'Hold the Line (Toto)' },
     { id: 'p3l7fgvrEKM', nombre: 'Freed from Desire (Gala)', inicio: 10 },
   ],
+
+  /* ---------- Telón e imagen ----------
+     El telón se calcula en la placa de video (WebGL): pliegues de tela, vaivén de aire y los paños que se corren.
+     movimiento: false = telón quieto · calidad: 'auto' (baja sola si la compu no llega), 'alta', 'media' o 'baja'
+     cierraMs: cuánto tarda en cerrarse cuando termina el título · viejo: true = el telón dibujado de antes (sin WebGL) */
+  telon: { movimiento: true, calidad: 'auto', cierraMs: 1500, viejo: false },
+  imagen: { grano: true },   // grano fino sobre toda la imagen: disimula las franjas en los degradés oscuros
+
+  /* ---------- Efectos de sonido generados por la app ----------
+     false = apagado · true = como sonaba antes · un número = volumen (1 = como antes, 0.6 = más bajo).
+     Hoy solo queda el del ticket dorado, más bajo. Para recuperar alguno, cambiá false por true. */
+  efectos: {
+    ticket: 0.6,       // el ticket dorado: cuando aparece entre los premios, la explosión del ganador y el ticket que cruza la pantalla (🎫)
+    apertura: false,   // golpes graves y aire de los avisos, los créditos, el logo de neón, el título y las frases de tu entrada
+    tarjetas: false,   // cada tarjeta de "Cómo se juega" y cada premio que se da vuelta
+    cuenta: false,     // cada puesto que se revela en la cuenta final
+    respuesta: false,  // campanas al revelar cada respuesta
+    ajuste: false,     // golpe cuando sumás puntos a mano
+  },
 
   /* Cuánto dura el golpe de respuesta antes de pasar a la música de datos curiosos (ms) */
   respuestaMs: 4000,
