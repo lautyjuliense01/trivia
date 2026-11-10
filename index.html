@@ -1342,7 +1342,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v69 · 09/11 20:00';
+const VERSION = 'v71 · 10/11 19:50';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -3894,8 +3894,8 @@ function initScreen() {
     window.__telonVer = () => { try { TELON.visible(TELON.isFront() || !tapado()); } catch {} };
     setInterval(window.__telonVer, 700);
   } else setTimeout(() => { try { curtainAssets(); } catch (e) { log('Telón: ' + e.message, 'e'); } }, 60);
-  // grano fino sobre toda la imagen: disimula las franjas de los degradés oscuros (imagen.grano: false lo saca)
-  if ((D.imagen || {}).grano !== false) { try {
+  // grano sobre toda la imagen: apagado por defecto (en la tele se ve como ruido). Solo con imagen.grano: true
+  if ((D.imagen || {}).grano === true) { try {
     const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), im = x.createImageData(256, 256);
     for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() < 0.5 ? 0 : 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = Math.random() * 9; }
     x.putImageData(im, 0, 0);

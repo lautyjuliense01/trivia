@@ -136,11 +136,7 @@ window.TRIVIA = {
   /* Volúmenes: los mp3 están emparejados por sonoridad medida (todos a −15 LUFS con su "volumen"); los de YouTube no se pueden
      medir desde acá: se emparejan de oído en el celu (🎚️ Calibraciones). El volumen general va en dB: 70 = −9 dB, 100 = 0 dB. */
   musica: {
-    previa:       { nombre: 'Swing de previa', volumen: 0.45, credito: false,
-                    lista: ['_CI-0E_jses', 'ZEcqHA7dbwM', 'r2S1I_ien6A', 'le1QF3uoQNg', 'Edwsf-8F3sI'] },
-                  // mientras llega la gente. lista: varios videos que van rotando (al terminar uno sigue el otro; si uno falla, lo saltea):
-                  //   In the Mood (Glenn Miller) · Fly Me to the Moon (Sinatra) · Sing, Sing, Sing (Benny Goodman) · New York, New York (Sinatra) · Feeling Good (Bublé)
-                  //   Para cambiarlos: el id es lo que va después de "watch?v=" en el link de YouTube. Con un solo tema, usá id: '...' y se repite.
+    previa:       { id: '',            nombre: 'A definir: música de previa' },       // mientras esperan, pantalla en negro
     cine:         { id: '6h2qMHjHGvo', nombre: 'Apertura de cine (Dolby Atmos)', inicio: 0, repetir: false, credito: false },   // completa (1:04), entra con la intro de estudio
     intro:        { id: 'zQdK6HLN2qI', nombre: 'Universal Pictures (100 años)' },
     presentacion: { id: '7EhnvUTkBZM', archivo: 'presentacion.mp3', volumen: 0.93, nombre: 'The Good, the Bad and the Ugly', inicio: 26.3, bucle: [67.65, 131.642], fundido: 0.15 },
@@ -195,7 +191,7 @@ window.TRIVIA = {
      movimiento: false = telón quieto · calidad: 'auto' (baja sola si la compu no llega), 'alta', 'media' o 'baja'
      cierraMs: cuánto tarda en cerrarse cuando termina el título · viejo: true = el telón dibujado de antes (sin WebGL) */
   telon: { movimiento: true, calidad: 'auto', cierraMs: 1500, viejo: false },
-  imagen: { grano: true },   // grano fino sobre toda la imagen: disimula las franjas en los degradés oscuros
+  imagen: { grano: false },   // true = puntitos sobre toda la imagen contra las franjas en los oscuros (en la tele se nota como ruido)
 
   /* ---------- Efectos de sonido generados por la app ----------
      false = apagado · true = como sonaba antes · un número = volumen (1 = como antes, 0.6 = más bajo).
