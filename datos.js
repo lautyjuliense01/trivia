@@ -170,12 +170,15 @@ window.TRIVIA = {
 
     ganador:      { id: '32C0ohT-JFU', nombre: 'We Are the Champions (Queen)' },   // arranca con "El ganador de El Ticket Dorado es…" y sigue con la explosión (tu toque)
     premios:      { id: '3GwjfUFyY6M', nombre: 'Celebration (Kool & The Gang)', volumen: 0.7 },   // mientras eligen los premios (se repite)
-    enjuego:      { id: 'BuYf0taXoNw', nombre: 'Presentación de premios' },   // mientras se dan vuelta los premios
+    enjuego:      { id: 'BuYf0taXoNw', archivo: 'premios.mp3', volumen: 0.71, nombre: "He's a Pirate (Piratas del Caribe)", bucle: [0.05, 155.3] },
+                  // mientras se dan vuelta los premios. Dura 2:35; si se termina, vuelve a empezar sin los 2,5 s de silencio del final
     ticket:       { id: '',            nombre: 'A definir: aparece el ticket dorado' },  // cuando aparece el ticket
     muletilla:    { id: '',            nombre: 'A definir: muletilla del ticket', inicio: 0 },   // fragmento corto para el botón 🎫 (vacío = campanas)
     gracias:      { id: '-QuVe-hjMs0', archivo: 'gracias.mp3', nombre: 'Cierre: palabras de agradecimiento', inicio: 17, recorte: [20.35, 22.45], bucle: [58.15, 124.36], fundido: 0.15, volumen: 0.43, credito: false },
                   // recorte: saltea los 2 s de silencio del 20,4 · bucle (contado ya recortado): sigue sonando lo que dure tu discurso   // suena más bajo (55 %) para hablar encima
-    cierre:       { id: '0T-if-Vj2Xs', nombre: 'Créditos finales', credito: false },   // el rodillo de créditos dura lo que la canción
+    cierre:       { id: '0T-if-Vj2Xs', nombre: 'Créditos finales', credito: false, repetir: false },
+                  // el rodillo va con la canción: "Fin" termina de salir justo cuando termina. Si el video sigue después de la música
+                  // (silencio, imagen), poné en cierreCreditos.finCancion el segundo en que termina la música
   },
 
   /* ---------- Pistas a mano ----------
@@ -185,6 +188,11 @@ window.TRIVIA = {
     { id: 'ZP69PLBqFUo', nombre: 'Hold the Line (Toto)' },
     { id: 'p3l7fgvrEKM', nombre: 'Freed from Desire (Gala)', inicio: 10 },
   ],
+
+  /* ---------- Créditos finales ----------
+     finCancion: segundo del video en que termina la música (null = el largo del video). "Fin" termina de salir ahí.
+     segundos: duración del rodillo si la canción no llega a sonar */
+  cierreCreditos: { finCancion: null, segundos: 45 },
 
   /* ---------- Telón e imagen ----------
      El telón se calcula en la placa de video (WebGL): pliegues de tela, vaivén de aire y los paños que se corren.
@@ -197,6 +205,7 @@ window.TRIVIA = {
      false = apagado · true = como sonaba antes · un número = volumen (1 = como antes, 0.6 = más bajo).
      Hoy solo queda el del ticket dorado, más bajo. Para recuperar alguno, cambiá false por true. */
   efectos: {
+    participantes: 0.5,   // un golpe seco con brillo dorado cuando aparece cada participante (0.5 = a mitad de volumen)
     ticket: 0.6,       // el ticket dorado: cuando aparece entre los premios, la explosión del ganador y el ticket que cruza la pantalla (🎫)
     apertura: false,   // golpes graves y aire de los avisos, los créditos, el logo de neón, el título y las frases de tu entrada
     tarjetas: false,   // cada tarjeta de "Cómo se juega" y cada premio que se da vuelta
@@ -207,6 +216,8 @@ window.TRIVIA = {
 
   /* Cuánto dura el golpe de respuesta antes de pasar a la música de datos curiosos (ms) */
   respuestaMs: 4000,
+  /* "⚡ Revelar ahora" (en el aviso que aparece al tocar Revelar): el tema salta a estos segundos antes del golpe de la respuesta */
+  revelarAhoraSeg: 2,
 
   /* ---------- Calibraciones de fábrica ----------
      Lo que se copia en el celu con "📋 Copiar todas las calibraciones" (pegalo acá tal cual).
@@ -233,8 +244,9 @@ window.TRIVIA = {
   bucleApoyo: true,
   bucleAnticipo: 120,
 
-  /* Al salir de una pregunta, lo que venía sonando se apaga en este tiempo (ms) y recién después arranca lo siguiente */
-  desvanecerMs: 5000,
+  /* Al salir de una pregunta, lo que venía sonando se apaga en este tiempo (ms) y recién después arranca lo siguiente.
+     La pantalla baja a negro junto con la música y lo nuevo aparece con su tema (igual con los fundidos de más abajo). */
+  desvanecerMs: 3500,
 
   /* Qué música suena en cada momento (nombres de la lista de arriba, o null = silencio) */
   momentos: {
@@ -393,18 +405,19 @@ window.TRIVIA = {
     // En el celu, arriba, ves el segundo de la voz y del tema mientras suenan: así lo ajustás fino.
     textos: [
       // tema: segundo del tema ya recortado (el que ves en el celu mientras suena). La voz "damas y caballeros" ahora va en la apertura.
-      { texto: 'Llegó como pasante en 2021', tema: 3, dura: 6.5 },
-      { texto: 'Hoy dirige el mejor departamento de Bioingeniería de la provincia', tema: 10.5, dura: 7.5 },
-      { texto: 'Conoce cada equipo del inventario', tema: 19, dura: 6.5 },
-      { texto: 'Cada marca, cada modelo', tema: 26.5, dura: 5.5 },
-      { texto: 'Esta noche, solo él sabe todas las respuestas', tema: 33, dura: 7.5 },
-      { texto: 'Y viene a encontrar al que más sabe de Bioingeniería', tema: 41.5, dura: 8 },
+      { texto: 'Llegó como pasante en 2021', tema: 3, dura: 7.5 },
+      { texto: 'Hoy dirige el mejor departamento de Bioingeniería de Córdoba', tema: 11.5, dura: 8.5 },
+      { texto: 'Conoce cada equipo del inventario', tema: 21.5, dura: 7.5 },
+      { texto: 'Esta noche, solo él sabe todas las respuestas', tema: 30.5, dura: 8.5 },
+      { texto: 'Y viene a encontrar al que más sabe de Bioingeniería', tema: 40.5, dura: 8.5 },
       { texto: 'Con ustedes', tema: 51 },
     ],
     // Golpe de entrada automático: segundo del tema en que cae (con la apertura en automático). null = siempre a mano.
     golpeTema: 56.95,
     reflectoresAntes: 0.5,
     reflectoresDerecha: 5,
+    entradaMetros: 4,        // a cuántos metros a la derecha de la tele entrás: todos los reflectores apuntan hacia ahí
+    pantallaMetros: 1.4,     // ancho de la tele en metros (para calcular el ángulo)
     apagonAntes: 3,          // segundos antes del golpe en que se apaga todo (tele y luces) para que entres a oscuras; 0 = sin apagón   // segundos que los reflectores quedan a la derecha después del golpe
     logoTras: 7,             // segundos después del golpe en que aparece el logo   // segundos antes del golpe en que los reflectores van al costado derecho (por donde entrás)
     // Qué aparece en el golpe: 'logo' (el logo de la trivia, como en la tele) o 'nombre' (tu nombre y foto)

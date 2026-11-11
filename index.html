@@ -266,9 +266,11 @@ details summary{cursor:pointer;color:var(--gold);font-weight:700;font-size:13px}
 .v-win-fit .win-names{margin-top:16px}
 .win-card{gap:10px}
 .win-card .pl-photo{width:clamp(140px,16vw,230px)!important}
+.win-names:has(.sin-foto){margin-top:clamp(20px,5vh,60px);margin-bottom:clamp(10px,3vh,40px)}
 .win-card .script{font-size:clamp(60px,7.5vw,115px)!important}
 .win-names.multi .win-card .pl-photo{width:clamp(110px,12vw,180px)!important}
 .win-names.multi .win-card .script{font-size:clamp(40px,5vw,76px)!important}
+.win-card.sin-foto .script{font-size:clamp(90px,12.5vw,200px)!important;line-height:1.05}.win-names.multi .win-card.sin-foto .script{font-size:clamp(50px,6.5vw,105px)!important}
 .win-crown{margin-bottom:-14px!important}
 .win-pts{margin-top:18px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-size:clamp(16px,2vw,28px)}
 
@@ -848,8 +850,9 @@ body.telon-gl .trav,body.telon-gl .intro-valance{display:none}
 .ej-intro-t{font-family:'Cinzel',serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;padding-left:.14em;font-size:clamp(44px,6.6vw,112px);line-height:1.1;text-align:center;
   background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.9) 50%,transparent 58%) no-repeat,linear-gradient(180deg,#fffaf0 0%,#f6e3b0 38%,#d8a94a 64%,#f6dc93 100%);
   background-size:300% 100%,100% 100%;background-position:120% 0,0 0;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 30px rgba(255,200,110,.35));opacity:0}
-.v-enjuego.go .ej-intro-t{animation:ejIn 3.2s cubic-bezier(.2,.7,.2,1) both,hwShine 2.4s 1.6s ease-out both}
-@keyframes ejIn{0%{opacity:0;filter:blur(18px) drop-shadow(0 0 0 rgba(255,200,110,0));letter-spacing:.5em;transform:scale(1.08)}100%{opacity:1;filter:blur(0) drop-shadow(0 0 30px rgba(255,200,110,.35));letter-spacing:.14em;transform:none}}
+.v-enjuego.go .ej-intro-t{animation:ejIn 2.4s cubic-bezier(.16,.84,.3,1) both,hwShine 2.4s 1.4s ease-out both}
+/* solo opacidad y escala: el texto queda armado igual de principio a fin (antes cambiaba el espaciado y saltaba de renglón) */
+@keyframes ejIn{0%{opacity:0;transform:scale(1.07) translateY(1.2vh)}60%{opacity:1}100%{opacity:1;transform:none}}
 .ej-prizes{transition:opacity .8s ease,transform .8s ease}
 .v-enjuego.tk .ej-prizes{opacity:0;transform:scale(.92);pointer-events:none}
 .ej-row .rl-card{aspect-ratio:3/4.2}
@@ -1168,7 +1171,7 @@ body{background:
   <div id="rev-toast" hidden>
     <div id="rev-msg"></div>
     <div class="br-track" style="height:8px;margin:8px 0"><div class="br-fill" id="rev-bar" style="width:100%"></div></div>
-    <div class="row"><button class="btn" id="rev-skip" style="flex:1">⏩ Acortar: ir al tramo final</button><button class="btn ghost small" id="rev-cancel">↩ Cancelar</button></div>
+    <div class="row"><button class="btn" id="rev-skip" style="flex:1">⚡ Revelar ahora</button><button class="btn ghost small" id="rev-cancel">↩ Cancelar</button></div>
   </div>
   <div id="seq-toast" hidden>
     <div id="seq-msg"></div>
@@ -1342,7 +1345,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v71 · 10/11 19:50';
+const VERSION = 'v72 · 10/11 23:30';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1749,7 +1752,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     if (current === key && !opts.restart && (F ? !F.paused : (ready && player.getPlayerState() === S().PLAYING))) return;
     if (F) {   // venía sonando un tema de archivo
       if (opts.xfade > 0) { await fFade(0, opts.xfade); if (gen0 !== playGen) return; opts = { ...opts, instant: false }; }
-      fKill(opts.instant ? 0 : 300);
+      fKill(opts.instant ? 0 : 900);   // nunca un corte seco entre temas
     }
     if (fileTrack(key)) {
       if (ready && player.getPlayerState() === S().PLAYING) {
@@ -1767,7 +1770,7 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
       if (gen !== playGen) return;   // mientras tanto se pidió otra cosa
       opts = { ...opts, instant: false };
     }
-    if (player.getPlayerState() === S().PLAYING && !opts.instant) await fadeTo(0, 600);
+    if (player.getPlayerState() === S().PLAYING && !opts.instant) await fadeTo(0, 900);
     current = key; loopOn = !!tr.bucle; swapStop(); volverPropio();
     needsFadeIn = !opts.instant;
     if (opts.instant) { clearInterval(fadeTimer); try { player.unMute(); player.setVolume(lv()); } catch {} }
@@ -1884,7 +1887,15 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
   }, 8);
   function release() {
     loopOn = false; swapStop();
-    if (!F) return;
+    if (!F) {   // tema de YouTube (si el mp3 no cargó): el mismo salto que con el archivo, con seekTo (puede notarse un corte chico)
+      try {
+        const tr = current && tracks[current], b = tr && tr.bucle; if (!b || !ready) return;
+        const pT = player.getCurrentTime() + 0.1;
+        if (tr.salida && pT >= b[0] && pT <= tr.salida) player.seekTo(pT + (b[1] - b[0]), true);
+        else if (tr.periodo && pT >= b[0]) { const P = tr.periodo, dest = b[1] - P + ((pT - b[0]) % P + P) % P; if (dest > pT + 0.5) player.seekTo(dest, true); }
+      } catch {}
+      return;
+    }
     fReanchor(); F.loop = false; try { F.src.loop = false; } catch {}
     // salida: si suena el tramo que se repite idéntico más adelante, salta a ese mismo punto de la segunda pasada (al sample: no se nota)
     const tr = tracks[F.key], b = tr.bucle;
@@ -2074,7 +2085,13 @@ function createBeams(host) {
   }
   function clearPools() { poolsBox.querySelectorAll('.pool').forEach(d => { d.classList.remove('on'); setTimeout(() => d.remove(), 900); }); }
   function outside() { beams.forEach(b => set(b, (b.x < .5 ? 1 : -1) * 60, 0, 0)); }
-  return { setup, aimEls, play, motion, stop, level, over, pools, clearPools, outside, layout };
+  // Todos los haces hacia un punto (puede estar fuera de la pantalla); max: inclinación máxima en grados, para que se sigan viendo
+  function aimPoint(x, y, opts = {}) {
+    stop();
+    const max = opts.max || 70, ms = opts.ms == null ? 420 : opts.ms;
+    beams.forEach(b => { const a = angleTo(b, x, y); set(b, Math.max(-max, Math.min(max, a)), ms, 1); });
+  }
+  return { setup, aimEls, aimPoint, play, motion, stop, level, over, pools, clearPools, outside, layout };
 }
 
 /* ================= Modelo del juego ================= */
@@ -3348,16 +3365,40 @@ function rulesList() { return rulesCards().map(r => (r.titulo ? r.titulo + ': ' 
 const PREMIO = D.premio || 'el ticket dorado';
 const deTitulo = () => /^el\s/i.test(D.titulo) ? 'del ' + D.titulo.replace(/^el\s+/i, '') : 'de ' + D.titulo;
 function showLogoHTML(arriba, cls = '') {
+  const gid = (cls || 'a').replace(/[^\w-]+/g, '-') + '-' + (++showLogoHTML.n || (showLogoHTML.n = 1));
   const w = D.titulo.trim().split(/\s+/), art = /^(el|la|los|las)$/i.test(w[0]) && w.length > 1 ? w.shift() : '';
   return `<div class="show-logo ${cls}">
-    <svg class="sl-frame" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="slg-${cls || 'a'}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2c4"/><stop offset=".5" stop-color="#d9a94a"/><stop offset="1" stop-color="#8a5f1a"/></linearGradient></defs>
-      <path d="M40 10H960a30 30 0 0 0 30 30V250a50 50 0 0 0 0 100V560a30 30 0 0 0-30 30H40a30 30 0 0 0-30-30V350a50 50 0 0 0 0-100V40A30 30 0 0 0 40 10z" fill="rgba(14,4,2,.72)" stroke="url(#slg-${cls || 'a'})" stroke-width="3" vector-effect="non-scaling-stroke"/>
-      <path d="M58 30H942a22 22 0 0 0 22 22V262a38 38 0 0 0 0 76V548a22 22 0 0 0-22 22H58a22 22 0 0 0-22-22V338a38 38 0 0 0 0-76V52A22 22 0 0 0 58 30z" fill="none" stroke="url(#slg-${cls || 'a'})" stroke-width="1" stroke-opacity=".6" vector-effect="non-scaling-stroke"/></svg>
+    <svg class="sl-frame" aria-hidden="true"><defs><linearGradient id="slg-${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2c4"/><stop offset=".5" stop-color="#d9a94a"/><stop offset="1" stop-color="#8a5f1a"/></linearGradient></defs>
+      <path class="slf-o" fill="rgba(14,4,2,.72)" stroke="url(#slg-${gid})" stroke-width="3" vector-effect="non-scaling-stroke"/>
+      <path class="slf-i" fill="none" stroke="url(#slg-${gid})" stroke-width="1" stroke-opacity=".6" vector-effect="non-scaling-stroke"/></svg>
     ${arriba ? `<div class="sl-top"><span>◆</span>${esc(arriba)}<span>◆</span></div>` : ''}
     ${art ? `<div class="sl-art">${esc(art)}</div>` : ''}
     <div class="sl-title">${w.map(esc).join('<br>')}</div>
     <div class="sl-rule"></div>
     <div class="sl-sub">${esc(D.edicion)}</div></div>`;
+}
+/* Marco de la placa: se calcula al tamaño real (no se estira). Esquinas caladas y muesca al medio de cada lado;
+   el borde interno va paralelo al externo a la misma distancia en todo el contorno (las curvas son concéntricas). */
+function slFrameD(w, h, d, rc, rn) {
+  const f = n => n.toFixed(1), cut = R => Math.sqrt(Math.max(0, R * R - d * d));
+  const Rc = rc + d, Rn = rn + d, a = cut(Rc), b = cut(Rn), m = h / 2;
+  return `M${f(a)} ${f(d)}H${f(w - a)}A${f(Rc)} ${f(Rc)} 0 0 0 ${f(w - d)} ${f(a)}V${f(m - b)}A${f(Rn)} ${f(Rn)} 0 0 0 ${f(w - d)} ${f(m + b)}`
+    + `V${f(h - a)}A${f(Rc)} ${f(Rc)} 0 0 0 ${f(w - a)} ${f(h - d)}H${f(a)}A${f(Rc)} ${f(Rc)} 0 0 0 ${f(d)} ${f(h - a)}`
+    + `V${f(m + b)}A${f(Rn)} ${f(Rn)} 0 0 0 ${f(d)} ${f(m - b)}V${f(a)}A${f(Rc)} ${f(Rc)} 0 0 0 ${f(a)} ${f(d)}Z`;
+}
+function slFrameFit(el) {
+  const svg = el.querySelector(':scope > .sl-frame'); if (!svg) return;
+  const w = el.offsetWidth, h = el.offsetHeight; if (!w || !h) return;
+  const u = Math.min(w, h * 1.7) / 1000;                  // escala: igual en los dos ejes
+  const rc = 34 * u, rn = 50 * u, o = 2.5, gap = 20 * u;   // radio esquina · radio muesca · borde de afuera · separación al de adentro
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.querySelector('.slf-o').setAttribute('d', slFrameD(w, h, o, rc - o, rn - o));
+  svg.querySelector('.slf-i').setAttribute('d', slFrameD(w, h, o + gap, rc - o, rn - o));
+}
+if (typeof ResizeObserver !== 'undefined') {
+  const ro = new ResizeObserver(es => es.forEach(e => slFrameFit(e.target)));
+  const scan = () => document.querySelectorAll('.show-logo:not([data-fr])').forEach(el => { el.dataset.fr = 1; slFrameFit(el); ro.observe(el); });
+  let pend = false; new MutationObserver(() => { if (!pend) { pend = true; requestAnimationFrame(() => { pend = false; scan(); }); } }).observe(document.documentElement, { childList: true, subtree: true });
 }
 /* El ticket dorado: una sola lámina dorada (sin talón ni troquel), con esquinas caladas, marco art déco y todo centrado */
 const ENJ = () => (D.premiosEnJuego || []);
@@ -3599,7 +3640,7 @@ function wideReverb(ctx) {
 }
 /* Efectos generados por la app, por grupo (datos.js → efectos): false = apagado · true = como siempre · número = volumen (0.6 = más bajo).
    Por defecto solo queda el del ticket dorado, más bajo. FX('grupo', fn) corre fn con el volumen de ese grupo (o no la corre). */
-const EFECTOS = Object.assign({ ticket: 0.6, apertura: false, tarjetas: false, cuenta: false, respuesta: false, ajuste: false }, D.efectos || {});
+const EFECTOS = Object.assign({ participantes: 0.5, ticket: 0.6, apertura: false, tarjetas: false, cuenta: false, respuesta: false, ajuste: false }, D.efectos || {});
 let fxVol = 1;
 const fxNivel = g => { const v = EFECTOS[g]; return v === true ? 1 : (+v > 0 ? +v : 0); };
 function FX(grupo, fn) { const v = fxNivel(grupo); if (!v) return; const prev = fxVol; fxVol = v; try { fn(); } finally { fxVol = prev; } }
@@ -3718,6 +3759,27 @@ function boomGrave(size = 1, when = 0) {
   const rh = ctx.createBiquadFilter(); rh.type = 'highpass'; rh.frequency.value = 70;
   const rg = ctx.createGain(); rg.gain.setValueAtTime(0.0001, t0); rg.gain.exponentialRampToValueAtTime(0.45 * s, t0 + 0.04); rg.gain.setTargetAtTime(0.0001, t0 + 0.3, 1.1);
   r.connect(rl); rl.connect(rh); rh.connect(rg); wideOut(ctx, rg, bus, 1); rg.connect(bus.rev); r.start(t0); r.stop(t0 + 6.5);
+}
+/* Presentación de cada participante: un golpe seco y corto (sin cola larga) con un brillo dorado arriba. Simple, sin estridencia */
+function golpeSello() {
+  const ctx = audioCtx();
+  if (!ctx) return;
+  const bus = sfxOut(ctx), t0 = ctx.currentTime + 0.02;
+  const env = (g, peak, att, dec) => { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + att); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dec); };
+  const sub = ctx.createOscillator(); sub.type = 'sine';   // el pecho del golpe
+  sub.frequency.setValueAtTime(92, t0); sub.frequency.exponentialRampToValueAtTime(46, t0 + 0.35);
+  const sg = ctx.createGain(); env(sg, 0.85, 0.006, 0.75); sub.connect(sg); sg.connect(bus.master); sub.start(t0); sub.stop(t0 + 0.8);
+  const skin = ctx.createOscillator(); skin.type = 'triangle';   // el parche (que tenga cuerpo y no sea solo un zumbido)
+  skin.frequency.setValueAtTime(210, t0); skin.frequency.exponentialRampToValueAtTime(105, t0 + 0.09);
+  const kg = ctx.createGain(); env(kg, 0.35, 0.003, 0.16); skin.connect(kg); kg.connect(bus.master); skin.start(t0); skin.stop(t0 + 0.2);
+  const n = ctx.createBufferSource(); n.buffer = noise(ctx);   // el ataque
+  const nb = ctx.createBiquadFilter(); nb.type = 'bandpass'; nb.frequency.value = 1800; nb.Q.value = 0.9;
+  const ng = ctx.createGain(); env(ng, 0.22, 0.002, 0.05); n.connect(nb); nb.connect(ng); ng.connect(bus.master); n.start(t0); n.stop(t0 + 0.06);
+  [[1318.5, 0.05], [1975.5, 0.035], [2637, 0.02]].forEach(([f, v], i) => {   // brillo dorado: un mi agudo que se apaga suave
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t0 + 0.01); g.gain.exponentialRampToValueAtTime(v, t0 + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.4 - i * 0.3);
+    o.connect(g); g.connect(bus.master); g.connect(bus.rev); o.start(t0); o.stop(t0 + 1.5);
+  });
 }
 /* "Sonido envolvente": acorde que crece y gira por la sala, corte seco y golpe grave */
 function swellEnvolvente(riseMs = 4800) {
@@ -4167,7 +4229,7 @@ function initScreen() {
 
   let lastAjuste = null;
   let locAudio = null;
-  let revMon = null, revLocal = null, revTension = null, revResend = 0;   // pregunta con tema en bucle
+  let revMon = null, revLocal = null, revTension = null, revResend = 0, revSinMus = 0;   // pregunta con tema en bucle
   let cur = { slide: -1 }, curRev = null, confettiLoop = null, introTimer = null, cineHits = [], contPhase = null;
   const CONT_PRE = 1600;
   const stage = $('#stage');
@@ -4299,9 +4361,10 @@ function initScreen() {
   function hostFlash(kind) { const f = document.createElement('div'); f.className = 'flash ' + kind; document.body.appendChild(f); setTimeout(() => f.remove(), 600); }
   // los reflectores van al costado derecho de la pantalla (por donde entrás) justo antes del golpe
   function beamsDerecha(apagados = false) {
-    let el = $('#beam-derecha');
-    if (!el) { el = document.createElement('div'); el.id = 'beam-derecha'; el.style.cssText = 'position:fixed;right:3vw;top:38vh;width:10vw;height:40vh;pointer-events:none'; document.body.appendChild(el); }
-    beams.setup('top4'); beams.clearPools(); beams.level(apagados ? 0 : 1); beams.aimEls([el], { ms: 420, spread: true, sway: false });
+    // entrás a unos metros a la derecha de la tele: todos los haces apuntan hacia allá (ninguno queda vertical)
+    const P = D.presentador || {}, m = P.entradaMetros != null ? P.entradaMetros : 4, ancho = P.pantallaMetros || 1.4;
+    beams.setup('top4'); beams.clearPools(); beams.level(apagados ? 0 : 1);
+    beams.aimPoint(innerWidth * (1 + m / ancho), innerHeight * 0.85, { ms: 420, max: 58 });
   }
   function hostGolpe(vh) {
     document.body.classList.remove('apagon');   // se enciende todo con el golpe
@@ -4538,14 +4601,16 @@ function initScreen() {
       case 'presentacion':
         beams.setup('top3'); beams.clearPools(); beams.level(1);
         if (PRES_NUEVA) {
+          if (changed) FX('participantes', golpeSello);   // cada participante entra con un golpe
           scanLock(() => [sq('.pr-seal')], 500);
           later(PRES_MS + 200, () => { beams.clearPools(); beams.level(.45); beams.play('search'); });   // pantalla limpia: los reflectores buscan al próximo
         } else scanLock(() => [sq('.pl-photo')], 650);
         break;
       case 'presentador':
         if (st.step === 'golpe') {
-          // el resto (nombre, foco, fiesta) lo hace el motor de ritmo
-          beams.setup('top5'); beams.clearPools(); beams.level(1); beams.play('scan');
+          // el resto (nombre, foco, fiesta) lo hace el motor de ritmo: los reflectores quedan apuntando a donde entrás
+          // (reflectoresDerecha) y recién después barren. Antes este barrido los sacaba de ahí en el mismo golpe.
+          if (!host) { beams.setup('top5'); beams.clearPools(); beams.level(1); beams.play('scan'); }
         } else {
           // a oscuras, los reflectores buscan entre el público y se aceleran con los textos
           beams.setup('top3'); beams.clearPools(); beams.level(.45); beams.play('search');   // después los acelera el motor de textos
@@ -4597,7 +4662,7 @@ function initScreen() {
       case 'ganador':
         beams.setup('top5'); beams.clearPools();
         if (st.step === 'redoble' || st.step === 'suspenso') { beams.level(st.step === 'suspenso' ? .55 : 1); beams.play('scan'); }
-        else later(150, () => { const ph = sqa('.win-card .pl-photo'); beams.aimEls(ph, { ms: 320 }); beams.pools(ph); });
+        else later(150, () => { const ph = sqa('.win-card .pl-photo, .win-card.sin-foto .script'); beams.aimEls(ph, { ms: 320, spread: ph.length === 1 }); beams.pools(ph, ph.length === 1); });
         break;
     }
   }
@@ -4701,15 +4766,21 @@ function initScreen() {
 
   render({ slide: 0, step: null, overlay: null, results: {} });
 
-  /* De la última pregunta a la cuenta final (o a lo que venga si se saltea): la pantalla baja a negro junto con la música (desvanecerMs)
+  /* Fundido a negro con la música (ver renderNegro): la pantalla baja a negro junto con la música (desvanecerMs)
      y la cuenta aparece desde el negro. Lo que llega mientras tanto se aplica al final. */
   let negroHold = null;
   function renderNegro(st) {
     if (negroHold) { negroHold.st = st; return; }
-    const from = SCRIPT[cur.slide], to = SCRIPT[st.slide] || {};
-    // de la última pregunta a lo que siga (la cuenta; o, si la cuenta se saltea, el ganador o el desempate del 1°)
-    if (!(from && from.k === 'pregunta' && from.n === TOTAL_Q && ['cuenta', 'ganador', 'desempate'].includes(to.k) && st.slide !== cur.slide)) return render(st);
-    const XF = D.desvanecerMs == null ? 5000 : D.desvanecerMs;
+    const from = SCRIPT[cur.slide];
+    // Cada vez que la música se apaga despacio antes del tema nuevo (al salir de una pregunta, antes de Presentamos, antes de los premios…),
+    // la pantalla baja a negro junto con ella y lo nuevo aparece desde el negro cuando arranca su tema: imagen y música entran juntas.
+    let XF = 0;
+    if (from && st.slide !== cur.slide && !st.manual && !cur.manual && !st.overlay && !cur.overlay) {
+      if (isQ(from)) XF = D.desvanecerMs == null ? 5000 : D.desvanecerMs;
+      else { const mA = momentOf(cur), mB = momentOf(st), kA = musicKeyOf(cur), kB = musicKeyOf(st);
+        if (mA !== mB && kA && kA !== kB && (FUNDIDOS[mB] || 0) >= 1500) XF = FUNDIDOS[mB]; }
+    }
+    if (XF < 1500) return render(st);
     negroHold = { st };
     direct(st);   // la música empieza a apagarse ya
     const capa = document.createElement('div'); capa.className = 'negro-fx'; document.body.appendChild(capa);
@@ -4717,6 +4788,8 @@ function initScreen() {
     setTimeout(() => {
       const h = negroHold; negroHold = null;
       render(h.st);
+      // si el tema nuevo ya arrancó durante el negro, lo que espera la música (número de la pregunta, título de premios, cuenta) sale ya
+      try { const ms = music.status(); if (ms && ms.key && ms.t > 0.05 && window.__onTrackPlaying) window.__onTrackPlaying(ms.key); } catch {}
       setTimeout(() => { capa.style.transition = 'opacity 1400ms ease-out'; capa.style.opacity = '0'; setTimeout(() => capa.remove(), 1500); }, 250);
     }, XF + 150);
   }
@@ -4766,7 +4839,7 @@ function initScreen() {
     else { revStop(); if (st.step === 'pregunta' && revTension === st.slide) revTension = null; }
     if (m === 'redoble' && bk) document.body.classList.toggle('dimmed', revTension === st.slide);
   }
-  function revStop() { clearInterval(revMon); revMon = null; }
+  function revStop() { clearInterval(revMon); revMon = null; revSinMus = 0; }
   function revWatch(slide, bk) {
     if (revMon) return;
     const b = TRACKS[bk];
@@ -4774,7 +4847,12 @@ function initScreen() {
     revMon = setInterval(() => {
       if (cur.slide !== slide || cur.step !== 'redoble') return revStop();
       const s = music.status();
-      if (!s || s.key !== bk) return;
+      if (!s || s.key !== bk) {   // el tema no suena (no cargó, lo pararon): no hay golpe que esperar → revela a los 1,5 s
+        if (!revSinMus) revSinMus = performance.now();
+        else if (performance.now() - revSinMus > 1500) { revStop(); revLocal = slide; if (link) link.send({ type: 'revelar', slide }); render({ ...cur, step: 'revelado' }); }
+        return;
+      }
+      revSinMus = 0;
       if (music.looping()) music.release();
       const t = music.pos();
       if (t == null) return;
@@ -4790,12 +4868,13 @@ function initScreen() {
       }
     }, 25);
   }
-  // "Acortar": salta al tramo final del tema (desde donde arranca la tensión)
+  // "Revelar ahora": salta a la parte del tema que lleva al golpe de la respuesta (unos segundos antes de "revela"). Si queda un corte, queda
   function revSaltar(slide) {
     if (!revMon || cur.slide !== slide) return;
     const bk = bucleKeyOf(cur);
     if (!bk) return;
-    const b = TRACKS[bk], t = music.pos(), to = tensionOf(b);
+    const b = TRACKS[bk], t = music.pos(), lead = D.revelarAhoraSeg != null ? +D.revelarAhoraSeg : 2, to = Math.max(0, b.revela - lead);
+    if (music.looping()) music.release();
     if (t != null && t < to) { music.seek(to); revResend = performance.now() + 450; }
   }
 
@@ -5032,14 +5111,31 @@ function initScreen() {
         <div class="roll-title script">${esc(D.titulo)}</div><div class="round-sub">${esc(D.edicion)}</div>
         ${blocks.map(([t, items]) => `<div class="roll-b">${t ? `<div class="roll-t">${esc(t)}</div>` : ''}${items.map(x => `<div class="roll-i">${esc(x)}</div>`).join('')}</div>`).join('')}
         <div class="roll-end script">Fin</div></div></div>`;
-      // el rodillo arranca con la canción y dura lo que ella (termina 3 s antes); si no suena, arranca igual
-      const t0 = Date.now(), seg = D.cierre && D.cierre.segundos;
-      const arrancar = dur => { const r = $('#roll'); if (!r || r.dataset.go) return; r.dataset.go = 1; if (dur) r.style.animationDuration = dur + 's'; r.style.animationPlayState = 'running'; };
-      const espera = setInterval(() => {
+      // El rodillo va pegado al reloj de la canción: arranca con ella y "Fin" termina de salir por arriba justo cuando termina el tema.
+      // (cierre.finCancion: segundo del video en que termina la música, si después hay silencio o imagen; si no, el largo del video)
+      // Si a los 8 s la canción no suena, corre solo por reloj (cierre.segundos, 45 por defecto).
+      const t0 = performance.now(), C = Object.assign({}, D.cierre || {}, D.cierreCreditos || {});
+      let modo = null, w0 = 0, raf = 0;
+      const geo = () => { const r = $('#roll'), f = r && r.querySelector('.roll-end'); return r && f ? { r, total: f.offsetTop + f.offsetHeight + innerHeight } : null; };
+      const pintar = p => { const g = geo(); if (!g) return false; g.r.style.transform = `translateY(${(-Math.max(0, Math.min(1, p)) * g.total).toFixed(1)}px)`; return true; };
+      const r0 = $('#roll'); if (r0) { r0.style.animation = 'none'; r0.style.willChange = 'transform'; }
+      let tIni = null, listo = false;
+      const loop = () => {
+        if (!$('#roll') || listo) return;
+        raf = requestAnimationFrame(loop);
         const ms = music.status();
-        if (ms && ms.key === 'cierre' && ms.d > 0 && ms.t > 0) { clearInterval(espera); arrancar(seg ? null : Math.max(25, Math.min(240, ms.d - ms.t - 3))); }
-        else if (Date.now() - t0 > 4000) { clearInterval(espera); arrancar(null); }
-      }, 150);
+        if (modo !== 'reloj' && ms && ms.key === 'cierre' && ms.d > 0) {
+          const t = music.pos(); if (t == null || t <= 0) return;
+          if (tIni == null) tIni = t;   // donde arrancó a sonar
+          const fin = Math.min(ms.d, +C.finCancion > 0 ? +C.finCancion : ms.d - 0.2);
+          modo = 'tema'; const p = (t - tIni) / Math.max(5, fin - tIni); pintar(p); if (p >= 1) listo = true;   // terminó: queda así (aunque el tema vuelva a empezar)
+          return;
+        }
+        if (!modo && performance.now() - t0 > 8000) { modo = 'reloj'; w0 = performance.now(); }
+        if (modo === 'reloj') { const p = (performance.now() - w0) / 1000 / (+C.segundos > 0 ? +C.segundos : 45); pintar(p); if (p >= 1) listo = true; }
+      };
+      raf = requestAnimationFrame(loop);
+      const espera = setInterval(() => { if (!$('#roll')) { cancelAnimationFrame(raf); clearInterval(espera); } }, 1000);
       cineHits.push(espera);
     } else if (sl.k === 'ganador') {
       h = '<div id="win-box" style="width:100%"></div>';
@@ -5158,7 +5254,8 @@ function initScreen() {
 
   function winnerHTML(st) {
     const s = standing(st.results || {});
-    const names = s.top.map(i => `<div class="win-card"><div class="pl-photo">${photoHTML(P[i])}</div><h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
+    // solo el nombre (con foto únicamente si alguien la cargó en datos.js)
+    const names = s.top.map(i => `<div class="win-card ${P[i].foto ? '' : 'sin-foto'}">${P[i].foto ? `<div class="pl-photo">${photoHTML(P[i])}</div>` : ''}<h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
     const extra = s.decided ? `${ptsTxt(s.max)}${s.byTie ? ' · ganó el desempate' : ''}` : `${ptsTxt(s.max)} cada uno · comparten el primer puesto`;
     const medal = { 2: '🥈', 3: '🥉' };
     const rest = s.decided ? finalRanking(st.results || {}).filter(g => g.pos > 1).flatMap(g => g.players.map(i => `<span class="${g.pos <= 3 ? 'pod' : ''}">${g.players.length > 1 ? '⚔️' : (medal[g.pos] || '')} ${g.players.length > 1 ? g.pos + '°–' + (g.pos + g.players.length - 1) + '°' : g.pos + '°'} ${esc(P[i].nombre)} · ${fmtPts(g.score)} pts</span>`)).join('') : '';
@@ -6121,7 +6218,7 @@ function initControl() {
     upd(); revTick = setInterval(upd, 200);
   }
   function revDone() { revPlan = null; clearInterval(revTick); clearTimeout(revealT); $('#rev-toast').hidden = true; }
-  $('#rev-skip').addEventListener('click', () => { if (revPlan && link) { link.send({ type: 'saltar', slide: S.slide }); log('⏩ Salto al tramo final del tema', 'o'); } });
+  $('#rev-skip').addEventListener('click', () => { if (revPlan && link) { link.send({ type: 'saltar', slide: S.slide }); log('⚡ Revelar ahora: el tema salta al golpe de la respuesta', 'o'); } });
   $('#rev-cancel').addEventListener('click', () => {
     if (!revPlan || S.step !== 'redoble') return;
     revDone(); clearLights(); S.step = 'pregunta'; lastLightKey = null; commit();
@@ -6155,15 +6252,16 @@ function initControl() {
     if (!marcado()) { log('⚠️ Antes de revelar marcá quién acertó (o «Nadie»)', 'e'); const c = $('#score-card'); if (c) { c.classList.remove('falta'); void c.offsetWidth; c.classList.add('falta'); c.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
     const fest = +($('#st-fest-ms') ? $('#st-fest-ms').value : 6000);
     S.bucleCal = null;
-    const bk = bucleKeyOf(S), b = bk && TRACKS[bk], a = musNow && musNow.a;
-    if (b && a && a.key === bk && a.d > 0 && Date.now() - musNow.at < 5000) {
-      // estimación con el último dato de la tele (cada 1 s); la tele la corrige apenas recibe la orden
-      let te = a.t + (Date.now() - musNow.at) / 1000 + 0.15;
-      if (te >= b.bucle[1] && te < b.revela) te = b.bucle[0] + (te - b.bucle[1]);   // ya dio la vuelta del bucle
+    const bk = bucleKeyOf(S), b = bk && TRACKS[bk];
+    if (b) {
+      // la tele revela en el golpe del tema; acá solo se estima cuánto falta (la tele lo corrige apenas recibe la orden).
+      // Sin dato reciente de la tele, igual se espera a la tele (antes revelaba seco).
+      const eta = revelaEta();
+      const ms = eta != null && eta > 0 ? eta * 1000 : 8000;
       revPlan = { en: b.revela, total: 0 };
       S.step = 'redoble'; commit();
-      revSchedule((b.revela - te) * 1000, (tensionOf(b) - te) * 1000);
-      log(`✨ Revelar: sale del bucle y la respuesta cae en el segundo ${b.revela} del tema`, 'o');
+      revSchedule(ms, ms - (b.revela - tensionOf(b)) * 1000);
+      log(`✨ Revelar: la respuesta cae en el segundo ${b.revela} del tema`, 'o');
       return;
     }
     const D_ms = S.delayMs || 0;
