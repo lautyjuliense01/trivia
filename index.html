@@ -1345,7 +1345,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v72 · 10/11 23:30';
+const VERSION = 'v73 · 15/11 20:40';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -4804,7 +4804,7 @@ function initScreen() {
     marcasSt = st.marcar && mkLocal && Date.now() - mkLocal.at < 1500 ? mkLocal.t : acentosDe(st);
     if (host) host.marks = host.t0 != null ? marcasSt : null;
     marcarSet(!!st.marcar && sl.k === 'presentador');
-    const reCr = sl.k === 'cuentaReg' && !changed && (st.crRun || 0) !== (cur.crRun || 0);   // "marcar frases": vuelve a arrancar la locución
+    const reCr = (sl.k === 'cuentaReg' || (sl.k === 'cine' && sl.parte === 'avisos')) && !changed && (st.crRun || 0) !== (cur.crRun || 0);   // "marcar frases": vuelve a arrancar la locución
     if (changed || reCr) buildSlide(st, sl);
     updateSlide(st, sl, changed);
     // Superposición del marcador
@@ -4926,9 +4926,38 @@ function initScreen() {
       const envIdx = AVISOS.findIndex(a => avSonido(a) === 'envolvente'), envAt = envIdx < 0 ? CEL - 600 : AV_T0 + AVISOS.slice(0, envIdx).reduce((t, a) => t + avDur(a), 0);
       const parte = sl.parte || 'todo', off = cineOff(sl), conAv = parte !== 'creditos', conCred = parte !== 'avisos';
       const CAT = CRED_AT.map(x => x - off);
-      if (LOCUCION && conAv) cineHits.push(setTimeout(() => {
-        try { locAudio = new Audio(LOCUCION.archivo); locAudio.volume = Math.min(1, (LOCUCION.volumen || 1) * volGain(musicVol) * ajGain('avisos')); locAudio.play().catch(e => log('No se pudo reproducir la locución (' + LOCUCION.archivo + '): ' + e.message, 'e')); locAudio.onerror = () => log('No encuentro la locución: ' + LOCUCION.archivo, 'e'); } catch {}
-      }, AV_T0));
+      // Locución: cada placa entra cuando el AUDIO llega a su segundo (no por reloj de la compu: si el mp3 tarda en arrancar, no se adelantan).
+      // Lo marcado en el celu (🎯 Marcar las placas) manda sobre datos.js. Marcando: arranca enseguida y cada placa sale al tocar.
+      const NLOC = LOCUCION && conAv ? LOCUCION.placas.length : 0;
+      if (NLOC) {
+        const mk = (st.crEn && st.crEn.avisos) || null, marcas = st.crMarcar ? [] : null;
+        const pl = LOCUCION.placas.map((p, k) => ({ ...p, en: mk && mk[k] != null ? mk[k] : p.en }));
+        let empezo = false;
+        const reloj = () => locAudio && empezo ? locAudio.currentTime : -1;
+        cuentaRun = { slide: st.slide, reloj, marcas, pl, cfg: 'avisos' };
+        cineHits.push(setTimeout(() => {
+          try { locAudio = new Audio(LOCUCION.archivo); locAudio.volume = Math.min(1, (LOCUCION.volumen || 1) * volGain(musicVol) * ajGain('avisos'));
+            locAudio.addEventListener('playing', () => { empezo = true; }, { once: true });
+            locAudio.play().catch(e => { log('No se pudo reproducir la locución (' + LOCUCION.archivo + '): ' + e.message, 'e'); });
+            locAudio.onerror = () => log('No encuentro la locución: ' + LOCUCION.archivo, 'e'); } catch {}
+        }, st.crMarcar ? 300 : AV_T0));
+        let activo = -1;
+        const tick = setInterval(() => {
+          const t = reloj(); if (t < 0) return;
+          let i = -1;
+          if (marcas) i = marcas.length - 1;   // marcando: sale la que acabás de tocar
+          else pl.forEach((p, k) => { if (t >= p.en - 0.05) i = k; });
+          if (i === activo || i < 0) return;
+          const el = stage.querySelector(`.av-card.lc[data-k="${i}"]`); if (!el) return;
+          const fin = pl[i + 1] ? pl[i + 1].en : (pl[i].hasta || pl[i].en + 4), dur = Math.max(1500, (fin - pl[i].en) * 1000);
+          if (activo >= 0) { const prev = stage.querySelector(`.av-card.lc[data-k="${activo}"]`); if (prev) { prev.style.animation = 'none'; prev.style.opacity = '0'; } }
+          el.style.opacity = ''; el.style.animation = 'none'; void el.offsetWidth;
+          if (marcas) el.style.opacity = '1';   // marcando: queda fija hasta el próximo toque
+          else el.style.animation = `cardInOut ${dur}ms linear both`;
+          activo = i;
+        }, 40);
+        cineHits.push(tick);
+      }
       h = `<div class="cine"><div class="cine-dim"></div><div class="cine-black" style="${conAv ? `animation-delay:${envAt}ms` : 'animation:none;opacity:1'}"></div>
         ${!conAv ? '' : (() => { let t = AV_T0; return AVISOS.map((a, idx) => {
           const d = avDur(a), at = t, son = avSonido(a);
@@ -4939,8 +4968,9 @@ function initScreen() {
             cineHits.push(setTimeout(() => FX('apertura', () => swellEnvolvente(hitAt - at)), at));
             cineHits.push(setTimeout(() => { const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }, hitAt + 30));
           } else {
-            if (a.estilo === 'legal') html = `<div class="cine-card av-card" style="animation-delay:${at}ms;animation-duration:${d - 200}ms"><div class="av legal">${avIconHTML(a.icono || 'balanza')}<div class="av-eye">Aviso legal</div><div class="av-legal">${esc(a.texto || '')}</div></div></div>`;
-            else html = `<div class="cine-card av-card" style="animation-delay:${at}ms;animation-duration:${d - 200}ms"><div class="av ${a.icono ? '' : 'solo'}">${avIconHTML(a.icono)}<div class="av-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="av-div"></div><div class="av-s">${esc(a.sub)}</div>` : ''}</div></div>`;
+            const lc = idx < NLOC, sty = lc ? 'animation:none;opacity:0' : `animation-delay:${at}ms;animation-duration:${d - 200}ms`;
+            if (a.estilo === 'legal') html = `<div class="cine-card av-card${lc ? ' lc' : ''}" data-k="${idx}" style="${sty}"><div class="av legal">${avIconHTML(a.icono || 'balanza')}<div class="av-eye">Aviso legal</div><div class="av-legal">${esc(a.texto || '')}</div></div></div>`;
+            else html = `<div class="cine-card av-card${lc ? ' lc' : ''}" data-k="${idx}" style="${sty}"><div class="av ${a.icono ? '' : 'solo'}">${avIconHTML(a.icono)}<div class="av-t">${esc(a.texto || '')}</div>${a.sub ? `<div class="av-div"></div><div class="av-s">${esc(a.sub)}</div>` : ''}</div></div>`;
             if (son === 'grave') cineHits.push(setTimeout(() => FX('apertura', () => boomGrave(idx === AVISOS.findIndex(x => avSonido(x) === 'grave') ? 1 : 0.75)), at + 120));
             else if (son) cineHits.push(setTimeout(() => playFile(son), at + 120));
           }
@@ -6123,7 +6153,8 @@ function initControl() {
     const m = momentOf(S);
     lightsFor(m);
     // La apertura de cine avanza sola a la fanfarria cuando terminan los créditos
-    if (SCRIPT[S.slide].k === 'cine' || SCRIPT[S.slide].k === 'cuentaReg') { if (autoKey !== S.slide + ':' + (S.crRun || 0)) { autoKey = S.slide + ':' + (S.crRun || 0); clearTimeout(autoT); const k0 = S.slide, fin = SCRIPT[S.slide].k === 'cuentaReg' ? locuMs(locuCfg(SCRIPT[S.slide])) + (S.crMarcar ? 1500 - locuSil(locuCfg(SCRIPT[S.slide])) + 1000 : 1500) : cineFin(SCRIPT[S.slide]) + 300;   // la cuenta: lo dispara el aviso de la tele (cuentaFin); esto es por si no llega
+    if (SCRIPT[S.slide].k === 'cine' && S.crMarcar) { clearTimeout(autoT); autoKey = null; }   // marcando las placas: no pasa sola al corto
+    else if (SCRIPT[S.slide].k === 'cine' || SCRIPT[S.slide].k === 'cuentaReg') { if (autoKey !== S.slide + ':' + (S.crRun || 0)) { autoKey = S.slide + ':' + (S.crRun || 0); clearTimeout(autoT); const k0 = S.slide, fin = SCRIPT[S.slide].k === 'cuentaReg' ? locuMs(locuCfg(SCRIPT[S.slide])) + (S.crMarcar ? 1500 - locuSil(locuCfg(SCRIPT[S.slide])) + 1000 : 1500) : cineFin(SCRIPT[S.slide]) + 300;   // la cuenta: lo dispara el aviso de la tele (cuentaFin); esto es por si no llega
       const sq = seqAhora(), av = ((PREVIA && PREVIA.avisoSeg) || 8) * 1000;
       if (sq && sq.phase === 'apertura') autoT = setTimeout(() => {   // con la apertura en automático: aviso con cuenta regresiva y freno
         if (S.slide !== k0) return;
@@ -6153,6 +6184,7 @@ function initControl() {
   }
   function goSlide(i, auto = false) {
     i = Math.max(0, Math.min(SCRIPT.length - 1, i));
+    if (i !== S.slide) S.crMarcar = false;   // marcar frases/placas es solo para la pantalla en la que se empezó
     if (SCRIPT[i].k === 'enjuego' && S.volBase == null) { S.volBase = S.vol; volA(ENJ_VOL[0], 1500); }
     else if (SCRIPT[i].k !== 'enjuego' && S.volBase != null) { volA(S.volBase, 2500); S.volBase = null; }
     if (typeof seq !== 'undefined' && seq) cancelarPaso();   // tocar Siguiente en automático solo adelanta: el resto sigue solo
@@ -6464,7 +6496,16 @@ function initControl() {
           <button class="btn ghost small" id="cr-reset" style="margin-top:6px">↩ Volver a los de datos.js</button>` : ''}`;
     }
     else if (sl.k === 'corto') h = `${CORTO.local && cortoTele === false ? '<p class="warn-big">⚠️ La tele no tiene elegido el video: si llega acá, se saltea.</p>' : ''}<div class="now-title">🎞️ ${esc(CORTO.nombre || 'Cortometraje')}</div><p class="muted">A pantalla completa, sin controles. Cuando termina sigue sola con la intro de estudio y los créditos.</p><p style="margin:6px 0">⏱ <b id="corto-prog">${cortoProg && cortoProg.d ? `${mmss(cortoProg.t)} de ${mmss(cortoProg.d)}` : 'arrancando…'}</b></p>`;
-    else if (sl.k === 'cine' && sl.parte === 'avisos') h = `<div class="now-title">Apertura de cine: avisos</div><p class="muted">Los avisos de sala mientras la luz baja hasta negro. Pasa sola al cortometraje en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
+    else if (sl.k === 'cine' && sl.parte === 'avisos') {
+      const pl = LOCUCION ? LOCUCION.placas : [], mk = (S.crEn && S.crEn.avisos) || [];
+      h = `<div class="now-title">Apertura de cine: avisos</div><p class="muted">Los avisos de sala mientras la luz baja hasta negro.${S.crMarcar ? '' : ` Pasa sola al cortometraje en ${Math.round(cineFin(sl) / 1000)} s.`}</p>
+        ${!pl.length ? '' : `<button class="pbtn ${S.crMarcar ? 'on' : ''}" id="cr-mk" style="margin-top:10px">${S.crMarcar ? '✔ Terminar de marcar' : '🎯 Marcar las placas (ensayo)'}</button>
+        ${S.crMarcar ? `<p class="muted" style="margin-top:6px">La locución arranca de nuevo (sin el silencio) y no pasa sola al corto. Tocá el botón <b>justo cuando la voz empieza cada concepto</b>, en orden: la placa sale en la tele en ese momento. Para repetir: ↻.</p>
+          <div class="row" style="gap:8px;margin-top:8px"><button class="btn" id="cr-tap" style="flex:1;padding:22px 0;font-size:19px;touch-action:manipulation">💥 ${mk.length < pl.length ? 'Ahora: ' + esc((pl[mk.length].texto || '').slice(0, 40)) : 'Listo, todas marcadas'}</button><button class="btn ghost" id="cr-again" style="flex:0 0 auto">↻</button></div>` : ''}
+        ${mk.length ? `<ol class="muted" style="margin:10px 0 0 18px;font-size:13px">${pl.map((p, i) => `<li>${esc((p.texto || '').slice(0, 40))} · <b>${mk[i] != null ? mk[i].toFixed(2) : p.en} s</b></li>`).join('')}</ol>
+          <p class="muted" style="margin-top:6px;font-size:12.5px">Quedan guardadas en este celu. Para dejarlas fijas, copiá las calibraciones (⚙️) y pasámelas, o en datos.js reemplazá los <code>en:</code> de <code>apertura.locucion.placas</code> por: <code>${mk.map(x => x.toFixed(2)).join(', ')}</code></p>
+          <button class="btn ghost small" id="cr-reset" style="margin-top:6px">↩ Volver a los de datos.js</button>` : ''}`}`;
+    }
     else if (sl.k === 'cine' && sl.parte === 'creditos') h = `<div class="now-title">Apertura de cine: estudio y créditos</div><p class="muted">Desde negro: la intro de estudio y los créditos con la música de cine. Pasa sola a la fanfarria en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
     else if (sl.k === 'cine') h = `<div class="now-title">Apertura de cine</div><p class="muted">"Apaguen sus celulares" mientras la luz baja hasta negro, y ${CREDITS.length} créditos con un pulso azul en el techo. Pasa sola a la fanfarria en ${Math.round(cineFin(sl) / 1000)} s.</p>`;
     else if (sl.k === 'intro') h = `<div class="now-title">Intro de película · ${esc(TRACKS.intro ? TRACKS.intro.name : 'sin música')}</div><p class="muted">Dura unos 10 s con la fanfarria. Las luces arrancan en tensión y pasan a festejo cuando aparece el título.</p>`;
@@ -6581,7 +6622,7 @@ function initControl() {
     const bqr = body.querySelector('#bq-reset'); if (bqr) bqr.addEventListener('click', () => { const bk = bucleKeyOf(S); if (S.bucleAj) { const n = { ...S.bucleAj }; delete n[bk]; S.bucleAj = n; } commit(); });
     const pp = body.querySelector('#prueba-previa'); if (pp) pp.addEventListener('change', () => { try { localStorage.setItem(STORE_PFX + 'pruebaPrevia', pp.checked ? '1' : '0'); } catch {} log(pp.checked ? `🧪 Prueba: la previa arranca en ${mmss(PRUEBA_DESDE)}` : '🧪 Prueba desactivada: la previa arranca desde el principio', 'o'); renderControl(); });
     const sa = body.querySelector('#seq-abort'); if (sa) sa.addEventListener('click', () => abortSeq());
-    const crCf = () => SCRIPT[S.slide].cfg || 'cuenta';
+    const crCf = () => SCRIPT[S.slide].k === 'cine' ? 'avisos' : (SCRIPT[S.slide].cfg || 'cuenta');
     const crm = body.querySelector('#cr-mk'); if (crm) crm.addEventListener('click', () => { S.crMarcar = !S.crMarcar; if (S.crMarcar) { S.crEn = { ...(S.crEn || {}), [crCf()]: [] }; S.crRun = Date.now(); } commit(); });   // al empezar a marcar, la locución arranca de nuevo
     const cra = body.querySelector('#cr-again'); if (cra) cra.addEventListener('click', () => { S.crEn = { ...(S.crEn || {}), [crCf()]: [] }; S.crRun = Date.now(); commit(); });
     const crt = body.querySelector('#cr-tap'); if (crt) crt.addEventListener('click', () => { if (link) link.send({ type: 'crMarca', demora: 0.3 }); });
