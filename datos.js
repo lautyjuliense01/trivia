@@ -44,20 +44,17 @@ window.TRIVIA = {
     // Si está, reemplaza a los avisos de abajo. Sin archivo = avisos mudos.
     locucion: {
       archivo: 'avisos.mp3', volumen: 1,
-      placas: [
-        { en: 0,    texto: 'Te damos la bienvenida', sub: 'a esta sala' },
-        { en: 2.45, texto: 'La función está por comenzar' },
-        { en: 5.4,  icono: 'butaca',   texto: 'Tomá asiento' },
-        { en: 10.25, icono: 'mudo',    texto: 'Silencio en la sala' },
-        { en: 16.65, icono: 'celular', texto: 'Apagá tu celular' },
-        { en: 21.75, icono: 'pantalla', texto: 'Sin dispositivos durante los desafíos' },
-        { en: 27.7, icono: 'salida',   texto: 'Salida de emergencia' },
-        { en: 31.8, icono: 'salida',   texto: 'En caso de derrota desastrosa' },
-        { en: 36.45, icono: 'camara',  texto: 'Fotos permitidas', sub: 'con discreción' },
-        { en: 40.35, icono: 'comida',  texto: 'Bebidas y comida', sub: 'durante toda la función' },
-        { en: 45.7, estilo: 'legal',   texto: 'La organización no se responsabiliza por daños ocasionados a reputaciones ni amistades como consecuencia de los resultados de esta competencia.' },
-        { en: 54.25, texto: 'Te deseamos una excelente función' },
-        { en: 57.4, texto: 'El Ticket Dorado', sub: 'comienza en instantes', hasta: 62.5 },
+      placas: [   // una por concepto: ícono y título; la letra chica va completa. en = segundo en que arranca la frase
+        { en: 0,     texto: 'Bienvenidos' },                                     // Buenas noches · bienvenida a esta sala
+        { en: 5.4,   icono: 'butaca',   texto: 'Tomá asiento' },                 // la función está por comenzar · tomá asiento
+        { en: 14.3,  icono: 'mudo',     texto: 'Silencio' },                     // silencio durante las presentaciones
+        { en: 21.35, icono: 'celular',  texto: 'Sin dispositivos' },             // silenciá tu celular · no consultar dispositivos
+        { en: 32.15, icono: 'salida',   texto: 'Salida de emergencia' },         // … si no sumás ningún punto
+        { en: 40.6,  icono: 'camara',   texto: 'Fotos con discreción' },
+        { en: 44.55, icono: 'comida',   texto: 'Bebidas y comida' },             // … provisiones a mano
+        { en: 54.45, icono: 'balanza',  texto: 'Decisiones inapelables' },       // … no discutir, podrían restarte puntos
+        { en: 64.2,  estilo: 'legal',   texto: 'La organización no se responsabiliza por daños ocasionados a la reputación a causa de los resultados.' },
+        { en: 70.95, texto: 'El Ticket Dorado', sub: 'comienza en instantes', hasta: 79.5 },   // te deseamos una excelente función · El Ticket Dorado… comienza en instantes
       ],
     },
     // Cuenta regresiva con voz, entre los avisos y el cortometraje. Segundos del mp3.
@@ -303,8 +300,9 @@ window.TRIVIA = {
      La pantalla se tiñe del mismo color y se oscurece cuando la luz baja. */
   looks: {
     // transicion: segundos que tarda la lámpara en llegar a este look (fundido suave). Sin transicion = cambio inmediato.
-    sala:      { tipo: 'blanco', brillo: 60, calidez: 20, transicion: 2, respaldo: 'normal' },
-    salaInicio: { tipo: 'blanco', brillo: 60, calidez: 20, transicion: 2, respaldo: 'normal', tira: { apagar: true } },   // llegada: techo de sala, tira apagada
+    // calidez = el "tono" de la app de la lámpara (misma escala, 0 cálido · 100 frío): 70 como en la cena
+    sala:      { tipo: 'blanco', brillo: 60, calidez: 70, transicion: 2, respaldo: 'normal' },
+    salaInicio: { tipo: 'blanco', brillo: 60, calidez: 70, transicion: 2, respaldo: 'normal', tira: { apagar: true } },   // llegada: techo de sala, tira apagada
     ambiente:  { tipo: 'color', h: 30, s: 80, brillo: 16, transicion: 4, respaldo: 'normal' },          // previa: cálido y tenue
     oscuro:    { tipo: 'color', h: 225, s: 90, brillo: 2, respaldo: 'tension' },     // casi negro azulado: antes de un golpe
     escenario: { tipo: 'color', h: 230, s: 75, brillo: 12, transicion: 0.8, respaldo: 'normal' },     // azul tenue de presentación
