@@ -410,7 +410,9 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
   background-size:180px 160px,110px 130px;background-position:0 0,40px 60px;animation:drift 60s linear infinite;opacity:.45}
 .dust.d2{background-size:260px 240px,150px 170px;animation-duration:95s;animation-direction:reverse;opacity:.3}
 @keyframes drift{to{transform:translate(180px,-160px)}}
-.previa-code{position:absolute;right:24px;bottom:20px;color:#6d6252;font-size:14px;letter-spacing:.1em}
+.pv-cv{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;animation:fadeIn 4s ease forwards}
+.pv-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 50%,transparent 45%,rgba(0,0,0,.55) 78%,#000 100%)}
+.previa-code{position:absolute;z-index:2;right:24px;bottom:20px;color:#6d6252;font-size:14px;letter-spacing:.1em}
 .previa-code b{color:#a8997f;font-size:20px;letter-spacing:.25em;margin-left:6px}
 .v-pt{display:flex;flex-direction:column;align-items:center}
 .pt-pre{font-family:Lobster,cursive;font-size:clamp(34px,4vw,60px);color:#f4ead8;opacity:0;animation:fadeIn 1.2s .4s forwards}
@@ -1377,7 +1379,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v77 · 16/11 00:30';
+const VERSION = 'v78 · 16/11 00:50';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -3399,6 +3401,80 @@ const mmssD = t => Math.floor(t / 60) + ':' + (t % 60).toFixed(1).padStart(4, '0
 const tensionOf = b => (b.tension != null ? b.tension : (b.bucle ? b.bucle[1] : b.revela - 6));
 
 const FOTO_ESTILO = (D.fotos && D.fotos.estilo) || 'duotono';
+/* Fondo de la espera (previa): seda dorada en movimiento, rayos lentos desde el centro, anillos que laten y polvo de luz.
+   Dibujado en canvas a la resolución real de la tele (sin gradientes en bandas ni pixelado). Se apaga solo al salir de la pantalla. */
+function previaFondo(cv) {
+  const ctx = cv.getContext('2d'); if (!ctx) return;
+  let W = 0, H = 0, dpr = 1;
+  const fit = () => { dpr = Math.min(2, window.devicePixelRatio || 1); W = cv.clientWidth || innerWidth; H = cv.clientHeight || innerHeight; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); };
+  fit(); addEventListener('resize', fit);
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const motas = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random(), r: rnd(1.2, 7), v: rnd(.004, .016), f: rnd(.3, 1.3), p: rnd(0, 6.28), a: rnd(.12, .55) }));
+  const cintas = [   // y base, amplitud, velocidad, fase, cantidad de hilos, separación, brillo
+    { y: .30, a: .13, v: .11, p: 0.0, n: 34, s: .0042, o: .075 },
+    { y: .52, a: .17, v: -.08, p: 2.1, n: 46, s: .0048, o: .09 },
+    { y: .72, a: .12, v: .14, p: 4.0, n: 30, s: .0040, o: .065 },
+  ];
+  let last = 0;
+  const frame = ms => {
+    if (!cv.isConnected) { removeEventListener('resize', fit); return; }
+    requestAnimationFrame(frame);
+    if (ms - last < 30) return; last = ms;   // ~30 cuadros por segundo: fluido y liviano
+    const t = ms / 1000, cx = W / 2, cy = H / 2, R = Math.hypot(W, H) / 2;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    bg.addColorStop(0, '#2a1503'); bg.addColorStop(.45, '#120803'); bg.addColorStop(1, '#030100');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    // rayos: dos abanicos que giran lento en sentidos opuestos
+    [[18, .020, .055], [11, -.013, .04]].forEach(([n, vel, op], q) => {
+      for (let i = 0; i < n; i++) {
+        const a = t * vel + i * 6.2832 / n + q, w = 6.2832 / n * (.22 + .12 * Math.sin(t * .2 + i * 1.7 + q));
+        const g = ctx.createRadialGradient(cx, cy, R * .06, cx, cy, R);
+        g.addColorStop(0, `rgba(255,214,140,${op * 1.6})`); g.addColorStop(.5, `rgba(214,150,60,${op})`); g.addColorStop(1, 'rgba(120,70,10,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + R * Math.cos(a - w), cy + R * Math.sin(a - w)); ctx.lineTo(cx + R * Math.cos(a + w), cy + R * Math.sin(a + w)); ctx.closePath(); ctx.fill();
+      }
+    });
+    // seda: cintas de hilos dorados que ondulan
+    ctx.lineCap = 'round';
+    cintas.forEach(c => {
+      for (let k = 0; k < c.n; k++) {
+        const u = k / (c.n - 1), off = (u - .5) * c.n * c.s, br = Math.sin(u * Math.PI);
+        ctx.strokeStyle = `rgba(${(255 - 40 * u) | 0},${(196 + 30 * br) | 0},${(96 + 60 * br) | 0},${(c.o * (.35 + .65 * br)).toFixed(3)})`;
+        ctx.lineWidth = 1 + 1.6 * br;
+        ctx.beginPath();
+        for (let x = -20; x <= W + 20; x += 14) {
+          const X = x / W, ph = t * c.v + c.p;
+          const y = (c.y + off * (1 + .8 * Math.sin(X * 3.1 + ph * 1.3))
+            + c.a * Math.sin(X * 2.4 + ph + u * .9) * .6 + c.a * .4 * Math.sin(X * 5.3 - ph * 1.7 + u * 1.6)) * H;
+          x === -20 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    });
+    // anillos que salen del centro, como un latido lento
+    for (let i = 0; i < 4; i++) {
+      const p = ((t / 11 + i / 4) % 1), r = R * (.05 + .85 * p);
+      ctx.strokeStyle = `rgba(255,214,150,${(.22 * Math.sin(p * Math.PI) ** 2).toFixed(3)})`; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.stroke();
+    }
+    // corazón de luz
+    const pul = .85 + .15 * Math.sin(t * .7), co = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * .42 * pul);
+    co.addColorStop(0, 'rgba(255,226,170,.5)'); co.addColorStop(.25, 'rgba(240,170,70,.22)'); co.addColorStop(1, 'rgba(120,60,0,0)');
+    ctx.fillStyle = co; ctx.fillRect(0, 0, W, H);
+    // polvo de luz que sube y titila
+    motas.forEach(m => {
+      m.y -= m.v * .03; if (m.y < -.05) { m.y = 1.05; m.x = Math.random(); }
+      const x = (m.x + .02 * Math.sin(t * m.f + m.p)) * W, y = m.y * H, al = m.a * (.55 + .45 * Math.sin(t * m.f * 2 + m.p));
+      const g = ctx.createRadialGradient(x, y, 0, x, y, m.r * 3);
+      g.addColorStop(0, `rgba(255,236,190,${al.toFixed(3)})`); g.addColorStop(.35, `rgba(255,200,110,${(al * .45).toFixed(3)})`); g.addColorStop(1, 'rgba(255,180,80,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, m.r * 3, 0, 6.2832); ctx.fill();
+    });
+  };
+  requestAnimationFrame(frame);
+}
 function photoHTML(p) {
   const ini = esc((p.nombre || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase());
   return p.foto ? `<img src="${esc(p.foto)}" alt="" data-ini="${ini}" class="foto-${FOTO_ESTILO}">` : `<span class="ini">${ini}</span>`;
@@ -4964,7 +5040,8 @@ function initScreen() {
     } else if (sl.k === 'previa') {
       const modo = st.previaModo || 'apagado';
       const fondo = modo === 'apagado' ? '' : modo === 'polvo' ? '<div class="dust"></div><div class="dust d2"></div>'
-        : '<div class="hypno"></div><div class="hypno h2"></div><div class="hypno-core"></div><div class="hring"></div><div class="hring r2"></div><div class="hring r3"></div>';
+        : '<canvas class="pv-cv" id="pv-cv"></canvas><div class="pv-vig"></div>';
+      if (modo !== 'apagado' && modo !== 'polvo') setTimeout(() => { const c = stage.querySelector('#pv-cv'); if (c) previaFondo(c); }, 0);
       h = `<div class="previa">${fondo}
            <div class="previa-code" id="previa-code" ${curRev ? 'hidden' : ''}>Código para el control <b>${code}</b></div></div>`;
     } else if (sl.k === 'titulo') {
