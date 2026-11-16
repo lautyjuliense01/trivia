@@ -634,14 +634,14 @@ body.espejo .status-chip,body.espejo .yt-wrap,body.espejo #scr-sound,body.espejo
 .nz-wall::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,.28) 0 2px,transparent 2px 96px);
   -webkit-mask:repeating-linear-gradient(0deg,#000 0 44px,transparent 44px 88px);mask:repeating-linear-gradient(0deg,#000 0 44px,transparent 44px 88px)}
 .nz-spill{position:absolute;inset:0;opacity:0;transition:opacity .06s linear;
-  background:radial-gradient(ellipse 30% 26% at 50% 30%,rgba(60,230,255,.20),transparent 70%),radial-gradient(ellipse 48% 30% at 50% 47%,rgba(255,60,210,.24),transparent 72%),radial-gradient(ellipse 40% 18% at 50% 62%,rgba(60,230,255,.14),transparent 70%)}
+  background:radial-gradient(ellipse 30% 26% at 50% 30%,rgba(60,230,255,.20),transparent 70%),radial-gradient(ellipse 48% 30% at 50% 47%,rgba(255,80,20,.24),transparent 72%),radial-gradient(ellipse 40% 18% at 50% 62%,rgba(60,230,255,.14),transparent 70%)}
 .nz-sign{position:relative;display:flex;flex-direction:column;align-items:center;gap:0;transform:translateY(-3vh)}
 .nz-ico{width:clamp(150px,17vw,260px);height:auto;overflow:visible}
 .nz-ico path{fill:none;stroke:rgba(140,180,190,.16);stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;transition:stroke .04s}
 .nz-ico.on path{stroke:#d8feff}
 .nz-ico.on{filter:drop-shadow(0 0 3px #7ff9ff) drop-shadow(0 0 10px #18e6ff) drop-shadow(0 0 28px rgba(0,190,255,.75))}
-.nz-script{font-family:'Yellowtail',cursive;font-size:clamp(70px,9.6vw,150px);line-height:1;margin-top:-.08em;padding:0 .2em;color:rgba(255,170,235,.10);transform:rotate(-4deg)}
-.nz-script.on{color:#fff1fb;text-shadow:0 0 3px #fff,0 0 9px #ff5ad9,0 0 20px #ff2bcc,0 0 42px #ff2bcc,0 0 80px rgba(255,30,190,.55)}
+.nz-script{font-family:'Yellowtail',cursive;font-size:clamp(70px,9.6vw,150px);line-height:1;margin-top:-.08em;padding:0 .2em;color:rgba(255,160,120,.10);transform:rotate(-4deg)}
+.nz-script.on{color:#fff3ea;text-shadow:0 0 3px #fff,0 0 9px #ff7a3a,0 0 20px #ff4f1a,0 0 42px #ff3d0d,0 0 80px rgba(255,60,10,.55)}
 .nz-block{font-family:'Montserrat',sans-serif;font-weight:800;font-size:clamp(30px,4vw,66px);letter-spacing:.55em;margin:.12em 0 0 .55em;
   color:transparent;-webkit-text-stroke:2.5px rgba(140,190,200,.16)}
 .nz-block.on{-webkit-text-stroke:2.5px #d8feff;filter:drop-shadow(0 0 3px #7ff9ff) drop-shadow(0 0 10px #18e6ff) drop-shadow(0 0 26px rgba(0,190,255,.7))}
@@ -944,6 +944,11 @@ body.telon-gl .trav,body.telon-gl .intro-valance{display:none}
 @keyframes dustUp{from{transform:translateY(0);opacity:0}15%{opacity:1}to{transform:translateY(-105vh);opacity:0}}
 /* v31: reglas en tarjetas */
 .v-rules2{width:min(1240px,94vw)}
+.nota-box{margin-top:12px;border-top:1px dashed rgba(232,190,110,.25);padding-top:10px}
+.nota-h{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:6px;display:flex;justify-content:space-between}
+.nota-ok{font-weight:500;opacity:.7}
+#nota-txt{width:100%;min-height:70px;resize:vertical;font:inherit;font-size:15px;line-height:1.4;background:rgba(0,0,0,.25);color:inherit;border:1px solid rgba(232,190,110,.3);border-radius:8px;padding:8px}
+.nav-sub{display:block;font-size:.62em;font-weight:500;opacity:.8;margin-top:2px}
 .rl-eyebrow{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.5em;padding-left:.5em;text-transform:uppercase;color:#e8d3a6;font-size:clamp(16px,1.9vw,30px);margin-bottom:clamp(16px,3vh,34px)}
 .rl-row{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:clamp(10px,1.6vw,24px);perspective:1600px}
 .rl-card{position:relative;aspect-ratio:3/5.1;opacity:0;animation:fadeIn .7s forwards}
@@ -1199,6 +1204,7 @@ body{background:
   <div class="card">
     <div class="now-label" id="now-label"></div>
     <div id="now-body"></div>
+    <div id="nota-box" class="nota-box"><div class="nota-h">📝 Aclaraciones <span class="nota-ok" id="nota-ok"></span></div><textarea id="nota-txt" rows="3" placeholder="Lo que quieras tener a mano en este momento: qué decir, a quién mirar, qué no olvidar…"></textarea><button class="btn ghost small" id="nota-reset" hidden>↩ Volver al texto original</button></div>
   </div>
 
   <details class="card" id="ajuste-card">
@@ -1313,9 +1319,10 @@ body{background:
   </details>
 
   <details class="card" id="calib-card">
-    <summary>🎚️ Calibraciones (volumen por pista y copiar todo)</summary>
-    <p class="muted" style="font-size:13px">Quedan guardadas en este celu (no se borran al reiniciar la partida). Para dejarlas fijas en datos.js, copialas y pasámelas.</p>
-    <button class="btn" id="calib-copy" style="width:100%;margin:8px 0">📋 Copiar todas las calibraciones</button>
+    <summary>🎚️ Calibraciones y exportar todo</summary>
+    <p class="muted" style="font-size:13px">Todo lo que editás en el celu (volúmenes, ritmo, tiempos de placas y frases, bucles, demora, volumen general y aclaraciones) queda guardado acá y no se borra al reiniciar la partida. Para dejarlo fijo en datos.js, exportalo y pasámelo.</p>
+    <button class="btn" id="calib-copy" style="width:100%;margin:8px 0">📋 Copiar todo lo editado</button>
+    <button class="btn ghost" id="calib-dl" style="width:100%;margin:0 0 8px">⬇️ Descargar todo en un archivo</button>
     <textarea id="calib-txt" readonly hidden style="width:100%;height:120px;font-size:11px"></textarea>
     <div class="now-title" style="font-size:15px;margin-top:10px">Volumen de cada pista</div>
     <p class="muted" style="font-size:12.5px">Con la pista sonando (♪), subila o bajala hasta que quede pareja con las demás. Cada toque es 1 dB.</p>
@@ -1345,7 +1352,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v73 · 15/11 20:40';
+const VERSION = 'v74 · 15/11 22:30';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -1891,7 +1898,8 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
       try {
         const tr = current && tracks[current], b = tr && tr.bucle; if (!b || !ready) return;
         const pT = player.getCurrentTime() + 0.1;
-        if (tr.salida && pT >= b[0] && pT <= tr.salida) player.seekTo(pT + (b[1] - b[0]), true);
+        if (tr.salto != null && pT < tr.salto) player.seekTo(tr.salto, true);
+        else if (tr.salida && pT >= b[0] && pT <= tr.salida) player.seekTo(pT + (b[1] - b[0]), true);
         else if (tr.periodo && pT >= b[0]) { const P = tr.periodo, dest = b[1] - P + ((pT - b[0]) % P + P) % P; if (dest > pT + 0.5) player.seekTo(dest, true); }
       } catch {}
       return;
@@ -1899,7 +1907,14 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     fReanchor(); F.loop = false; try { F.src.loop = false; } catch {}
     // salida: si suena el tramo que se repite idéntico más adelante, salta a ese mismo punto de la segunda pasada (al sample: no se nota)
     const tr = tracks[F.key], b = tr.bucle;
-    if (b && tr.salida) {
+    if (b && tr.salto != null) {   // salto: de la tensión al tramo que desemboca en el golpe de la respuesta, en el próximo pulso del bucle
+      const ctx = audioCtx(), pT = fPos(), half = tr.periodo ? tr.periodo / 2 : 0;
+      if (pT < tr.salto - 0.5) {
+        let wait = 0.06;
+        if (half && pT >= b[0]) { const ph = ((pT - b[0]) % half + half) % half; wait = (half - ph) / F.rate; if (wait < 0.15) wait += half / F.rate; }
+        fJump(ctx.currentTime + wait, tr.salto, 0.12);
+      }
+    } else if (b && tr.salida) {
       const ctx = audioCtx(), T = ctx.currentTime + 0.06, pT = fPos() + 0.06 * F.rate;
       if (pT >= b[0] && pT <= tr.salida) fJump(T, pT + (b[1] - b[0]));
     } else if (b && tr.periodo) {   // tema que se repite cada "periodo": salta al mismo punto de la última vuelta (así la respuesta llega enseguida)
@@ -1909,13 +1924,13 @@ function createMusic(containerId, tracks, onLabel, onMutedBlock, onEnded, conApo
     }
   }
   // empalme exacto: el tema nuevo arranca en T (tiempo del audio) desde "offset" y el viejo se corta ahí mismo, con un fundido de 15 ms
-  function fJump(T, offset) {
+  function fJump(T, offset, fade = 0.015) {
     const ctx = audioCtx(), f = F;
     const src = ctx.createBufferSource(), g = ctx.createGain(), target = f.g.gain.value;
     src.buffer = f.buf; src.loop = false; src.playbackRate.value = f.rate;
     src.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(target, T + 0.015);
-    try { f.g.gain.setValueAtTime(target, T); f.g.gain.linearRampToValueAtTime(0, T + 0.015); f.src.stop(T + 0.03); } catch {}
+    g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(target, T + fade);
+    try { f.g.gain.setValueAtTime(target, T); f.g.gain.linearRampToValueAtTime(0, T + fade); f.src.stop(T + fade + 0.02); } catch {}
     f.killed = true;
     src.start(T, offset);
     const nf = F = { key: f.key, src, g, buf: f.buf, anchorCtx: T, anchorPos: offset, loop: false, rate: f.rate, paused: false };
@@ -2195,7 +2210,8 @@ const CUENTA = LOCUS.cuenta;
 const locuCfg = sl => (sl && sl.k === 'cuentaReg' && LOCUS[sl.cfg || 'cuenta']) || CUENTA;
 const locuVel = c => (c && +c.velocidad > 0 ? +c.velocidad : 1);
 const locuSil = c => c ? Math.round((c.silencioAntes != null ? c.silencioAntes : 2) * 1000) : 0;   // negro y silencio antes de que arranque la voz
-const locuMs = c => c ? locuSil(c) + Math.round(((c.hasta || 55) - (c.desde || 0)) * 1000 / locuVel(c)) + 300 : 0;   // local: el video se elige de los archivos de la compu de la tele
+const locuSalto = c => c && Array.isArray(c.salto) && c.salto.length === 2 && c.salto[1] > c.salto[0] ? { de: +c.salto[0], a: +c.salto[1] } : null;   // [de, a]: al llegar a «de» salta a «a»
+const locuMs = c => c ? locuSil(c) + Math.round(((c.hasta || 55) - (c.desde || 0) - (locuSalto(c) ? locuSalto(c).a - locuSalto(c).de : 0)) * 1000 / locuVel(c)) + 300 : 0;   // local: el video se elige de los archivos de la compu de la tele
 const cineOff = sl => (sl && sl.parte === 'creditos' ? CEL - 1200 : 0);                     // en la parte de créditos todo arranca a los 0,8 s
 const cineFin = sl => (sl && sl.parte === 'avisos' ? CEL + 700 : CRED_END - cineOff(sl));   // ms hasta que pasa sola a lo siguiente
 /* ================= Telón y reflectores en WebGL =================
@@ -2891,14 +2907,15 @@ function hwSize(texto) {
 }
 /* Productora chica (antes del corto): cartel de neón que se enciende a los tirones, con zumbido y chasquidos */
 function neonHTML(c) {
-  const words = (c.estudio || '').trim().split(/\s+/), top = words.length > 1 ? words.slice(0, -1).join(' ') : words[0] || '', bot = words.length > 1 ? words[words.length - 1] : '';
+  // la primera palabra va en letra cursiva (Bioingeniería) y el resto en el letrero de tubos (ANIMATION STUDIOS)
+  const words = (c.estudio || '').trim().split(/\s+/), top = words[0] || '', bot = words.slice(1).join(' ');
   const botHTML = [...bot.toUpperCase()].map((ch, i) => i === 1 ? `<span class="nz-flaky">${esc(ch)}</span>` : esc(ch)).join('');
   const arc = (r, lado) => { const k = r * 0.7071, x = lado < 0 ? 130 - k : 130 + k; return `<path d="M${x.toFixed(1)},${(70 - k).toFixed(1)} A${r},${r} 0 0,${lado < 0 ? 0 : 1} ${x.toFixed(1)},${(70 + k).toFixed(1)}"/>`; };
   return `<div class="neon"><div class="nz-wall"></div><div class="nz-spill"></div>
     <div class="nz-sign">
       <svg class="nz-ico" viewBox="0 0 260 140" aria-hidden="true"><path d="M92,70 H110 L118,46 L128,96 L137,56 L142,70 H168"/>${[52, 68, 84].map(r => arc(r, -1) + arc(r, 1)).join('')}</svg>
       <div class="nz-script">${esc(top)}</div>
-      ${bot ? `<div class="nz-block">${botHTML}</div>` : ''}
+      ${bot ? `<div class="nz-block" style="font-size:${Math.min(4, 64 / (bot.length * 1.45 + 1)).toFixed(2)}vw;letter-spacing:${bot.length > 10 ? '.3em' : '.55em'};margin-left:${bot.length > 10 ? '.3em' : '.55em'}">${botHTML}</div>` : ''}
     </div>
     ${c.texto ? `<div class="nz-sub">${esc(c.texto)}</div>` : ''}
   </div>`;
@@ -3107,7 +3124,7 @@ Object.entries(D.musica || {}).forEach(([k, v]) => {
   const bucle = Array.isArray(t.bucle) && t.bucle.length === 2 && t.bucle[1] > t.bucle[0] ? t.bucle.map(Number) : null;
   const lista = Array.isArray(t.lista) ? t.lista.filter(x => typeof x === 'string' && x) : null;   // varios videos que van rotando (ej.: la previa)
   if (lista && lista.length && !t.id) t.id = lista[0];
-  if (t.id || t.archivo) TRACKS[k] = { id: t.id, lista: lista && lista.length > 1 ? lista : null, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, periodo: +t.periodo > 0 ? +t.periodo : null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, fundido: +t.fundido > 0 ? +t.fundido : 0, recorte: Array.isArray(t.recorte) && t.recorte[1] > t.recorte[0] ? t.recorte.map(Number) : null, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
+  if (t.id || t.archivo) TRACKS[k] = { id: t.id, lista: lista && lista.length > 1 ? lista : null, archivo: t.archivo || null, rate: +t.velocidad > 0 ? +t.velocidad : null, salida: t.salida || null, periodo: +t.periodo > 0 ? +t.periodo : null, salto: t.salto != null ? +t.salto : null, name: t.nombre || k, start: t.inicio || 0, vol: t.volumen, credito: t.credito !== false, bucle, fundido: +t.fundido > 0 ? +t.fundido : 0, recorte: Array.isArray(t.recorte) && t.recorte[1] > t.recorte[0] ? t.recorte.map(Number) : null, revela: t.revela != null ? +t.revela : null, tension: t.tension != null ? +t.tension : null,
     loop: t.repetir != null ? !!t.repetir : (bucle ? false : !['redoble', 'respuesta', 'anfitrionVoz'].includes(k)) };
 });
 
@@ -4089,11 +4106,13 @@ function initScreen() {
   function cuentaStop(ms = 90) {
     if (cuentaEl) { const a = cuentaEl; cuentaEl = null; const v0 = a.volume, tt = performance.now(); const f = setInterval(() => { const k = Math.min(1, (performance.now() - tt) / Math.max(30, ms)); try { a.volume = v0 * (1 - k); } catch {} if (k >= 1) { clearInterval(f); a.pause(); } }, 15); }
     const c = cuentaSrc; cuentaSrc = null; if (!c) return;
-    try { const t = c.ctx.currentTime; c.g.gain.cancelScheduledValues(t); c.g.gain.setValueAtTime(c.g.gain.value, t); c.g.gain.linearRampToValueAtTime(0, t + ms / 1000); c.src.stop(t + ms / 1000 + 0.02); } catch {}
+    try { const t = c.ctx.currentTime; c.g.gain.cancelScheduledValues(t); c.g.gain.setValueAtTime(c.g.gain.value, t); c.g.gain.linearRampToValueAtTime(0, t + ms / 1000); c.src.stop(t + ms / 1000 + 0.02); if (c.src2) c.src2.stop(t + ms / 1000 + 0.02); } catch {}
   }
   let cuentaRun = null;   // la locución que está sonando (para marcar las frases desde el celu)
   function cuentaStart(slide, st0 = {}, C = CUENTA, cfgName = 'cuenta') {
-    const d0 = C.desde || 0, d1 = C.hasta || 55, nums = C.numeros || [], vel = locuVel(C);
+    const d0 = C.desde || 0, d1 = C.hasta || 55, vel = locuVel(C), SJ = locuSalto(C);
+    // con salto, los números que quedan en el tramo salteado no se muestran (la cuenta sigue desde el que corresponde)
+    const nums = (C.numeros || []).filter(x => !SJ || x < SJ.de || x >= SJ.a - 0.2);
     // dónde empieza cada frase: lo marcado en el celu (ensayo) manda sobre datos.js
     const mk = (st0.crEn && st0.crEn[cfgName]) || null;
     const marcas = st0.crMarcar ? [] : null, enDe = k => (mk && mk[k] != null) ? mk[k] : C.placas[k].en;
@@ -4112,18 +4131,30 @@ function initScreen() {
       if (!buf || fin || !lead.isConnected) { t0 = performance.now(); return; }
       const ctx = audioCtx(), src = ctx.createBufferSource(), g = ctx.createGain();
       src.buffer = buf; src.playbackRate.value = vel; g.gain.value = vol;
-      src.connect(g); g.connect(ctx.destination);
-      const at = ctx.currentTime + 0.05; src.start(at, d0);
-      cuentaSrc = { src, g, ctx }; sonando = { ctx, at };
+      g.connect(ctx.destination);
+      const at = ctx.currentTime + 0.05;
+      let src2 = null;
+      if (SJ && SJ.de > d0) {   // salto: dos tramos pegados, con un fundido cortito para que no haga clic
+        const L1 = (SJ.de - d0) / vel, F = 0.04, g1 = ctx.createGain(), g2 = ctx.createGain();
+        src.connect(g1); g1.connect(g);
+        g1.gain.setValueAtTime(1, at + L1 - F); g1.gain.linearRampToValueAtTime(0, at + L1 + F);
+        src.start(at, d0); src.stop(at + L1 + F + 0.02);
+        src2 = ctx.createBufferSource(); src2.buffer = buf; src2.playbackRate.value = vel; src2.connect(g2); g2.connect(g);
+        g2.gain.setValueAtTime(0, at + L1 - F); g2.gain.linearRampToValueAtTime(1, at + L1 + F);
+        src2.start(at + L1 - F, Math.max(0, SJ.a - F * vel));
+      } else { src.connect(g); src.start(at, d0); }
+      cuentaSrc = { src, src2, g, ctx }; sonando = { ctx, at };
       if (ctx.state !== 'running') log('El sonido de la tele está bloqueado (falta tocar «activar»): sigue por reloj', 'e');
     });
     // el reloj es el del audio; si no hay audio, el de la compu (y mientras carga, espera)
+    const mapa = e => !SJ || d0 + e < SJ.de ? d0 + e : SJ.a + (d0 + e - SJ.de);   // segundos de audio, con el salto
     const reloj = () => sonando && sonando.el ? sonando.el.currentTime
-      : sonando && sonando.ctx.state === 'running' ? d0 + Math.max(0, sonando.ctx.currentTime - sonando.at) * vel
-      : (esperando && performance.now() - t0 < 4000 ? d0 - 1 : d0 + (performance.now() - t0) / 1000 * vel);
+      : sonando && sonando.ctx.state === 'running' ? mapa(Math.max(0, sonando.ctx.currentTime - sonando.at) * vel)
+      : (esperando && performance.now() - t0 < 4000 ? d0 - 1 : mapa((performance.now() - t0) / 1000 * vel));
     cuentaRun = { slide, reloj, marcas, pl, cfg: cfgName };
     const tick = setInterval(() => {
       if (fin || !lead || !lead.isConnected) { clearInterval(tick); return; }
+      if (SJ && sonando && sonando.el && sonando.el.currentTime >= SJ.de && sonando.el.currentTime < SJ.a) { try { sonando.el.currentTime = SJ.a; } catch {} }
       const t = reloj();
       // placas: hasta que empiezan los números
       let i = -1; pl.forEach((p, k) => { if (t >= p.en - 0.05) i = k; });
@@ -4229,7 +4260,7 @@ function initScreen() {
 
   let lastAjuste = null;
   let locAudio = null;
-  let revMon = null, revLocal = null, revTension = null, revResend = 0, revSinMus = 0;   // pregunta con tema en bucle
+  let revMon = null, revLocal = null, revTension = null, revResend = 0, revSinMus = 0, revLastT = null;   // pregunta con tema en bucle
   let cur = { slide: -1 }, curRev = null, confettiLoop = null, introTimer = null, cineHits = [], contPhase = null;
   const CONT_PRE = 1600;
   const stage = $('#stage');
@@ -4839,7 +4870,7 @@ function initScreen() {
     else { revStop(); if (st.step === 'pregunta' && revTension === st.slide) revTension = null; }
     if (m === 'redoble' && bk) document.body.classList.toggle('dimmed', revTension === st.slide);
   }
-  function revStop() { clearInterval(revMon); revMon = null; revSinMus = 0; }
+  function revStop() { clearInterval(revMon); revMon = null; revSinMus = 0; revLastT = null; }
   function revWatch(slide, bk) {
     if (revMon) return;
     const b = TRACKS[bk];
@@ -4856,6 +4887,8 @@ function initScreen() {
       if (music.looping()) music.release();
       const t = music.pos();
       if (t == null) return;
+      if (revLastT != null && Math.abs(t - revLastT) > 1 && !revResend) revResend = performance.now() + 80;   // saltó: corrige la cuenta del celu
+      revLastT = t;
       if (revTension !== slide && t >= tensionOf(b) - 0.05) { revTension = slide; document.body.classList.add('dimmed'); }
       if (revResend && performance.now() >= revResend) {   // le avisa al celu cuánto falta (para las lámparas y la cuenta regresiva)
         revResend = 0;
@@ -5007,7 +5040,7 @@ function initScreen() {
     } else if (sl.k === 'corto') {
       // antes del corto, la intro de estudio en versión corta (el corto también es una producción de la casa)
       // el corto lo presenta una productora chica, "Bioingeniería Surround", con su cartel de neón (corto.presenta en datos.js)
-      const pres = CORTO.intro === false || CORTO.presenta === false ? null : { estudio: 'Bioingeniería Surround', texto: CORTO.introTexto || 'presenta', ...(CORTO.presenta || {}) };
+      const pres = CORTO.intro === false || CORTO.presenta === false ? null : { estudio: 'Bioingeniería Animation Studios', texto: CORTO.introTexto || 'presenta', ...(CORTO.presenta || {}) };
       const MINI = pres ? (CORTO.introMs || 7200) : 0;
       h = `<div class="cine"><div class="cine-black" style="animation:none;opacity:1"></div>${MINI ? `<div class="cine-card ident-card mini" style="animation-delay:300ms;animation-duration:${MINI}ms">${neonHTML(pres)}</div>` : ''}</div>`;
       if (MINI) setTimeout(() => neonRun(300, MINI, cineHits), 0);   // el zumbido del neón va con el grupo 'apertura' (ver neonRun)
@@ -5158,11 +5191,11 @@ function initScreen() {
           const t = music.pos(); if (t == null || t <= 0) return;
           if (tIni == null) tIni = t;   // donde arrancó a sonar
           const fin = Math.min(ms.d, +C.finCancion > 0 ? +C.finCancion : ms.d - 0.2);
-          modo = 'tema'; const p = (t - tIni) / Math.max(5, fin - tIni); pintar(p); if (p >= 1) listo = true;   // terminó: queda así (aunque el tema vuelva a empezar)
+          modo = 'tema'; const p = (t - tIni) / Math.max(5, fin - tIni); pintar(p); if (p >= 1) { listo = true; if (link) link.send({ type: 'creditosFin' }); }   // terminó: queda así y vuelve la luz de sala
           return;
         }
         if (!modo && performance.now() - t0 > 8000) { modo = 'reloj'; w0 = performance.now(); }
-        if (modo === 'reloj') { const p = (performance.now() - w0) / 1000 / (+C.segundos > 0 ? +C.segundos : 45); pintar(p); if (p >= 1) listo = true; }
+        if (modo === 'reloj') { const p = (performance.now() - w0) / 1000 / (+C.segundos > 0 ? +C.segundos : 45); pintar(p); if (p >= 1) { listo = true; if (link) link.send({ type: 'creditosFin' }); } }
       };
       raf = requestAnimationFrame(loop);
       const espera = setInterval(() => { if (!$('#roll')) { cancelAnimationFrame(raf); clearInterval(espera); } }, 1000);
@@ -5397,7 +5430,7 @@ function initControl() {
   let S = Object.assign({ slide: 0, step: null, overlay: null, results: {}, delayMs: 2000 }, saved || {});
   // Calibraciones de fábrica (datos.js → calibraciones): valen en un celu que todavía no calibró esa parte; lo calibrado en el celu manda
   const CAL = D.calibraciones || {}, hay = v => v != null && !(typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length);
-  [['volPistas', 'volumenPorPista_dB'], ['ritmo', 'ritmo'], ['acentos', 'efectosMarcados'], ['crEn', 'frasesMarcadas'], ['bucleAj', 'bucleAjustado']]
+  [['volPistas', 'volumenPorPista_dB'], ['ritmo', 'ritmo'], ['acentos', 'efectosMarcados'], ['crEn', 'frasesMarcadas'], ['bucleAj', 'bucleAjustado'], ['notas', 'aclaraciones']]
     .forEach(([k, c]) => { if (!hay(S[k]) && hay(CAL[c])) S[k] = JSON.parse(JSON.stringify(CAL[c])); });
   if ((!saved || saved.delayMs == null) && CAL.demoraRevelarMs != null) S.delayMs = CAL.demoraRevelarMs;
   if (S.vol == null && CAL.volumenGeneral != null) S.vol = CAL.volumenGeneral;
@@ -5455,6 +5488,7 @@ function initControl() {
         if (sq && sq.phase === 'apertura' && !sq.pending) armAuto(proximoNombre(S.slide), negro, () => goSlide(S.slide + 1, true));
         else if (!sq) log('🎞️ Pantalla en negro: tocá Siguiente cuando quieras seguir', 'o');
       }
+      if (msg.type === 'creditosFin') { if (SCRIPT[S.slide].k === 'cierre' && LOOKS.sala) { fireLook('sala'); log('💡 Terminaron los créditos: luz de sala', 'o'); } }
       if (msg.type === 'crMarcas' && Array.isArray(msg.t)) { S.crEn = { ...(S.crEn || {}), [msg.cfg || 'cuenta']: msg.t }; commit(true); log(`🎯 Frase ${msg.t.length} marcada en ${msg.t[msg.t.length - 1].toFixed(2)} s`, 'o'); }
       if (msg.type === 'cuentaFin' && SCRIPT[S.slide].k === 'cuentaReg' && msg.slide === S.slide) {   // llegó al 1: largan la intro de estudio y los créditos
         const sq = seqAhora();
@@ -6257,12 +6291,49 @@ function initControl() {
     log('↩ Revelado cancelado: el tema vuelve al bucle', 'e');
   });
   // en cuántos segundos aparecería la respuesta si tocás Revelar ahora (con el tema en bucle sale del bucle y cae en "revela")
+  /* Aclaraciones por momento: un cuadro editable debajo del panel. Se guarda en el celu (S.notas, por momento).
+     Arranca con el texto que traía el momento (ej. el guion de cada participante) o con calibraciones.notas de datos.js. */
+  const notaKey = () => slideId(S.slide);
+  function notaBase(i) {
+    const sl = SCRIPT[i] || {};
+    if (sl.k === 'presentacion') { const q = P[sl.p]; return q ? (q.guion || [q.edad ? q.edad + ' años' : '', q.rol, q.antiguedad].filter(Boolean).join(' · ')) : ''; }
+    return '';
+  }
+  let notaShown = null, notaT = null;
+  function notaRender() {
+    const k = notaKey(), ta = $('#nota-txt'); if (!ta) return;
+    if (k === notaShown && document.activeElement === ta) return;   // escribiendo: no se toca
+    if (k === notaShown) return;
+    notaShown = k;
+    const N = S.notas || {}, base = notaBase(S.slide);
+    ta.value = N[k] != null ? N[k] : base;
+    $('#nota-reset').hidden = !(N[k] != null && base && N[k] !== base);
+    $('#nota-ok').textContent = '';
+  }
+  $('#nota-txt').addEventListener('input', () => {
+    const k = notaKey(), v = $('#nota-txt').value;
+    S.notas = { ...(S.notas || {}) }; S.notas[k] = v;
+    $('#nota-ok').textContent = '…';
+    clearTimeout(notaT); notaT = setTimeout(() => { store.set('game', S); $('#nota-ok').textContent = '✔ guardado'; $('#nota-reset').hidden = !notaBase(S.slide) || v === notaBase(S.slide); }, 500);
+  });
+  $('#nota-reset').addEventListener('click', () => { if (S.notas) delete S.notas[notaKey()]; store.set('game', S); notaShown = null; notaRender(); });
+  // botón Siguiente: antes de anunciar al ganador y de "Lo que está en juego" te recuerda que va tu speech
+  function setNext(lab) {
+    const b = $('#nav-next'); if (!b) return;
+    const speech = /Anunciar al ganador|Lo que está en juego/.test(lab);
+    if (speech) b.innerHTML = `${esc(lab)}<small class="nav-sub">(pasar para speech)</small>`; else b.textContent = lab;
+  }
   function revelaEta() {
     const sl = SCRIPT[S.slide]; if (!isQ(sl)) return null;
     const bk = bucleKeyOf(S), b = bk && TRACKS[bk], a = musNow && musNow.a;
     if (!b || !a || a.key !== bk || !(a.d > 0) || Date.now() - musNow.at > 5000) return S.delayMs > 0 ? S.delayMs / 1000 : 0;
     const [b0, b1] = b.bucle, te = a.t + (Date.now() - musNow.at) / 1000;
     let p = te;
+    if (b.salto != null && te < b.salto - 0.5) {   // salta en el próximo pulso al tramo final
+      const half = b.periodo ? b.periodo / 2 : 0; let w = 0.06;
+      if (half && te >= b0) { const ph = ((te - b0) % half + half) % half; w = half - ph; if (w < 0.15) w += half; }
+      return Math.max(0, w + (b.revela - b.salto));
+    }
     if (te >= b0 && te <= b1 + 0.05) {
       if (b.salida && te <= b.salida) p = te + (b1 - b0);
       else if (b.periodo) { const d = b1 - b.periodo + ((te - b0) % b.periodo + b.periodo) % b.periodo; if (d > te + 0.5) p = d; }
@@ -6270,7 +6341,7 @@ function initControl() {
     }
     return Math.max(0, b.revela - te);
   }
-  setInterval(() => { const sl = SCRIPT[S.slide]; if (isQ(sl) && ['pregunta', 'pizarras', 'tension'].includes(S.step) && !S.overlay) $('#nav-next').textContent = nextLabel(); }, 500);
+  setInterval(() => { const sl = SCRIPT[S.slide]; if (isQ(sl) && ['pregunta', 'pizarras', 'tension'].includes(S.step) && !S.overlay) setNext(nextLabel()); }, 500);
   // antes de revelar hay que marcar quién acertó (o "nadie"): así no se pasa por alto cargar los puntos
   function marcado(sl = SCRIPT[S.slide]) {
     if (!isQ(sl)) return true;
@@ -6406,14 +6477,24 @@ function initControl() {
   }
   $('#calib-card').addEventListener('toggle', renderCalib);
   setInterval(() => { if ($('#calib-card').open) renderCalib(); }, 3000);
+  // todo lo que se edita en el celu, de una sola vez: volúmenes, ritmo, efectos, tiempos de placas y frases, bucles, demora, volumen general y aclaraciones
+  function exportTodo() {
+    return { version: VERSION, fecha: new Date().toISOString(), volumenPorPista_dB: S.volPistas || {}, ritmo: S.ritmo || null, efectosMarcados: S.acentos || null,
+      frasesMarcadas: S.crEn || null, bucleAjustado: S.bucleAj || null, demoraRevelarMs: S.delayMs, volumenGeneral: S.vol, aclaraciones: S.notas || {} };
+  }
+  $('#calib-dl').addEventListener('click', () => {
+    try {
+      const blob = new Blob([JSON.stringify(exportTodo(), null, 1)], { type: 'application/json' }), a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'trivia-calibraciones-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    } catch (e) { log('No se pudo descargar: ' + e.message, 'e'); }
+  });
   $('#calib-copy').addEventListener('click', async () => {
-    const c = { version: VERSION, fecha: new Date().toISOString(), volumenPorPista_dB: S.volPistas || {}, ritmo: S.ritmo || null, efectosMarcados: S.acentos || null,
-      frasesMarcadas: S.crEn || null, bucleAjustado: S.bucleAj || null, demoraRevelarMs: S.delayMs, volumenGeneral: S.vol };
-    const txt = 'Calibraciones de la trivia:\n' + JSON.stringify(c, null, 1);
+    const txt = 'Calibraciones de la trivia:\n' + JSON.stringify(exportTodo(), null, 1);
     let ok = false; try { await navigator.clipboard.writeText(txt); ok = true; } catch {}
     const ta = $('#calib-txt'); ta.value = txt; ta.hidden = false; if (!ok) { ta.focus(); ta.select(); }
     $('#calib-copy').textContent = ok ? '✔ Copiado: pegámelo en el chat' : 'Seleccioná el texto de abajo y copialo';
-    setTimeout(() => { $('#calib-copy').textContent = '📋 Copiar todas las calibraciones'; }, 4000);
+    setTimeout(() => { $('#calib-copy').textContent = '📋 Copiar todo lo editado'; }, 4000);
   });
   $('#reset-btn').addEventListener('click', () => {
     const b = $('#reset-btn');
@@ -6421,7 +6502,7 @@ function initControl() {
     clearTimeout(resetArmed); resetArmed = null; b.textContent = 'Reiniciar partida';
     if (seq) abortSeq('Secuencia de previa cancelada', true);
     const ini = (PREVIA && PREVIA.inicio) || {};
-    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol, ritmo: S.ritmo, acentos: S.acentos, bucleAj: S.bucleAj, crEn: S.crEn, volPistas: S.volPistas, auto: S.auto, bucleModo: S.bucleModo, bucleAnt: S.bucleAnt, previaModo: ini.pantalla || 'apagado' };
+    S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol, ritmo: S.ritmo, acentos: S.acentos, bucleAj: S.bucleAj, crEn: S.crEn, notas: S.notas, volPistas: S.volPistas, auto: S.auto, bucleModo: S.bucleModo, bucleAnt: S.bucleAnt, previaModo: ini.pantalla || 'apagado' };
     log('Partida reiniciada · luz de sala, lista para la previa', 'o');
     lastLightKey = null; lastLook = null;
     commit();
@@ -6602,6 +6683,7 @@ function initControl() {
     else if (false) h = `<div class="auto-banner">🤖 <b>Automático hasta el golpe de entrada</b>${GOLPE_TEMA != null ? ` (segundo ${GOLPE_TEMA} del tema)` : ''}<button class="btn ghost small" id="auto-off">✋ Pasar a manual</button></div>` + h;
 
     body.innerHTML = h;
+    notaRender();
     body.querySelectorAll('[data-modo]').forEach(b => b.addEventListener('click', () => ponerModo(b.dataset.modo === '1')));
     body.querySelectorAll('[data-pm]').forEach(b => b.addEventListener('click', () => { S.previaModo = b.dataset.pm; commit(); }));
     const ss = body.querySelector('#seq-start'); if (ss) ss.addEventListener('click', startPrevia);
@@ -6652,7 +6734,7 @@ function initControl() {
     renderScoring(sl);
     renderMini();
     renderIndex();
-    $('#nav-next').textContent = nextLabel();
+    setNext(nextLabel());
     $('#nav-next').disabled = S.step === 'redoble' || (!S.overlay && S.slide === SCRIPT.length - 1) || (isQ(sl) && !S.overlay && S.step === PASOS_Q[PASOS_Q.length - 1] && PASOS_Q.length > 1 && !marcado(sl));
     $('#nav-score').classList.toggle('on', S.overlay === 'marcador');
     $('#nav-score').style.opacity = spoilerZone() && !S.overlay ? .35 : 1;
