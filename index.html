@@ -326,6 +326,26 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 .cd-row{transition:border-color 1s ease 1.2s,box-shadow 1s ease 1.2s}
 .cd-row.fin{border-color:var(--gold);box-shadow:0 0 30px rgba(255,190,60,.45)}   /* terminó la cuenta: los que quedan arriba */
 .cd-row.fin .cd-pos,.cd-row.fin .cd-name{color:var(--gold)}
+.cdf-row{display:flex;justify-content:center;align-items:flex-start;gap:clamp(10px,2.2vw,40px);margin:clamp(18px,4vh,46px) auto 0;max-width:96vw}
+.cdf{width:clamp(120px,15vw,230px);display:flex;flex-direction:column;align-items:center;transition:transform 1s cubic-bezier(.3,1.2,.4,1)}
+.cdf-seal{width:100%;aspect-ratio:1;filter:drop-shadow(0 0 22px rgba(255,190,90,.45));transition:filter 1s ease}
+.cdf-seal .seal{width:100%;height:100%;overflow:visible}
+.cdf-name{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.04em;font-size:clamp(18px,2.1vw,34px);color:var(--gold);margin-top:6px;white-space:nowrap;transition:filter 1s ease,opacity 1s ease}
+.cdf-pos{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(34px,4.6vw,76px);line-height:1.1;color:#fff;min-height:1.1em;opacity:0}
+.cdf-pts{font-family:'Cinzel',serif;font-weight:700;font-size:clamp(14px,1.5vw,24px);color:var(--muted);min-height:1.3em;opacity:0}
+.cdf.out{transform:scale(.8)}
+.cdf.out .cdf-seal{filter:grayscale(1) brightness(.34)}
+.cdf.out .cdf-name{filter:grayscale(1);opacity:.55}
+.cdf.out .cdf-pos,.cdf.out .cdf-pts,.cdf.emp .cdf-pos,.cdf.emp .cdf-pts{opacity:1;animation:cdfPos .7s cubic-bezier(.2,1.5,.4,1) both}
+.cdf.tie .cdf-pos::after{content:'⚔️';font-size:.5em;margin-left:.2em;vertical-align:middle}
+.cdf.fin,.cdf.emp{transform:scale(1.14)}
+.cdf.fin{transition-delay:1.2s}
+.cdf.fin .cdf-seal,.cdf.emp .cdf-seal{filter:drop-shadow(0 0 40px rgba(255,205,100,.95));animation:cdfGlow 1.8s ease-in-out 2.2s infinite alternate}
+.cdf.fin .cdf-seal{transition-delay:1.2s}
+.cdf.emp .cdf-pos{color:var(--gold)}
+@keyframes cdfPos{from{opacity:0;transform:scale(2.2)}to{opacity:1;transform:none}}
+@keyframes cdfGlow{from{filter:drop-shadow(0 0 26px rgba(255,205,100,.6))}to{filter:drop-shadow(0 0 52px rgba(255,215,120,1))}}
+.cd-banner.on{margin:clamp(14px,3vh,34px) 0 0!important}
 .cd-banner.tarde{transition-delay:1.3s}   /* "Quedan los dos mejores…": un momento después del último puesto */
 .cd-banner.empate.on{animation:cdEmpate .7s cubic-bezier(.2,1.5,.4,1) both;font-size:clamp(36px,4.4vw,68px)}
 @keyframes cdEmpate{from{opacity:0;transform:scale(1.9);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
@@ -1353,7 +1373,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v75 · 15/11 23:50';
+const VERSION = 'v76 · 16/11 00:10';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -4697,8 +4717,8 @@ function initScreen() {
         beams.setup('top3');
         const ps = cuentaPasos(st.results || {}), nCg = ps.filter(x => x.t === 'g').length, k = Math.min(st.sub || 0, ps.length);
         if (k === 0) { beams.clearPools(); beams.level(.55); beams.play('calm'); break; }   // todavía no se reveló nada: los reflectores no señalan a nadie
-        if (ps[k - 1]) scanLock(() => sqa(`.cd-row[data-g="${ps[k - 1].g.pos}"]`), 450);
-        if (k === nCg) later(1900, () => scanLock(() => sqa('.cd-row.fin'), 600));   // terminó la cuenta: a los que quedan
+        if (ps[k - 1]) scanLock(() => sqa(`.cdf[data-g="${ps[k - 1].g.pos}"]`), 450);
+        if (k === nCg) later(1900, () => scanLock(() => sqa('.cdf.fin'), 600));   // terminó la cuenta: a los que quedan
         break;
       }
       case 'ganador':
@@ -5111,13 +5131,12 @@ function initScreen() {
         <div class="cont-row">${P.map((p, i) => `<div class="cont-card" style="animation-delay:${0.25 + i * 0.4}s">${PRES_NUEVA ? `<div class="cont-seal">${sealHTML(p, 'c' + i)}</div>` : `<div class="pl-photo">${photoHTML(p)}</div>`}<div class="script">${esc(p.nombre)}</div></div>`).join('')}</div>
         <div class="cont-sub" style="animation-delay:${0.6 + P.length * 0.4}s">¿Quién se llevará ${esc(PREMIO)}?</div></div>`;
     } else if (sl.k === 'cuenta') {
-      // todas las filas nacen vacías e iguales: lo de cada puesto (número, foto, nombre, puntos) se escribe recién al revelarlo
-      const rows = [];
-      rankGroups(st.results || {}).forEach(g => g.players.forEach((pi, j) => rows.push(`<div class="cd-row" data-g="${g.pos}" data-j="${j}"><span class="cd-pos"></span><span class="cd-av"></span><span class="cd-name">&nbsp;</span><span class="cd-pts"></span></div>`)));
+      // los cinco sellos, encendidos y en el orden de siempre (no dice nada del resultado): cada toque apaga a quien queda en ese puesto
+      const sellos = P.map((p, i) => `<div class="cdf" data-p="${i}"><div class="cdf-seal">${sealHTML(p, 'cd' + i)}</div><div class="cdf-name">${esc(p.nombre)}</div><div class="cdf-pos"></div><div class="cdf-pts"></div></div>`).join('');
       // la cuenta aparece recién cuando ya suena la música de tensión (si no avisa, a los 5 s)
       cdGo = () => { cdGo = null; const v = stage.querySelector('.v-cd'); if (v) v.classList.remove('espera'); };
       cineHits.push(setTimeout(() => { if (cdGo) cdGo(); }, 5000));
-      h = `<div class="v v-cd enter espera"><h2 class="script">La cuenta final</h2><div class="round-sub" style="margin-top:4px">Del último al primero</div><div class="cd-banner" id="cd-banner"></div><div class="cd-list">${rows.join('')}</div></div>`;
+      h = `<div class="v v-cd enter espera"><h2 class="script">La cuenta final</h2><div class="round-sub" style="margin-top:4px">Del último al primero</div><div class="cdf-row" style="--n:${P.length}">${sellos}</div><div class="cd-banner" id="cd-banner"></div></div>`;
     } else if (sl.k === 'enjuego') {
       const PR = ENJ();
       h = `<div class="v v-enjuego enter s0" id="venj">
@@ -5352,19 +5371,18 @@ function initScreen() {
     } else if (sl.k === 'cuenta') {
       if (!changed && JSON.stringify(st.results) !== JSON.stringify(cur.results)) { buildSlide(st, sl); return updateSlide(st, sl, true); }
       const R = st.results || {}, ps = cuentaPasos(R), k = Math.min(st.sub || 0, ps.length), nCg = ps.filter(x => x.t === 'g').length;
-      const byPos = new Map(ps.slice(0, k).map(x => [x.g.pos, x.g]));   // lo ya revelado
+      const de = new Map(); ps.slice(0, k).forEach(x => x.g.players.forEach(pi => de.set(pi, x)));   // lo ya revelado, por participante
       let fresh = false;
-      stage.querySelectorAll('.cd-row[data-g]').forEach(row => {
-        const g = byPos.get(+row.dataset.g), on = !!g;
-        if (on && !row.classList.contains('shown')) {   // recién ahora se escribe el puesto: antes la fila está vacía de verdad
-          fresh = true;
-          const pi = g.players[+row.dataset.j], c = row.children;
-          c[0].textContent = g.pos + '°'; c[1].innerHTML = photoHTML(P[pi]); c[2].textContent = P[pi].nombre; c[3].textContent = fmtPts(g.score) + ' pts';
-          row.classList.toggle('tie', g.players.length > 1);   // ⚔️: empatados (se define después, con su desempate)
-          fixPhotos(row);
-        } else if (!on && row.classList.contains('shown')) { const c = row.children; c[0].textContent = ''; c[1].innerHTML = ''; c[2].innerHTML = '&nbsp;'; c[3].textContent = ''; row.classList.remove('tie'); }
-        row.classList.toggle('shown', on);
-        row.classList.toggle('fin', on ? +row.dataset.g === 1 : (nCg > 0 && k >= nCg));   // terminó la cuenta: los que quedan arriba, en dorado
+      stage.querySelectorAll('.cdf').forEach(el => {
+        const x = de.get(+el.dataset.p), on = !!x, c = el.children;
+        if (on && !el.dataset.g) {   // recién ahora se escribe su puesto
+          fresh = true; el.dataset.g = x.g.pos;
+          c[2].textContent = x.g.pos + '°'; c[3].textContent = fmtPts(x.g.score) + ' pts';
+        } else if (!on && el.dataset.g) { delete el.dataset.g; c[2].textContent = ''; c[3].textContent = ''; }
+        el.classList.toggle('out', on && x.t === 'g');            // se apaga: ya tiene su puesto
+        el.classList.toggle('emp', on && x.t === 'empate');       // empatados en el 1°: siguen encendidos
+        el.classList.toggle('tie', on && x.g.players.length > 1); // ⚔️
+        el.classList.toggle('fin', !on && nCg > 0 && k >= nCg);   // terminó la cuenta: los que quedan encendidos
       });
       const empate = k > nCg;   // ya se reveló el empate en el 1°
       if (fresh && !changed) {
@@ -6647,7 +6665,7 @@ function initControl() {
     else if (sl.k === 'cuenta') {
       const ps = cuentaPasos(S.results), k = Math.min(S.sub || 0, ps.length), cg = ps.filter(x => x.t === 'g').map(x => x.g), emp = ps.some(x => x.t === 'empate');
       const rg = rankGroups(S.results), arriba = rg.slice(0, rg.length - cg.length), ocu = cuentaOculta(S.results), empOk = emp && k >= ps.length;
-      h = `<div class="now-title">Cuenta final</div><p class="muted">La tele arranca con todas las filas vacías: no muestra puestos, nombres ni empates hasta que los revelás con tu toque (del último hacia arriba).${cg.length ? ` Al terminar dice <b>${esc(cuentaQuedan(S.results))}</b>, el mismo cartel haya o no empate arriba.` : ''}
+      h = `<div class="now-title">Cuenta final</div><p class="muted">La tele arranca con los sellos de todos encendidos (sin puestos ni empates). Cada toque apaga a quien queda en ese puesto, del último hacia arriba, y al final quedan encendidos solo los que pelean arriba.${cg.length ? ` Al terminar dice <b>${esc(cuentaQuedan(S.results))}</b>, el mismo cartel haya o no empate arriba.` : ''}
         ${emp ? `Después, con otro toque, salen juntos los empatados en el 1° y el cartel <b>${esc(cuentaEmpate(S.results))}</b>` : `Quedan sin revelar ${NUM_TXT[ocu] || ocu} (el 1° y ${ocu > 2 ? 'los empatados en el 2°' : 'el 2°'}), así el ganador no se sabe por descarte`}.</p>
         <div class="mini-score">${cg.map((g, i) => `<span style="${i < k ? '' : 'opacity:.45'}">${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}${g.players.length > 1 ? ' ⚔️' : ''}${i < k ? ' ✓' : ''}</span><b>${g.score}</b>`).join('')}
         ${arriba.map(g => `<span>${empOk ? '' : '🔒 '}${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}${g.players.length > 1 ? ' ⚔️' : ''}${empOk ? ' ✓' : ''}</span><b>${g.score}</b>`).join('')}</div>`;
