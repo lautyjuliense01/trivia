@@ -288,6 +288,14 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
   color:transparent;-webkit-text-stroke:3px rgba(247,201,72,.22);z-index:-1;animation:bignum 1.2s cubic-bezier(.2,1,.3,1) both}
 @keyframes bignum{from{opacity:0;transform:translate(-50%,-50%) scale(1.8)}to{opacity:1;transform:translate(-50%,-50%)}}
 .pl-photo-wrap{position:relative}
+.win-seal{width:clamp(170px,19vw,290px);aspect-ratio:1;margin:0 auto 4px;filter:drop-shadow(0 0 34px rgba(255,205,100,.75))}
+.win-names.multi .win-seal{width:clamp(110px,12vw,180px)}
+.win-seal .seal{width:100%;height:100%;overflow:visible}
+.mseal{display:block;width:100%;height:100%}
+.mseal .seal{width:100%;height:100%;overflow:visible;display:block;filter:drop-shadow(0 0 10px rgba(255,190,90,.35))}
+.br-av:has(.mseal),.slot-ph:has(.mseal),.pl-photo:has(.mseal),.cd-av:has(.mseal){border:0!important;background:none!important;box-shadow:none!important;overflow:visible!important;border-radius:0!important}
+.pl-photo-wrap:has(.mseal) .ring{display:none}
+.q-juegan .qj .mseal{width:clamp(38px,3.8vw,60px);height:clamp(38px,3.8vw,60px);flex:0 0 auto}
 .ring{position:absolute;inset:0;border-radius:50%;border:4px solid var(--bulb);animation:ring 1s .15s ease-out both;pointer-events:none}
 .ring.r2{animation-delay:.35s;border-color:var(--gold)}
 @keyframes ring{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(2.1)}}
@@ -1379,7 +1387,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v78 · 16/11 00:50';
+const VERSION = 'v79 · 16/11 01:10';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2875,8 +2883,9 @@ function laurelLeaves() {
 /* Sello personal de cada contendiente: inicial en el centro, laurel y su nombre grabado en el anillo */
 function sealHTML(p, u, o = {}) {
   const ini = ((p.nombre || '?').trim()[0] || '?').toUpperCase(), yr = (D.edicion.match(/\d{4}/) || [''])[0];
-  let ring = `${p.nombre} · ${p.apodo || p.rol || ''}`.toUpperCase();
-  if (ring.length > 40 || !(p.apodo || p.rol)) ring = `${p.nombre} · ${yr}`.toUpperCase();
+  // anillo: solo el nombre, el show y el año (nada de apodos, roles ni títulos)
+  let ring = `${p.nombre} · ${D.titulo || ''} · ${yr}`.toUpperCase();
+  if (ring.length > 40 || !D.titulo) ring = `${p.nombre} · ${yr}`.toUpperCase();
   // laurel: solo para quien gana la trivia · estrellas arriba: una por cada trivia ganada (datos.js → titulos; o.extra suma la de esta edición)
   const leaves = o.laurel ? laurelLeaves() : '', nSt = Math.max(0, (+p.titulos || 0) + (o.extra || 0));
   const star = (cx, cy, r) => { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, R = i % 2 ? r * 0.42 : r; d += (i ? 'L' : 'M') + (cx + R * Math.cos(a)).toFixed(1) + ',' + (cy + R * Math.sin(a)).toFixed(1); } return d + 'Z'; };
@@ -3475,13 +3484,19 @@ function previaFondo(cv) {
   };
   requestAnimationFrame(frame);
 }
+let sealN = 0;   // ids únicos de los degradados de cada sello
+const miniSeal = p => `<span class="mseal">${sealHTML(p, 'm' + (++sealN))}</span>`;
 function photoHTML(p) {
   const ini = esc((p.nombre || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase());
-  return p.foto ? `<img src="${esc(p.foto)}" alt="" data-ini="${ini}" class="foto-${FOTO_ESTILO}">` : `<span class="ini">${ini}</span>`;
+  return p.foto ? `<img src="${esc(p.foto)}" alt="" data-ini="${ini}" class="foto-${FOTO_ESTILO}">` : miniSeal(p);
 }
 function fixPhotos(root) {
   root.querySelectorAll('img[data-ini]').forEach(img => {
-    img.onerror = () => { const s = document.createElement('span'); s.className = 'ini'; s.textContent = img.dataset.ini; img.replaceWith(s); };
+    img.onerror = () => {   // la foto no cargó: el sello (o la inicial si no se sabe de quién es)
+      const k = P.findIndex(q => q.foto && img.getAttribute('src') === q.foto), s = document.createElement('span');
+      if (k >= 0) { s.className = 'mseal'; s.innerHTML = sealHTML(P[k], 'e' + (++sealN)); } else { s.className = 'ini'; s.textContent = img.dataset.ini; }
+      img.replaceWith(s);
+    };
   });
 }
 /* Cómo se juega: tarjetas I, II, III… La I (rondas y preguntas) la arma la app; el resto viene de datos.js */
@@ -4807,7 +4822,7 @@ function initScreen() {
       case 'ganador':
         beams.setup('top5'); beams.clearPools();
         if (st.step === 'redoble' || st.step === 'suspenso') { beams.level(st.step === 'suspenso' ? .55 : 1); beams.play('scan'); }
-        else later(150, () => { const ph = sqa('.win-card .pl-photo, .win-card.sin-foto .script'); beams.aimEls(ph, { ms: 320, spread: ph.length === 1 }); beams.pools(ph, ph.length === 1); });
+        else later(150, () => { const ph = sqa('.win-card .pl-photo, .win-card .win-seal'); beams.aimEls(ph, { ms: 320, spread: ph.length === 1 }); beams.pools(ph, ph.length === 1); });
         break;
     }
   }
@@ -5429,7 +5444,7 @@ function initScreen() {
   function winnerHTML(st) {
     const s = standing(st.results || {});
     // solo el nombre (con foto únicamente si alguien la cargó en datos.js)
-    const names = s.top.map(i => `<div class="win-card ${P[i].foto ? '' : 'sin-foto'}">${P[i].foto ? `<div class="pl-photo">${photoHTML(P[i])}</div>` : ''}<h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
+    const names = s.top.map(i => `<div class="win-card ${P[i].foto ? '' : 'sin-foto'}">${P[i].foto ? `<div class="pl-photo">${photoHTML(P[i])}</div>` : `<div class="win-seal">${sealHTML(P[i], 'w' + i + (++sealN), s.decided ? { laurel: true, extra: 1 } : {})}</div>`}<h2 class="script">${esc(P[i].nombre)}</h2></div>`).join('');
     const extra = s.decided ? `${ptsTxt(s.max)}${s.byTie ? ' · ganó el desempate' : ''}` : `${ptsTxt(s.max)} cada uno · comparten el primer puesto`;
     const medal = { 2: '🥈', 3: '🥉' };
     const rest = s.decided ? finalRanking(st.results || {}).filter(g => g.pos > 1).flatMap(g => g.players.map(i => `<span class="${g.pos <= 3 ? 'pod' : ''}">${g.players.length > 1 ? '⚔️' : (medal[g.pos] || '')} ${g.players.length > 1 ? g.pos + '°–' + (g.pos + g.players.length - 1) + '°' : g.pos + '°'} ${esc(P[i].nombre)} · ${fmtPts(g.score)} pts</span>`)).join('') : '';
