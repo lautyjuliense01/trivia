@@ -318,16 +318,17 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 .cd-av img{width:100%;height:100%;object-fit:cover}.cd-av .ini{font-size:26px}
 .cd-name{font-weight:800;font-size:clamp(22px,2.6vw,38px)}
 .cd-pts{font-family:Anton,sans-serif;font-size:34px;color:var(--gold);text-align:right}
-.cd-row:not(.shown):not(.top) .cd-av,.cd-row:not(.shown):not(.top) .cd-name,.cd-row:not(.shown):not(.top) .cd-pts{opacity:0}
-.cd-row:not(.shown):not(.top)::after{content:"?";position:absolute;left:0;right:0;text-align:center;font-family:Anton,sans-serif;font-size:34px;color:rgba(247,201,72,.35)}
+.cd-row:not(.shown)>*{opacity:0}   /* sin revelar: fila vacía (ni puesto, ni signo, ni nombre) */
 .cd-row.shown{animation:flipIn .7s cubic-bezier(.2,1.3,.4,1)}
 @keyframes flipIn{from{transform:rotateX(90deg) scale(1.1);filter:brightness(2.5)}to{transform:none;filter:none}}
 .cd-banner{height:0;margin:0;font-family:Lobster,cursive;font-size:clamp(30px,3.6vw,56px);color:var(--gold);text-shadow:0 0 26px rgba(255,190,60,.7);opacity:0;transform:scale(.8);transition:all .7s cubic-bezier(.2,1.4,.4,1)}
 .cd-banner.on{opacity:1;transform:none;height:auto;margin:8px 0 -4px}
-.cd-row.hid{border-color:var(--gold);box-shadow:0 0 30px rgba(255,190,60,.45)}
-.cd-row.hid .cd-pos,.cd-row.hid .cd-name{color:var(--gold)}
-.cd-row.top{border-color:var(--gold);box-shadow:0 0 30px rgba(255,190,60,.55);animation:pulseGlow 1.4s ease-in-out infinite}
-.cd-row.top .cd-pos,.cd-row.top .cd-name{color:var(--gold)}
+.cd-row{transition:border-color 1s ease 1.2s,box-shadow 1s ease 1.2s}
+.cd-row.fin{border-color:var(--gold);box-shadow:0 0 30px rgba(255,190,60,.45)}   /* terminó la cuenta: los que quedan arriba */
+.cd-row.fin .cd-pos,.cd-row.fin .cd-name{color:var(--gold)}
+.cd-banner.tarde{transition-delay:1.3s}   /* "Quedan los dos mejores…": un momento después del último puesto */
+.cd-banner.empate.on{animation:cdEmpate .7s cubic-bezier(.2,1.5,.4,1) both;font-size:clamp(36px,4.4vw,68px)}
+@keyframes cdEmpate{from{opacity:0;transform:scale(1.9);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
 @keyframes pulseGlow{50%{box-shadow:0 0 60px rgba(255,190,60,.9)}}
 .win-crown.big{font-size:clamp(120px,16vw,220px);margin:0;animation:shake .14s infinite}
 .win-rest{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:30px;opacity:0;animation:fadeIn 1s 2.5s forwards}
@@ -1352,7 +1353,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v74 · 15/11 22:30';
+const VERSION = 'v75 · 15/11 23:50';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -3159,7 +3160,7 @@ function buildScript() {
     r.preguntas.forEach((q, qi) => { n++; s.push({ k: 'pregunta', r: ri, q: qi, n, id: `r${ri}q${qi}`, label: `Pregunta ${n} · ${TIPO_LABEL[r.tipo] || r.tipo}` }); });
     if (ri < D.rondas.length - 1) s.push({ k: 'marcador', r: ri, label: `Marcador tras ronda ${ri + 1}` });
   });
-  s.push({ k: 'cuenta', label: 'Cuenta final (del último hacia arriba; se saltea si no hay nadie para revelar)' });
+  s.push({ k: 'cuenta', label: 'Cuenta final (del último hacia arriba; se saltea si no hay nada para revelar)' });
   // Desempates en cualquier puesto (definen el orden para elegir premios). Si el 1° no está empatado, primero el ganador
   // y después los desempates; si el 1° está empatado, los desempates van antes y el ganador queda para el final.
   // Siempre del desempate más bajo al más alto. Los que no hacen falta se saltean solos.
@@ -3299,7 +3300,8 @@ function standing(results) {
    nunca se sepa por descarte:
    · 1° solo → quedan ocultos el 1° y todo el grupo del 2° (si el 2° está empatado entre 3, quedan 4 ocultos);
    · 1° empatado → quedan ocultos solo los empatados en el 1°.
-   Si no queda nadie para revelar, la cuenta se saltea (se va directo al ganador o al desempate del 1°). */
+   Si no hay nada para revelar (ni puestos de abajo ni un empate en el 1°), la cuenta se saltea y se va directo al ganador.
+   En la tele las filas están vacías hasta que se revelan (ver cuentaPasos). */
 function countdownGroups(results) {
   const g = rankGroups(results);
   return g.slice(g[0] && g[0].players.length > 1 ? 1 : 2).reverse();
@@ -3309,11 +3311,20 @@ function cuentaOculta(results) {
   return g.slice(0, n).reduce((a, x) => a + x.players.length, 0);
 }
 const NUM_TXT = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho'];
-function cuentaBanner(results) {
+/* Sin spoilers (v75): la tele no muestra NADA de un puesto (ni número, ni signo, ni nombre, ni que hay empate) hasta que lo revelás con tu toque.
+   Los toques de la cuenta, en orden:
+   · { t: 'g', g }       un puesto (o un grupo empatado, todos juntos), del último hacia arriba;
+   · { t: 'empate', g }  solo si el 1° está empatado: recién ahí salen juntos los nombres de los empatados y el cartel de empate.
+   Al terminar la cuenta el cartel es el mismo haya o no empate arriba ("Quedan los dos mejores…"): la sala no puede saber qué viene. */
+function cuentaPasos(results) {
+  const g = rankGroups(results), ps = countdownGroups(results).map(x => ({ t: 'g', g: x }));
+  if (g[0] && g[0].players.length > 1) ps.push({ t: 'empate', g: g[0] });
+  return ps;
+}
+function cuentaQuedan(results) { const h = cuentaOculta(results); return `Quedan los ${NUM_TXT[h] || h} mejores…`; }
+function cuentaEmpate(results) {
   const g = rankGroups(results), k1 = g[0] ? g[0].players.length : 0;
-  if (k1 > 1) return { 2: '¡Empate en el primer puesto!', 3: '¡Triple empate en el primer puesto!', 4: '¡Cuádruple empate en el primer puesto!' }[k1] || `¡Empate de ${k1} en el primer puesto!`;
-  const h = cuentaOculta(results);
-  return `Quedan los ${NUM_TXT[h] || h} mejores…`;
+  return k1 > 1 ? ({ 2: '¡Empate en el primer puesto!', 3: '¡Triple empate en el primer puesto!', 4: '¡Cuádruple empate en el primer puesto!', 5: '¡Quíntuple empate en el primer puesto!' }[k1] || `¡Empate de ${k1} en el primer puesto!`) : '';
 }
 
 function momentOf(st) {
@@ -4684,10 +4695,10 @@ function initScreen() {
         break;
       case 'cuenta': {
         beams.setup('top3');
-        const cg = countdownGroups(st.results || {}), k = st.sub || 0;
-        if (k === 0) { beams.clearPools(); beams.level(.55); beams.play('calm'); if (!cg.length) later(1500, () => scanLock(() => sqa('.cd-row.hid'), 600)); break; }
-        if (cg[k - 1]) scanLock(() => sqa(`.cd-row[data-g="${cg[k - 1].pos}"]`), 450);
-        if (k >= cg.length) later(1900, () => scanLock(() => sqa('.cd-row.hid'), 600));
+        const ps = cuentaPasos(st.results || {}), nCg = ps.filter(x => x.t === 'g').length, k = Math.min(st.sub || 0, ps.length);
+        if (k === 0) { beams.clearPools(); beams.level(.55); beams.play('calm'); break; }   // todavía no se reveló nada: los reflectores no señalan a nadie
+        if (ps[k - 1]) scanLock(() => sqa(`.cd-row[data-g="${ps[k - 1].g.pos}"]`), 450);
+        if (k === nCg) later(1900, () => scanLock(() => sqa('.cd-row.fin'), 600));   // terminó la cuenta: a los que quedan
         break;
       }
       case 'ganador':
@@ -5100,12 +5111,9 @@ function initScreen() {
         <div class="cont-row">${P.map((p, i) => `<div class="cont-card" style="animation-delay:${0.25 + i * 0.4}s">${PRES_NUEVA ? `<div class="cont-seal">${sealHTML(p, 'c' + i)}</div>` : `<div class="pl-photo">${photoHTML(p)}</div>`}<div class="script">${esc(p.nombre)}</div></div>`).join('')}</div>
         <div class="cont-sub" style="animation-delay:${0.6 + P.length * 0.4}s">¿Quién se llevará ${esc(PREMIO)}?</div></div>`;
     } else if (sl.k === 'cuenta') {
-      const cg = countdownGroups(st.results || {});
-      const shownPlayers = new Set(cg.flatMap(g => g.players));
-      const hidden = P.length - shownPlayers.size;
+      // todas las filas nacen vacías e iguales: lo de cada puesto (número, foto, nombre, puntos) se escribe recién al revelarlo
       const rows = [];
-      for (let k = 0; k < hidden; k++) rows.push(`<div class="cd-row hid"><span class="cd-pos">?</span><span class="cd-av"><span class="ini q">?</span></span><span class="cd-name">???</span><span class="cd-pts">${avIconHTML('ticket')}</span></div>`);
-      [...cg].reverse().forEach(g => g.players.forEach(pi => rows.push(`<div class="cd-row" data-g="${g.pos}"><span class="cd-pos">${g.pos}°</span><span class="cd-av">${photoHTML(P[pi])}</span><span class="cd-name">${esc(P[pi].nombre)}</span><span class="cd-pts">${fmtPts(g.score)} pts</span></div>`)));
+      rankGroups(st.results || {}).forEach(g => g.players.forEach((pi, j) => rows.push(`<div class="cd-row" data-g="${g.pos}" data-j="${j}"><span class="cd-pos"></span><span class="cd-av"></span><span class="cd-name">&nbsp;</span><span class="cd-pts"></span></div>`)));
       // la cuenta aparece recién cuando ya suena la música de tensión (si no avisa, a los 5 s)
       cdGo = () => { cdGo = null; const v = stage.querySelector('.v-cd'); if (v) v.classList.remove('espera'); };
       cineHits.push(setTimeout(() => { if (cdGo) cdGo(); }, 5000));
@@ -5343,21 +5351,35 @@ function initScreen() {
       }
     } else if (sl.k === 'cuenta') {
       if (!changed && JSON.stringify(st.results) !== JSON.stringify(cur.results)) { buildSlide(st, sl); return updateSlide(st, sl, true); }
-      const cg = countdownGroups(st.results || {});
-      const shown = new Set(cg.slice(0, st.sub || 0).map(g => g.pos));
+      const R = st.results || {}, ps = cuentaPasos(R), k = Math.min(st.sub || 0, ps.length), nCg = ps.filter(x => x.t === 'g').length;
+      const byPos = new Map(ps.slice(0, k).map(x => [x.g.pos, x.g]));   // lo ya revelado
       let fresh = false;
       stage.querySelectorAll('.cd-row[data-g]').forEach(row => {
-        const on = shown.has(+row.dataset.g);
-        if (on && !row.classList.contains('shown')) fresh = true;
+        const g = byPos.get(+row.dataset.g), on = !!g;
+        if (on && !row.classList.contains('shown')) {   // recién ahora se escribe el puesto: antes la fila está vacía de verdad
+          fresh = true;
+          const pi = g.players[+row.dataset.j], c = row.children;
+          c[0].textContent = g.pos + '°'; c[1].innerHTML = photoHTML(P[pi]); c[2].textContent = P[pi].nombre; c[3].textContent = fmtPts(g.score) + ' pts';
+          row.classList.toggle('tie', g.players.length > 1);   // ⚔️: empatados (se define después, con su desempate)
+          fixPhotos(row);
+        } else if (!on && row.classList.contains('shown')) { const c = row.children; c[0].textContent = ''; c[1].innerHTML = ''; c[2].innerHTML = '&nbsp;'; c[3].textContent = ''; row.classList.remove('tie'); }
         row.classList.toggle('shown', on);
+        row.classList.toggle('fin', on ? +row.dataset.g === 1 : (nCg > 0 && k >= nCg));   // terminó la cuenta: los que quedan arriba, en dorado
       });
-      if (fresh && !changed) { const g = cg[(st.sub || 1) - 1]; FX('cuenta', () => SFX.puesto(g ? g.pos : 5)); }
-      const all = (st.sub || 0) >= cg.length;
-      const bn = $('#cd-banner');
-      if (bn) { bn.textContent = all ? cuentaBanner(st.results || {}) : ''; bn.classList.toggle('on', all); }
-      // empates más abajo: se marcan con ⚔️ (se definen después, con su desempate)
-      const tg = new Set(rankGroups(st.results || {}).filter(g => g.players.length > 1).map(g => g.pos));
-      stage.querySelectorAll('.cd-row[data-g]').forEach(row => row.classList.toggle('tie', tg.has(+row.dataset.g)));
+      const empate = k > nCg;   // ya se reveló el empate en el 1°
+      if (fresh && !changed) {
+        const x = ps[k - 1];
+        if (x && x.t === 'empate') { FX('cuenta', () => { boomGrave(0.8); sfxTimbal(55, 0.9); }); const f = document.createElement('div'); f.className = 'flash suave'; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
+        else FX('cuenta', () => SFX.puesto(x ? x.g.pos : 5));
+      }
+      // cartel: al terminar la cuenta, el mismo haya o no empate arriba; el de empate sale recién con tu toque, junto con los nombres
+      const bn = $('#cd-banner'), txt = empate ? cuentaEmpate(R) : (nCg > 0 && k === nCg ? cuentaQuedan(R) : '');
+      if (bn && bn.dataset.t !== txt) {
+        const estaba = bn.classList.contains('on');
+        bn.dataset.t = txt; bn.classList.remove('empate', 'tarde');
+        if (!txt) bn.classList.remove('on');
+        else { bn.textContent = txt; if (empate) bn.classList.add('empate'); else if (!changed && !estaba) bn.classList.add('tarde'); bn.classList.add('on'); }
+      }
     } else if (sl.k === 'ganador') {
       const box = $('#win-box');
       if (!box) return;
@@ -6249,7 +6271,7 @@ function initControl() {
   // qué partes del final hacen falta según cómo quedó el marcador
   function hace(sl) {
     if (!sl) return false;
-    if (sl.k === 'cuenta') return countdownGroups(S.results).length > 0;   // si no queda nadie para revelar, se saltea
+    if (sl.k === 'cuenta') return cuentaPasos(S.results).length > 0;   // si no hay nada para revelar (ni puestos ni empate arriba), se saltea
     if (sl.k === 'desempate') return (sl.s || 0) < planFinal(S.results).ties.length;
     if (sl.k === 'ganador' && sl.g != null) { const pl = planFinal(S.results); return sl.g === (pl.pre != null ? pl.pre : pl.ties.length); }
     return true;
@@ -6386,7 +6408,7 @@ function initControl() {
     if (seq && seq.phase !== 'apertura' && SCRIPT[S.slide].k !== 'previa') abortSeq('', true);
     const sl = SCRIPT[S.slide];
     if (S.overlay) { S.overlay = null; commit(); return; }
-    if (sl.k === 'cuenta' && (S.sub || 0) < countdownGroups(S.results).length) { S.sub = (S.sub || 0) + 1; commit(); return; }
+    if (sl.k === 'cuenta' && (S.sub || 0) < cuentaPasos(S.results).length) { S.sub = (S.sub || 0) + 1; commit(); return; }
     if (sl.k === 'enjuego' && (S.sub || 0) < ENJ().length + 1 + (D.ticketDorado ? 1 : 0)) {
       if (ticketEnCamino) return;
       if ((S.sub || 0) + 1 > ENJ().length + 1 && D.ticketDorado) {   // el ticket: la música sube a pleno un segundo antes de que aparezca
@@ -6442,7 +6464,7 @@ function initControl() {
     if (i < 0) return;
     S.slide = i; S.overlay = null; S.manual = null; S.desde = null;
     S.step = isQ(SCRIPT[i]) || SCRIPT[i].k === 'ganador' ? 'revelado' : null;
-    S.sub = SCRIPT[i].k === 'cuenta' ? countdownGroups(S.results).length : SCRIPT[i].k === 'reglas' ? rulesCards().length : SCRIPT[i].k === 'programa' ? PROGRAMA.length : SCRIPT[i].k === 'enjuego' ? ENJ().length + 1 + (D.ticketDorado ? 1 : 0) : 0;
+    S.sub = SCRIPT[i].k === 'cuenta' ? cuentaPasos(S.results).length : SCRIPT[i].k === 'reglas' ? rulesCards().length : SCRIPT[i].k === 'programa' ? PROGRAMA.length : SCRIPT[i].k === 'enjuego' ? ENJ().length + 1 + (D.ticketDorado ? 1 : 0) : 0;
     clearTimeout(revealT);
     commit();
   }
@@ -6525,10 +6547,11 @@ function initControl() {
     if (sl.k === 'cine') return sl.parte === 'avisos' ? '⏭ Saltar al corto' : '⏭ Saltar a la fanfarria';
     if (sl.k === 'corto') return '⏭ Saltar el corto';
     if (sl.k === 'cuenta') {
-      const cg = countdownGroups(S.results), k = S.sub || 0;
-      if (k < cg.length) return cg[k].players.length > 1 ? `Revelar ${posTxt(cg[k])} (empate) ▶` : `Revelar ${cg[k].pos}° puesto ▶`;
+      const ps = cuentaPasos(S.results), k = S.sub || 0;
+      if (k < ps.length) { const x = ps[k]; return x.t === 'empate' ? '⚔️ Revelar el empate en el 1° puesto ▶' : (x.g.players.length > 1 ? `Revelar ${posTxt(x.g)} (empate) ▶` : `Revelar ${x.g.pos}° puesto ▶`); }
       const nx = SCRIPT[nextIndex(S.slide, 1)] || {};
-      return nx.k === 'desempate' ? '⚔️ Desempate ▶' : '👑 ¡Anunciar al ganador! ▶';
+      if (nx.k === 'desempate') { const tg = tieSlot(nx, S.results); return `⚔️ Desempate${tg ? ' ' + desTxt(tg) : ''} ▶`; }
+      return '👑 ¡Anunciar al ganador! ▶';
     }
     if (sl.k === 'ganador' && S.step === 'redoble') return '🥁 …';
     if (sl.k === 'ganador' && S.step === 'suspenso') return '💥 ¡Explosión! (al decir el nombre)';
@@ -6622,12 +6645,12 @@ function initControl() {
     }
     else if (sl.k === 'contendientes') h = `<div class="now-title">Los ${P.length} participantes juntos</div><p class="muted">Aparecen uno a uno con flash. Luces en festejo.</p>`;
     else if (sl.k === 'cuenta') {
-      const cg = countdownGroups(S.results), k = S.sub || 0, st2 = standing(S.results);
-      const hiddenG = rankGroups(S.results).slice(0, rankGroups(S.results).length - cg.length);
-      const ocu = cuentaOculta(S.results);
-      h = `<div class="now-title">Cuenta final</div><p class="muted">Se revela del último hacia arriba. Quedan ocultos ${NUM_TXT[ocu] || ocu} (${st2.tied.length > 1 ? 'los empatados en el 1°' : 'el 1° y ' + (ocu > 2 ? 'los empatados en el 2°' : 'el 2°')}), así el ganador no se sabe por descarte. Al final el cartel dice: <b>${esc(cuentaBanner(S.results))}</b></p>
-        <div class="mini-score">${cg.map((g, i) => `<span style="${i < k ? '' : 'opacity:.45'}">${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}${i < k ? ' ✓' : ''}</span><b>${g.score}</b>`).join('')}
-        ${hiddenG.map(g => `<span>🔒 ${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}</span><b>${g.score}</b>`).join('')}</div>`;
+      const ps = cuentaPasos(S.results), k = Math.min(S.sub || 0, ps.length), cg = ps.filter(x => x.t === 'g').map(x => x.g), emp = ps.some(x => x.t === 'empate');
+      const rg = rankGroups(S.results), arriba = rg.slice(0, rg.length - cg.length), ocu = cuentaOculta(S.results), empOk = emp && k >= ps.length;
+      h = `<div class="now-title">Cuenta final</div><p class="muted">La tele arranca con todas las filas vacías: no muestra puestos, nombres ni empates hasta que los revelás con tu toque (del último hacia arriba).${cg.length ? ` Al terminar dice <b>${esc(cuentaQuedan(S.results))}</b>, el mismo cartel haya o no empate arriba.` : ''}
+        ${emp ? `Después, con otro toque, salen juntos los empatados en el 1° y el cartel <b>${esc(cuentaEmpate(S.results))}</b>` : `Quedan sin revelar ${NUM_TXT[ocu] || ocu} (el 1° y ${ocu > 2 ? 'los empatados en el 2°' : 'el 2°'}), así el ganador no se sabe por descarte`}.</p>
+        <div class="mini-score">${cg.map((g, i) => `<span style="${i < k ? '' : 'opacity:.45'}">${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}${g.players.length > 1 ? ' ⚔️' : ''}${i < k ? ' ✓' : ''}</span><b>${g.score}</b>`).join('')}
+        ${arriba.map(g => `<span>${empOk ? '' : '🔒 '}${g.pos}° ${g.players.map(x => esc(P[x].nombre)).join(', ')}${g.players.length > 1 ? ' ⚔️' : ''}${empOk ? ' ✓' : ''}</span><b>${g.score}</b>`).join('')}</div>`;
     }
     else if (sl.k === 'enjuego') h = `<div class="now-title">Lo que está en juego</div><p class="muted">Cada toque da vuelta un premio; al final, el ticket dorado. Se eligen en orden: el primero elige primero.</p><ol class="muted" style="padding-left:22px;margin:6px 0">${ENJ().map((r, i) => `<li style="${i < (S.sub || 0) ? 'color:#9ff0b9' : ''}">${esc(r.nombre || 'Premio ' + (i + 1))}${i < (S.sub || 0) ? ' ✓' : ''}</li>`).join('')}${D.ticketDorado ? `<li style="list-style:none;${(S.sub || 0) > ENJ().length ? 'color:#9ff0b9' : ''}">🎫 El ticket dorado${(D.ticketDorado.beneficios || []).length ? ': ' + esc(D.ticketDorado.beneficios.join(' + ')) : ''}</li>` : ''}</ol>`;
     else if (sl.k === 'reglas') h = `<div class="now-title">${esc(D.reglasTitulo || 'Cómo se juega')}</div><p class="muted">Cada toque da vuelta una tarjeta (I, II, III…), así explicás un punto por vez.</p><ol class="muted" style="padding-left:22px;margin:6px 0">${rulesList().map((r, i) => `<li style="${i < (S.sub || 0) ? 'color:#9ff0b9' : ''}">${esc(r)}${i < (S.sub || 0) ? ' ✓' : ''}</li>`).join('')}</ol>`;
