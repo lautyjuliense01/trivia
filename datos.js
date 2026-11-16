@@ -241,7 +241,7 @@ window.TRIVIA = {
   },
 
   /* Volumen durante la presentación de premios: al entrar, y después de cada premio (el último vale para el ticket). Al salir vuelve al de antes. */
-  enjuegoVolumen: { titulo: 35, tapados: 35, premios: [40, 40, 60, 60, 80], ticket: 100 },   // el ticket sube a 100 un segundo antes de aparecer
+  enjuegoVolumen: { titulo: 40, tapados: 40, premios: [45, 50, 55, 60, 65], ticket: 70 },   // el ticket sube a 100 un segundo antes de aparecer
 
   /* Bucle con YouTube (solo si una canción con bucle no tiene archivo): true = se pasan la canción entre los dos reproductores */
   bucleApoyo: true,
@@ -394,7 +394,7 @@ window.TRIVIA = {
      ⚠️ Edades FICTICIAS: reemplazar. */
   jugadores: [
     { nombre: 'Paulina',  foto: '', genero: 'f', edad: 25, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '', apodo: 'Subcampeona 2025', guion: "Recibamos a ella, que llega desde San Luis, ingeniera biomédica, 25 años. Viene de salir segunda en la trivia 2025 tras perder el desempate. Este año tiene revancha e intentará ir por la victoria. Con ustedes, Paulina." },
-    { nombre: 'Carolina', foto: '', genero: 'f', edad: 26, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '', apodo: 'Campeona 2025', guion: "Ella es la vigente campeona de la edición 2025. ingeniera biomédica. Disfruta de la paz de su San Antonio querido, y aunque no quiere vernos la cara fuera del trabajo, hoy está acá para volver a llevarse la Victoria. Podrá repetir la hazaña? Con ustedes, Carolina." },
+    { nombre: 'Carolina', titulos: 1, foto: '', genero: 'f', edad: 26, rol: 'Auxiliar ingeniera biomédica', antiguedad: '2 años en Bioingeniería', frase: '', apodo: 'Campeona 2025', guion: "Ella es la vigente campeona de la edición 2025. ingeniera biomédica. Disfruta de la paz de su San Antonio querido, y aunque no quiere vernos la cara fuera del trabajo, hoy está acá para volver a llevarse la Victoria. Podrá repetir la hazaña? Con ustedes, Carolina." },
     { nombre: 'Lucas',    foto: '', genero: 'm', edad: 29, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '', apodo: 'El más antiguo del equipo', guion: "Es el primer técnico de bioingeniería del servicio, el más antiguo del equipo. Con sus manos ha salvado cientos de dispositivos. Dice venir más preparado. ¿Le alcanzará esto para ganar? Con ustedes, Lucas." },
     { nombre: 'Tomás',    foto: '', genero: 'm', edad: 28, rol: 'Técnico electrónico',          antiguedad: '2 años en Bioingeniería', frase: '', apodo: 'El coscoíno', guion: "Llega el turno del coscoíno. Con una moto, él se recorrería todas las clínicas en un día. La última vez llegó diciendo que en una semana levantaba el hospital y se fue de acá con tan solo una vela. ¿Será que este año puede mejorar su nivel? Con ustedes, Tomás." },
     { nombre: 'Nicolás',  foto: '', genero: 'm', edad: 23, rol: 'Pasante',                      antiguedad: 'En Bioingeniería desde septiembre de 2026', frase: '', apodo: 'El ingreso más reciente', guion: "Por último, llega el turno del más reciente ingreso. Se perdió todo el año y hoy tiene que dar las mismas respuestas ¿Será capaz de suponer lo que no sabe? ¿Podrá competir a la altura de los más experimentados? Tiene la suerte de principiante de su lado, con ustedes, Nicolás." },
@@ -472,7 +472,8 @@ window.TRIVIA = {
   /* Título que presenta a los participantes: corte seco de tu tema, segundos a oscuras (corte) y entra la música western */
   presentamos: { titulo: 'Presentamos a los participantes' },
   tituloShow: false,   // la pantalla del título del show antes de presentar (ahora el logo ya queda de fondo después de tu golpe)
-  fundidos: { presentamos: 5000, enjuego: 4000 },   // ms en que baja la música al entrar a esa parte, antes de que arranque la nueva
+  fundidos: { intro: 2500, presentamos: 5000, enjuego: 4000 },   // intro: la pantalla se apaga 2,5 s antes de las palabras de cine y el telón
+  //   // ms en que baja la música al entrar a esa parte, antes de que arranque la nueva
 
   /* ---------- Presentación del programa ----------
      Va después de tu golpe de entrada, antes de "Presentamos a los contendientes". Cada toque del celu saca la frase siguiente. */

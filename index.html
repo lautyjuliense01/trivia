@@ -430,6 +430,10 @@ img.foto-byn{filter:grayscale(1) contrast(1.15)}
 .pz{display:flex;flex-direction:column;align-items:center;gap:10px;font-weight:800;font-size:clamp(18px,2vw,28px);opacity:0;animation:chipIn .6s forwards}
 .pz .br-av{width:clamp(80px,9vw,130px);height:clamp(80px,9vw,130px)}
 .pz .br-av .ini{font-size:clamp(34px,4vw,56px)}
+.pz-seal{width:clamp(90px,10vw,150px);aspect-ratio:1;display:block;filter:drop-shadow(0 0 16px rgba(255,190,90,.35))}
+.pz-seal.gana{width:clamp(130px,14.5vw,215px);filter:drop-shadow(0 0 30px rgba(255,205,100,.8))}
+.pz-seal .seal{width:100%;height:100%;overflow:visible}
+.pz-list{align-items:flex-end}
 .pz-n{font-family:Anton,sans-serif;font-size:clamp(28px,3vw,44px);color:var(--gold)}
 .pz-gift{font-size:clamp(50px,6vw,90px);margin-top:26px;animation:bob 1.8s ease-in-out infinite}
 .cierre{position:fixed;inset:0;z-index:6;background:#000;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 15%,#000 85%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 15%,#000 85%,transparent)}
@@ -1373,7 +1377,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v76 · 16/11 00:10';
+const VERSION = 'v77 · 16/11 00:30';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -2867,12 +2871,15 @@ function laurelLeaves() {
   return out;
 }
 /* Sello personal de cada contendiente: inicial en el centro, laurel y su nombre grabado en el anillo */
-function sealHTML(p, u) {
+function sealHTML(p, u, o = {}) {
   const ini = ((p.nombre || '?').trim()[0] || '?').toUpperCase(), yr = (D.edicion.match(/\d{4}/) || [''])[0];
   let ring = `${p.nombre} · ${p.apodo || p.rol || ''}`.toUpperCase();
   if (ring.length > 40 || !(p.apodo || p.rol)) ring = `${p.nombre} · ${yr}`.toUpperCase();
-  const leaves = laurelLeaves();
-  return `<svg class="seal" viewBox="0 0 400 400" aria-hidden="true"><defs>
+  // laurel: solo para quien gana la trivia · estrellas arriba: una por cada trivia ganada (datos.js → titulos; o.extra suma la de esta edición)
+  const leaves = o.laurel ? laurelLeaves() : '', nSt = Math.max(0, (+p.titulos || 0) + (o.extra || 0));
+  const star = (cx, cy, r) => { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, R = i % 2 ? r * 0.42 : r; d += (i ? 'L' : 'M') + (cx + R * Math.cos(a)).toFixed(1) + ',' + (cy + R * Math.sin(a)).toFixed(1); } return d + 'Z'; };
+  const stars = Array.from({ length: nSt }, (_, i) => `<path d="${star(200 + (i - (nSt - 1) / 2) * 44, 64, 21)}" fill="url(#sg-${u})" stroke="#2a1600" stroke-width="2.5" paint-order="stroke"/>`).join('');
+  return `<svg class="seal" viewBox="${o.laurel ? '0 0 400 400' : '46 40 308 308'}" aria-hidden="true"><defs>
     <linearGradient id="sg-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6d8"/><stop offset=".35" stop-color="#f3d282"/><stop offset=".6" stop-color="#b98a2e"/><stop offset=".82" stop-color="#f6dc93"/><stop offset="1" stop-color="#8a5f1a"/></linearGradient>
     <linearGradient id="sw-${u}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
     <path id="sr-${u}" d="M127.2,127.2 a103,103 0 1,1 0,145.6 a103,103 0 0,1 0,-145.6"/>
@@ -2882,7 +2889,7 @@ function sealHTML(p, u) {
     <circle cx="200" cy="200" r="119" fill="none" stroke="url(#sg-${u})" stroke-width="1.2"/>
     <circle cx="200" cy="200" r="87" fill="none" stroke="url(#sg-${u})" stroke-width="1.2"/>
     <text font-family="Cinzel" font-weight="700" font-size="14" fill="url(#sg-${u})"><textPath href="#sr-${u}" textLength="636" lengthAdjust="spacing">${esc(ring)} ·</textPath></text>
-    <text x="200" y="250" text-anchor="middle" font-family="Cinzel" font-weight="900" font-size="150" fill="url(#sg-${u})">${esc(ini)}</text>
+    <text x="200" y="250" text-anchor="middle" font-family="Cinzel" font-weight="900" font-size="150" fill="url(#sg-${u})">${esc(ini)}</text>${stars}
     <g clip-path="url(#sc-${u})"><rect class="seal-glint" x="-160" y="0" width="110" height="400" fill="url(#sw-${u})"/></g></svg>`;
 }
 function identHTML(c, t0, dur) {
@@ -5173,7 +5180,7 @@ function initScreen() {
       const order = finalRanking(st.results || {}).flatMap(g => g.players.map(i => ({ i, pos: g.pos, tie: g.players.length > 1 })));
       h = `<div class="v v-premios enter"><div class="marquee" style="display:inline-block"><h2 class="script">Entrega de premios</h2></div>
         <div class="round-sub" style="margin-top:22px">Eligen en este orden</div>
-        <div class="pz-list">${order.map((o, k) => `<div class="pz" style="animation-delay:${0.5 + k * 0.25}s"><span class="pz-n">${o.pos}${o.tie ? ' ⚔️' : ''}</span><span class="br-av">${photoHTML(P[o.i])}</span><span>${esc(P[o.i].nombre)}</span></div>`).join('')}</div>
+        <div class="pz-list">${order.map((o, k) => `<div class="pz" style="animation-delay:${0.5 + k * 0.25}s"><span class="pz-n">${o.pos}${o.tie ? ' ⚔️' : ''}</span><span class="pz-seal ${o.pos === 1 && !o.tie ? 'gana' : ''}">${sealHTML(P[o.i], 'pz' + o.i, o.pos === 1 && !o.tie ? { laurel: true, extra: 1 } : {})}</span><span>${esc(P[o.i].nombre)}</span></div>`).join('')}</div>
         <div class="pz-gift">${avIconHTML('regalo')}</div></div>`;
     } else if (sl.k === 'gracias') {
       const G = D.gracias || {};
@@ -5471,7 +5478,13 @@ function initControl() {
   // Calibraciones de fábrica (datos.js → calibraciones): valen en un celu que todavía no calibró esa parte; lo calibrado en el celu manda
   const CAL = D.calibraciones || {}, hay = v => v != null && !(typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length);
   [['volPistas', 'volumenPorPista_dB'], ['ritmo', 'ritmo'], ['acentos', 'efectosMarcados'], ['crEn', 'frasesMarcadas'], ['bucleAj', 'bucleAjustado'], ['notas', 'aclaraciones']]
-    .forEach(([k, c]) => { if (!hay(S[k]) && hay(CAL[c])) S[k] = JSON.parse(JSON.stringify(CAL[c])); });
+    .forEach(([k, c]) => {
+      if (!hay(CAL[c])) return;
+      const f = JSON.parse(JSON.stringify(CAL[c]));
+      if (!hay(S[k])) S[k] = f;
+      // el celu ya calibró algo de esto: lo del celu manda, pero lo que no tocó (ej. el volumen de las otras pistas) sale de datos.js
+      else if (k !== 'ritmo' && k !== 'acentos' && typeof f === 'object' && !Array.isArray(f) && typeof S[k] === 'object' && !Array.isArray(S[k])) S[k] = { ...f, ...S[k] };
+    });
   if ((!saved || saved.delayMs == null) && CAL.demoraRevelarMs != null) S.delayMs = CAL.demoraRevelarMs;
   if (S.vol == null && CAL.volumenGeneral != null) S.vol = CAL.volumenGeneral;
   aplicarBucleAj(S);
