@@ -421,6 +421,10 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
 .cine-adv{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1em;padding:0 14vw;text-align:center;opacity:0;animation-name:advInOut;animation-timing-function:linear;animation-fill-mode:both}
 .cine-adv p{margin:0;font-family:'Cinzel',serif;font-weight:400;font-size:clamp(20px,2.3vw,38px);line-height:1.5;letter-spacing:.06em;color:#ece6da;text-shadow:0 0 18px rgba(255,255,255,.12)}
 @keyframes advInOut{0%{opacity:0}14%{opacity:1}86%{opacity:1}100%{opacity:0}}
+.pix-wrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;margin:clamp(6px,1.2vh,14px) auto 0}
+.pix{display:block;max-width:min(78vw,1200px);max-height:50vh;width:auto;height:auto;border:3px solid rgba(232,190,110,.75);border-radius:10px;box-shadow:0 0 40px rgba(255,190,90,.25);image-rendering:pixelated;background:#000}
+.pix-niv{font-family:'Cinzel',serif;font-size:clamp(14px,1.4vw,22px);color:#f3dfae;letter-spacing:.05em;min-height:1.3em}
+.pix-niv b{color:var(--gold)}
 .pv-cv{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;animation:fadeIn 4s ease forwards}
 .pv-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 50%,transparent 45%,rgba(0,0,0,.55) 78%,#000 100%)}
 .previa-code{position:absolute;z-index:2;right:24px;bottom:20px;color:#6d6252;font-size:14px;letter-spacing:.1em}
@@ -986,6 +990,7 @@ body.telon-gl .trav,body.telon-gl .intro-valance{display:none}
 .nota-h{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:6px;display:flex;justify-content:space-between}
 .nota-ok{font-weight:500;opacity:.7}
 #nota-txt{width:100%;min-height:70px;resize:vertical;font:inherit;font-size:15px;line-height:1.4;background:rgba(0,0,0,.25);color:inherit;border:1px solid rgba(232,190,110,.3);border-radius:8px;padding:8px}
+.pix-ctl{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}
 .nav-sub{display:block;font-size:.62em;font-weight:500;opacity:.8;margin-top:2px}
 .rl-eyebrow{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.5em;padding-left:.5em;text-transform:uppercase;color:#e8d3a6;font-size:clamp(16px,1.9vw,30px);margin-bottom:clamp(16px,3vh,34px)}
 .rl-row{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:clamp(10px,1.6vw,24px);perspective:1600px}
@@ -1390,8 +1395,9 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v80 · 17/11 21:50';
+const VERSION = 'v82 · 17/11 23:40';
 const D = window.TRIVIA;
+D.rondas = (D.rondas || []).filter(r => r && r.activa !== false && (r.preguntas || []).length);   // activa: false = la ronda no se juega
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
 const ST_API = 'https://api.smartthings.com/v1';
@@ -2150,7 +2156,7 @@ function createBeams(host) {
 /* ================= Modelo del juego ================= */
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmtNum = n => (typeof n === 'number' ? n.toLocaleString('es-AR') : esc(n));
-const TIPO_LABEL = { opciones: 'Opción múltiple', quien: '¿Quién dijo?', aprox: 'Aproximación' };
+const TIPO_LABEL = { opciones: 'Opción múltiple', quien: '¿Quién dijo?', aprox: 'Aproximación', pixel: 'Foto pixelada' };
 const STEPS = ['pregunta', 'pizarras', 'tension', 'redoble', 'revelado'];
 const P = D.jugadores;
 D.momentos = Object.assign({ ganadorSuspenso: 'ganador', programa: 'anfitrion', titulo: 'anfitrion', gracias: 'gracias', enjuego: 'enjuego', enjuegoTicket: 'ticket', presentadorGolpe: 'anfitrion', premios: 'premios', cierre: 'cierre', previa: 'previa', cine: 'cine', presentamos: 'presentacion', contendientes: 'presentacion', presentador: 'anfitrion', cuenta: 'tension' }, D.momentos || {});
@@ -3176,7 +3182,7 @@ Object.entries(D.musica || {}).forEach(([k, v]) => {
 const PTS = Object.assign({ comun: 100, aprox: 200, exacto: 300, ajuste: 100 }, D.puntos || {});
 const fmtPts = n => Math.round(n || 0).toLocaleString('es-AR');
 const ptsTxt = n => fmtPts(n) + (Math.abs(n) === 1 ? ' punto' : ' puntos');
-const ptsOf = q => q.puntos != null ? +q.puntos : (q.tipo === 'aprox' ? PTS.aprox : PTS.comun);
+const ptsOf = q => q.tipo === 'pixel' ? Math.max(...pixPuntos(q)) : q.puntos != null ? +q.puntos : (q.tipo === 'aprox' ? PTS.aprox : PTS.comun);
 const exactoOf = q => q.exacto != null ? +q.exacto : Math.max(PTS.exacto, ptsOf(q));
 /* Desempates: preguntas de aproximación (datos.js: desempates: [ ... ]; también vale el viejo "desempate" suelto) */
 const DESEMPATES = (Array.isArray(D.desempates) ? D.desempates : (D.desempate ? [D.desempate] : [])).filter(Boolean).map(q => ({ ...q, tipo: 'aprox' }));
@@ -3222,8 +3228,14 @@ const TOTAL_Q = SCRIPT.filter(s => s.k === 'pregunta').length;
 function qOf(sl) {
   if (sl.k === 'desempate') return { ...DESEMPATES[sl.s || 0], tipo: 'aprox', ronda: 'Desempate' };
   const r = D.rondas[sl.r];
-  return { ...r.preguntas[sl.q], tipo: r.tipo, ronda: r.titulo };
+  return { niveles: r.niveles, puntosNivel: r.puntosNivel, ...r.preguntas[sl.q], tipo: r.tipo, ronda: r.titulo };
 }
+/* Foto pixelada: la foto arranca muy pixelada y con cada toque se aclara un nivel. Quien la saca antes, más puntos.
+   niveles = cuántos cuadraditos tiene la foto a lo ancho en cada nivel (el último paso, al revelar, es la foto nítida);
+   puntosNivel = lo que vale acertar en cada nivel (por defecto 5, 4, 3, 2, 1). */
+const PIX_NIV = [6, 10, 16, 28, 50];
+const pixNiveles = q => (Array.isArray(q.niveles) && q.niveles.length ? q.niveles : PIX_NIV).map(Number);
+const pixPuntos = q => { const n = pixNiveles(q).length, p = Array.isArray(q.puntosNivel) ? q.puntosNivel : []; return Array.from({ length: n }, (_, i) => p[i] != null ? +p[i] : Math.max(1, n - i)); };
 function isQ(sl) { return sl && (sl.k === 'pregunta' || sl.k === 'desempate'); }
 
 function parseNum(v) {
@@ -3256,6 +3268,7 @@ function awardsFor(q, res) {
     const ex = Math.abs(parseNum(res.g[who[0]]) - q.respuesta) < 1e-9;
     return who.map(p => ({ p, pts: ex ? exactoOf(q) : ptsOf(q), exacto: ex }));
   }
+  if (q.tipo === 'pixel') { const pp = pixPuntos(q); return (res.ok || []).map(p => ({ p, pts: pp[Math.min(pp.length - 1, +((res.niv || {})[p] || 0))], exacto: false, niv: +((res.niv || {})[p] || 0) })); }
   return (res.ok || []).map(p => ({ p, pts: ptsOf(q), exacto: false }));
 }
 function pointsFor(q, res) { return awardsFor(q, res).map(a => a.p); }
@@ -3486,6 +3499,30 @@ function previaFondo(cv) {
     });
   };
   requestAnimationFrame(frame);
+}
+/* Dibuja la foto con "bl" cuadraditos a lo ancho (0 = nítida). Al cambiar de nivel se aclara en unos pasos, no de golpe. */
+const pixImgs = {};
+function pixShow(cv, src, bl, anim) {
+  if (!src) return;
+  const go = img => {
+    const prev = cv.dataset.bl != null ? +cv.dataset.bl : null; cv.dataset.bl = bl;
+    if (!cv.width || cv.dataset.src !== src) { const w = Math.min(1800, img.naturalWidth || 1200); cv.width = w; cv.height = Math.round(w * (img.naturalHeight || 800) / (img.naturalWidth || 1200)); cv.dataset.src = src; }
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, tmp = document.createElement('canvas');
+    const draw = b => {
+      if (!b) { ctx.imageSmoothingEnabled = true; ctx.drawImage(img, 0, 0, W, H); return; }
+      const bw = Math.max(1, Math.round(b)), bh = Math.max(1, Math.round(b * H / W)); tmp.width = bw; tmp.height = bh;
+      const t = tmp.getContext('2d'); t.imageSmoothingEnabled = true; t.drawImage(img, 0, 0, bw, bh);
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(tmp, 0, 0, bw, bh, 0, 0, W, H);
+    };
+    clearInterval(cv._t);
+    if (!anim || prev == null || prev === bl) return draw(bl);
+    // paso a paso: del nivel anterior al nuevo (al revelar, termina nítida)
+    const a = prev || 120, z = bl || 120, n = 7; let k = 0;
+    cv._t = setInterval(() => { k++; const b = Math.round(a * Math.pow(z / a, k / n)); draw(k >= n ? bl : b); if (k >= n) clearInterval(cv._t); }, 90);
+  };
+  const c = pixImgs[src];
+  if (c && c.complete && c.naturalWidth) return go(c);
+  const img = pixImgs[src] = c || new Image(); img.addEventListener('load', () => go(img), { once: true }); if (!c) img.src = src;
 }
 let sealN = 0;   // ids únicos de los degradados de cada sello
 const miniSeal = p => `<span class="mseal">${sealHTML(p, 'm' + (++sealN))}</span>`;
@@ -5411,6 +5448,9 @@ function initScreen() {
       const img = q.imagen ? `<div class="bubble"><img src="${esc(q.imagen)}" alt=""></div>` : '';
       body = `<div class="q-text">¿Quién dijo?</div><div><div class="chat"><div class="chat-name">${esc(q.respuesta)}</div>${img}${bubbles}</div></div>
               <div><div class="ticket show ans" data-ans="${esc(q.respuesta)}"><span class="ans-eye">Respuesta</span><span class="ans-v">?</span></div></div>`;
+    } else if (q.tipo === 'pixel') {
+      body = `<div class="q-text">${esc(q.texto || '¿Qué es?')}</div><div class="pix-wrap"><canvas class="pix" id="pix"></canvas><div class="pix-niv" id="pix-niv"></div></div>
+              <div><div class="ticket show ans" data-ans="${esc(q.respuesta)}"><span class="ans-eye">Respuesta</span><span class="ans-v">?</span></div></div>`;
     } else if (hasOpts) {
       const ok = q.correctas || [];
       body = `<div class="q-text">${esc(q.texto)}</div><div class="opts">${q.opciones.map((o, i) => `<div class="opt ${ok.includes(i) ? 'ok' : ''}"><b>${'ABCDEFGH'[i]}</b><span>${esc(o)}</span><i class="opt-ok">${avIconHTML('estrella')}</i></div>`).join('')}</div>`;
@@ -5418,7 +5458,7 @@ function initScreen() {
       body = `<div class="q-text">${esc(q.texto)}</div><div><div class="ticket show ans" data-ans="${q.tipo === 'aprox' ? fmtNum(q.respuesta) : esc(q.respuesta)}"><span class="ans-eye">Respuesta</span><span class="ans-v">?</span></div></div>`;
     }
     return `<div class="v v-q enter stage-pulse ${hasOpts ? 'has-opts' : ''}" id="vq">
-      <div class="q-head"><div class="q-num">${num}</div></div><div class="q-round">${esc(title)}${sl.k !== 'desempate' ? `<span class="q-pts"><i>◆</i>${fmtPts(ptsOf(q))} puntos${q.tipo === 'aprox' ? ` · ${fmtPts(exactoOf(q))} si es exacta` : ''}</span>` : ''}</div>${juegan}
+      <div class="q-head"><div class="q-num">${num}</div></div><div class="q-round">${esc(title)}${sl.k !== 'desempate' ? `<span class="q-pts"><i>◆</i>${q.tipo === 'pixel' ? 'hasta ' : ''}${fmtPts(ptsOf(q))} puntos${q.tipo === 'aprox' ? ` · ${fmtPts(exactoOf(q))} si es exacta` : ''}</span>` : ''}</div>${juegan}
       ${body}
 
       <div class="hint q-hint h-ten">Últimos segundos</div>
@@ -5448,7 +5488,7 @@ function initScreen() {
         return `<div class="res ${w ? 'win' : ''} ${d === 0 ? 'exacto' : ''}"><span>${w ? '<i class="res-star">★</i>' : ''}${esc(P[r.p].nombre)}</span><span class="rd">${d === 0 ? '¡exacto!' : (dif > 0 ? '+' : '−') + fmtNum(Math.round(d * 100) / 100)}</span></div>`;
       }).join('');
     }
-    return (res.ok || []).map(p => `<div class="res win"><span>${esc(P[p].nombre)}</span><span class="rd">+${fmtPts(ptsOf(q))}</span></div>`).join('');
+    return awardsFor(q, res).map(a => `<div class="res win"><span>${esc(P[a.p].nombre)}</span><span class="rd">+${fmtPts(a.pts)}${q.tipo === 'pixel' ? ` <small>(nivel ${a.niv + 1})</small>` : ''}</span></div>`).join('');
   }
 
   function winnerHTML(st) {
@@ -5471,6 +5511,10 @@ function initScreen() {
       if (st.step !== 'pregunta') showQuestion(vq);
       const tk = vq.querySelector('.ticket');
       if (tk) { const v = tk.querySelector('.ans-v') || tk; v.innerHTML = st.step === 'revelado' ? tk.dataset.ans : '?'; tk.classList.toggle('open', st.step === 'revelado'); }
+      const pc = vq.querySelector('#pix');
+      if (pc) { const q = qOf(sl), N = pixNiveles(q), i = Math.min(N.length - 1, +((st.pix || {})[sl.id] || 0)), pp = pixPuntos(q), fin = st.step === 'revelado';
+        pixShow(pc, q.imagen, fin ? 0 : N[i], !changed);
+        const nv = vq.querySelector('#pix-niv'); if (nv) nv.innerHTML = fin ? '' : `Nivel <b>${i + 1}</b> de ${N.length} · vale <b>${fmtPts(pp[i])}</b>`; }
       $('#q-results').innerHTML = resultsHTML(sl, st);
       if (st.step === 'revelado' && (changed || cur.step !== 'revelado')) {
         confetti();
@@ -6577,6 +6621,10 @@ function initControl() {
       goSlide(nextIndex(S.slide, 1)); return;
     }
     if (sl.k === 'presentador' && S.step !== 'golpe') { clearTimeout(revealT); S.step = 'golpe'; commit(); return; }
+    if (isQ(sl) && S.step === 'pregunta' && qOf(sl).tipo === 'pixel') {   // foto pixelada: Siguiente aclara un nivel hasta llegar al último
+      const N = pixNiveles(qOf(sl)).length, i = +((S.pix || {})[sl.id] || 0);
+      if (i < N - 1) { S.pix = { ...(S.pix || {}) }; S.pix[sl.id] = i + 1; commit(); return; }
+    }
     if (isQ(sl) && S.step !== 'revelado') {
       if (S.step === 'redoble') return;
       const order = PASOS_Q;
@@ -6668,6 +6716,7 @@ function initControl() {
     const sl = SCRIPT[S.slide];
     if (S.overlay) return 'Volver ▶';
     if (isQ(sl)) {
+      if (S.step === 'pregunta' && qOf(sl).tipo === 'pixel') { const N = pixNiveles(qOf(sl)).length, i = +((S.pix || {})[sl.id] || 0); if (i < N - 1) return `🔍 Aclarar la foto (nivel ${i + 2} de ${N}) ▶`; }
       if (S.step === 'pregunta' && PASOS_Q.length === 1) return '✨ Revelar respuesta';
       if (S.step === 'pregunta') return '🔄 Den vuelta las pizarras ▶';
       if (S.step === 'pizarras' && sl.k === 'desempate' && (tieSlot(sl, S.results) || {}).pos === 1) return !marcado(sl) ? '⚠️ Cargá los números' : ((SCRIPT[nextIndex(S.slide, 1)] || {}).k === 'desempate' ? '⚔️ Siguen empatados: otro desempate ▶' : '👑 Anunciar al ganador ▶');
@@ -6801,6 +6850,11 @@ function initControl() {
         tieInfo = `<p class="muted">${g && g.again ? '<b>Siguen empatados.</b> ' : ''}Desempate <b>${g ? desTxt(g) : '?'}</b> (${g ? fmtPts(g.score) : '?'} pts). Juegan: <b>${t.map(i => esc(P[i].nombre)).join(', ')}</b>.
           El más cerca queda adelante${t.length > 2 ? ' y el resto se ordena por cercanía' : ''}; el que no escribió nada queda atrás. Si dos quedan igual de cerca, sigue otro desempate solo entre ellos
           (${quedan > 0 ? `quedan ${quedan} pregunta${quedan > 1 ? 's' : ''} de reserva` : '⚠️ no quedan más preguntas: comparten el puesto'}).${g && g.pos === 1 ? ' El resultado no sale en la tele: se ve con el ganador.' : ''}</p>`; }
+      else if (q.tipo === 'pixel') { const N = pixNiveles(q), pp = pixPuntos(q), i = Math.min(N.length - 1, +((S.pix || {})[sl.id] || 0));
+        tieInfo = `<p class="muted">Vale según el nivel: ${pp.map((p, k) => `${k + 1}° = <b>${fmtPts(p)}</b>`).join(' · ')}.<br>
+          <b>En cada nivel:</b> "¿Alguien se anima?" → el que quiere escribe y da vuelta la pizarra → las mirás. Si alguno acertó, lo marcás abajo y tocás 🎯. Si nadie, Siguiente y se aclara. El que erró, queda afuera de esta foto.</p>
+          <div class="pix-ctl"><button class="btn ghost small" id="pix-menos" ${i === 0 ? 'disabled' : ''}>◀ Más pixelada</button><b>Nivel ${i + 1} de ${N.length}</b><button class="btn small" id="pix-mas" ${i >= N.length - 1 ? 'disabled' : ''}>🔍 Aclarar ▶</button></div>
+          ${S.step === 'revelado' ? '' : `<button class="btn" id="pix-ya" style="width:100%;margin:4px 0 8px">🎯 ¡Acertaron! Mostrar la foto</button>`}`; }
       else if (isQ(sl)) tieInfo = `<p class="muted">Vale <b>${fmtPts(ptsOf(q))}</b>${q.tipo === 'aprox' ? ` al más cerca · <b>${fmtPts(exactoOf(q))}</b> si es exacto` : ''}.</p>`;
       const ansHTML = q.tipo === 'opciones' && q.opciones && q.opciones.length
         ? (q.correctas || []).map(i => `<div class="ans-op"><span class="ans-l">${'ABCDEF'[i]}</span><span>${esc(q.opciones[i])}</span></div>`).join('')
@@ -6839,6 +6893,10 @@ function initControl() {
     else if (false) h = `<div class="auto-banner">🤖 <b>Automático hasta el golpe de entrada</b>${GOLPE_TEMA != null ? ` (segundo ${GOLPE_TEMA} del tema)` : ''}<button class="btn ghost small" id="auto-off">✋ Pasar a manual</button></div>` + h;
 
     body.innerHTML = h;
+    const pixPaso = d => { const q = qOf(sl), N = pixNiveles(q).length; S.pix = { ...(S.pix || {}) }; S.pix[sl.id] = Math.max(0, Math.min(N - 1, (+S.pix[sl.id] || 0) + d)); commit(); };
+    if ($('#pix-mas')) $('#pix-mas').addEventListener('click', () => pixPaso(1));
+    if ($('#pix-menos')) $('#pix-menos').addEventListener('click', () => pixPaso(-1));
+    if ($('#pix-ya')) $('#pix-ya').addEventListener('click', () => { if (!marcado(sl) && !confirm('No marcaste a nadie. ¿Revelar igual?')) return; reveal(); });
     notaRender();
     body.querySelectorAll('[data-modo]').forEach(b => b.addEventListener('click', () => ponerModo(b.dataset.modo === '1')));
     body.querySelectorAll('[data-pm]').forEach(b => b.addEventListener('click', () => { S.previaModo = b.dataset.pm; commit(); }));
@@ -6924,6 +6982,26 @@ function initControl() {
         scoringFor = sl.id;
       }
       updateGuessInfo(sl);
+    } else if (q.tipo === 'pixel') {
+      // tocá a cada uno hasta que diga el nivel en que la sacó (cada toque sube un nivel; después del último, se desmarca)
+      const N = pixNiveles(q).length, pp = pixPuntos(q);
+      $('#score-title').textContent = '¿Quién acertó y en qué nivel?';
+      box.innerHTML = `<p class="muted" style="font-size:13px;margin:0 0 8px">Un toque lo marca en el nivel que está en la tele; si te equivocaste, cada toque más sube un nivel y después del último se desmarca.</p><div class="players">${P.map((p, i) => { const on = (res.ok || []).includes(i), n = +((res.niv || {})[i] || 0);
+        return `<button class="pbtn ${on ? 'on' : ''}" data-p="${i}">${on ? '✓ ' : ''}${esc(p.nombre)}${on ? ` · N${n + 1} (+${fmtPts(pp[n])})` : ''}</button>`; }).join('')}<button class="pbtn ${res.nadie ? 'on' : ''}" data-nadie="1">${res.nadie ? '✓ ' : ''}Nadie</button></div>`;
+      box.querySelectorAll('.pbtn').forEach(b => b.addEventListener('click', () => {
+        const r = S.results[sl.id] = S.results[sl.id] || { ok: [] };
+        r.ok = r.ok || []; r.niv = r.niv || {};
+        if (b.dataset.nadie) { r.nadie = !r.nadie; if (r.nadie) { r.ok = []; r.niv = {}; } }
+        else {
+          const i = +b.dataset.p;
+          if (!r.ok.includes(i)) { r.ok = [...r.ok, i].sort(); r.niv[i] = Math.min(N - 1, +((S.pix || {})[sl.id] || 0)); }   // se marca en el nivel que está en la tele
+          else if ((+r.niv[i] || 0) < N - 1) r.niv[i] = (+r.niv[i] || 0) + 1;
+          else { r.ok = r.ok.filter(x => x !== i); delete r.niv[i]; }
+          if (r.ok.length) r.nadie = false;
+        }
+        commit();
+      }));
+      scoringFor = sl.id;
     } else {
       $('#score-title').textContent = '¿Quién acertó?';
       box.innerHTML = `<div class="players">${P.map((p, i) => `<button class="pbtn ${(res.ok || []).includes(i) ? 'on' : ''}" data-p="${i}">${(res.ok || []).includes(i) ? '✓ ' : ''}${esc(p.nombre)}</button>`).join('')}<button class="pbtn ${res.nadie ? 'on' : ''}" data-nadie="1">${res.nadie ? '✓ ' : ''}Nadie</button></div>`;

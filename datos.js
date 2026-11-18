@@ -562,6 +562,21 @@ window.TRIVIA = {
           nota: 'Aproximadamente un cuarto del hospital.' },
       ],
     },
+    {
+      // FOTO PIXELADA: la foto arranca muy pixelada y con Siguiente se aclara un nivel. En cada nivel, el que se anima
+      // escribe y da vuelta la pizarra; si alguno acierta, gana los puntos de ese nivel y se revela la foto nítida.
+      // Fotos: carpeta "fotos" del repositorio, con los nombres foto1.jpg, foto2.jpg, foto3.jpg (en minúscula).
+      titulo: 'Foto pixelada',
+      tipo: 'pixel',
+      activa: true,
+      niveles: [6, 10, 16, 28, 50],    // cuadraditos a lo ancho en cada nivel (más números = más niveles)
+      puntosNivel: [5, 4, 3, 2, 1],    // lo que vale acertar en cada nivel
+      preguntas: [
+        { imagen: 'fotos/foto1.jpg', texto: '¿Qué equipo es?', respuesta: 'Monitor Feas' },
+        { imagen: 'fotos/foto2.jpg', texto: '¿Qué equipo es?', respuesta: 'Monitor Mindray MEC-1200' },
+        { imagen: 'fotos/foto3.jpg', texto: '¿Qué equipo es?', respuesta: 'Centrífuga Gelec' },
+      ],
+    },
   ],
 
   /* ---------- Desempates (aproximación) ----------
