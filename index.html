@@ -1395,7 +1395,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v82 · 17/11 23:40';
+const VERSION = 'v83 · 17/11 23:59';
 const D = window.TRIVIA;
 D.rondas = (D.rondas || []).filter(r => r && r.activa !== false && (r.preguntas || []).length);   // activa: false = la ronda no se juega
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
@@ -3396,6 +3396,10 @@ function musicKeyOf(st) {
   if (st.manual && TRACKS[st.manual]) return st.manual;   // pista elegida a mano desde el celu
   const m = momentOf(st);
   const sl0 = SCRIPT[st.slide] || {};
+  // ronda con música propia (rondas[].musica): suena desde la presentación de la ronda y sigue en todas sus preguntas,
+  // también al revelar y al pasar a la siguiente (no se corta ni vuelve a empezar)
+  const rm = (sl0.k === 'ronda' || sl0.k === 'pregunta') && !st.overlay && D.rondas[sl0.r] && D.rondas[sl0.r].musica;
+  if (rm && TRACKS[rm]) return rm;
   if (isQ(sl0) && ['pregunta', 'pizarras', 'tension'].includes(m) && !st.overlay) {
     const q = qOf(sl0);
     if (q.musica && TRACKS[q.musica]) return q.musica;                                  // música propia de esa pregunta

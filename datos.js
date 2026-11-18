@@ -163,6 +163,8 @@ window.TRIVIA = {
                   // bucle: el pulso de tensión se repite cada 4 s (periodo): al revelar salta a la última vuelta, así la respuesta cae en ≤ 6 s
                   // revela: el golpe del 54,1; después el tema sigue con su cierre final y pasa a los datos curiosos   // la última pregunta y el desempate
     tension:      { id: 'xznaPaJLwDw', nombre: 'No Time for Thoughts' },
+    montana:      { archivo: 'montana.mp3', volumen: 1, nombre: 'In the Hall of the Mountain King (Grieg)', bucle: [9.57, 45.253], fundido: 0.15 },
+                  // ronda de fotos: arranca desde el principio y repite el tramo 9,57 → 45,25 (mismo tema y nivel, la vuelta no se nota)
     datos:        { id: 'aBE9EQ7gXKI', nombre: 'Spanish Flea' },
     anfitrionVoz: { id: 'q9C_euAFpW8', archivo: 'voz-presentacion.mp3', nombre: 'Voz: Ladies and gentlemen', inicio: 0, duracion: 21, fin: 19, velocidad: 0.9, pausa: 5 },
                   // archivo: el mp3 subido al repositorio (velocidad exacta, sin YouTube). Si no lo encuentra, usa el video (id). tono: 'grave' = más lenta y más grave
@@ -518,6 +520,22 @@ window.TRIVIA = {
      ⚠️ Preguntas de la trivia 2025, como base. */
   rondas: [
     {
+      // FOTO PIXELADA: la foto arranca muy pixelada y con Siguiente se aclara un nivel. En cada nivel, el que se anima
+      // escribe y da vuelta la pizarra; si alguno acierta, gana los puntos de ese nivel y se revela la foto nítida.
+      // Fotos: carpeta "fotos" del repositorio, con los nombres foto1.jpg, foto2.jpg, foto3.jpg (en minúscula).
+      titulo: 'Foto pixelada',
+      tipo: 'pixel',
+      activa: true,
+      musica: 'montana',               // suena toda la ronda, sin cortarse entre fotos (ver musica.montana)
+      niveles: [6, 10, 16],            // cuadraditos a lo ancho en cada nivel: 6 muy pixelada · 16 todavía bastante pixelada
+      puntosNivel: [300, 200, 100],    // lo que vale acertar en cada nivel
+      preguntas: [
+        { imagen: 'fotos/foto1.jpg', texto: '¿Qué equipo es?', respuesta: 'Monitor Feas' },
+        { imagen: 'fotos/foto2.jpg', texto: '¿Qué equipo es?', respuesta: 'Monitor Mindray MEC-1200' },
+        { imagen: 'fotos/foto3.jpg', texto: '¿Qué equipo es?', respuesta: 'Centrífuga Gelec' },
+      ],
+    },
+    {
       titulo: 'Opción múltiple',
       tipo: 'opciones',
       preguntas: [
@@ -562,21 +580,7 @@ window.TRIVIA = {
           nota: 'Aproximadamente un cuarto del hospital.' },
       ],
     },
-    {
-      // FOTO PIXELADA: la foto arranca muy pixelada y con Siguiente se aclara un nivel. En cada nivel, el que se anima
-      // escribe y da vuelta la pizarra; si alguno acierta, gana los puntos de ese nivel y se revela la foto nítida.
-      // Fotos: carpeta "fotos" del repositorio, con los nombres foto1.jpg, foto2.jpg, foto3.jpg (en minúscula).
-      titulo: 'Foto pixelada',
-      tipo: 'pixel',
-      activa: true,
-      niveles: [6, 10, 16, 28, 50],    // cuadraditos a lo ancho en cada nivel (más números = más niveles)
-      puntosNivel: [5, 4, 3, 2, 1],    // lo que vale acertar en cada nivel
-      preguntas: [
-        { imagen: 'fotos/foto1.jpg', texto: '¿Qué equipo es?', respuesta: 'Monitor Feas' },
-        { imagen: 'fotos/foto2.jpg', texto: '¿Qué equipo es?', respuesta: 'Monitor Mindray MEC-1200' },
-        { imagen: 'fotos/foto3.jpg', texto: '¿Qué equipo es?', respuesta: 'Centrífuga Gelec' },
-      ],
-    },
+
   ],
 
   /* ---------- Desempates (aproximación) ----------
