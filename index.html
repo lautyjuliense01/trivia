@@ -1395,7 +1395,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v83 · 17/11 23:59';
+const VERSION = 'v85 · 18/11 00:10';
 const D = window.TRIVIA;
 D.rondas = (D.rondas || []).filter(r => r && r.activa !== false && (r.preguntas || []).length);   // activa: false = la ronda no se juega
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
@@ -3189,10 +3189,10 @@ const DESEMPATES = (Array.isArray(D.desempates) ? D.desempates : (D.desempate ? 
 const PROGRAMA = (D.programa && D.programa.activo !== false && D.programa.frases || []).filter(Boolean);
 function buildScript() {
   const s = [{ k: 'previa', label: 'Previa (espera en negro con música)' }];
+  if (CUENTA) s.push({ k: 'cuentaReg', cfg: 'cuenta', label: '⏳ Cuenta regresiva (voz)' });   // justo después de la previa, antes de los avisos de cine
   if (CORTO) s.push({ k: 'cine', parte: 'avisos', label: 'Apertura de cine: avisos de sala' }, ...(LOCUS.voz ? [{ k: 'cuentaReg', cfg: 'voz', label: '🎙️ Voz de bienvenida (ladies and gentlemen)' }] : []), { k: 'corto', label: '🎞️ Cortometraje' + (CORTO.nombre ? ': ' + CORTO.nombre : '') }, { k: 'cine', parte: 'creditos', label: 'Apertura de cine: estudio y créditos' });
   else s.push({ k: 'cine', label: 'Apertura de cine: celulares y créditos' });
   s.push({ k: 'intro', label: 'Intro de película (fanfarria)' });
-  if (CUENTA) s.push({ k: 'cuentaReg', cfg: 'cuenta', label: '⏳ Cuenta regresiva (voz)' });
   if (D.presentador) s.push({ k: 'presentador', label: 'Entrada del presentador: ' + D.presentador.nombre });
   if (PROGRAMA.length) s.push({ k: 'programa', label: 'Presentación del programa (una frase por toque)' });
   if (D.tituloShow !== false) s.push({ k: 'titulo', label: 'El título del show' });
@@ -3400,6 +3400,12 @@ function musicKeyOf(st) {
   // también al revelar y al pasar a la siguiente (no se corta ni vuelve a empezar)
   const rm = (sl0.k === 'ronda' || sl0.k === 'pregunta') && !st.overlay && D.rondas[sl0.r] && D.rondas[sl0.r].musica;
   if (rm && TRACKS[rm]) return rm;
+  // al revelar: rondas[].despues = false sigue el tema de la pregunta · 'clave' = otra pista · sin definir: datos (en aproximación y desempates, sigue el de la pregunta)
+  if (isQ(sl0) && m === 'revelado' && !st.overlay) {
+    const r = sl0.k === 'pregunta' ? D.rondas[sl0.r] : null, desp = r && r.despues !== undefined ? r.despues : (qOf(sl0).tipo === 'aprox' ? false : undefined);
+    if (desp === false) return musicKeyOf({ slide: st.slide, step: 'pregunta' });
+    if (typeof desp === 'string' && TRACKS[desp]) return desp;
+  }
   if (isQ(sl0) && ['pregunta', 'pizarras', 'tension'].includes(m) && !st.overlay) {
     const q = qOf(sl0);
     if (q.musica && TRACKS[q.musica]) return q.musica;                                  // música propia de esa pregunta
@@ -3505,7 +3511,25 @@ function previaFondo(cv) {
   requestAnimationFrame(frame);
 }
 /* Dibuja la foto con "bl" cuadraditos a lo ancho (0 = nítida). Al cambiar de nivel se aclara en unos pasos, no de golpe. */
-const pixImgs = {};
+const pixImgs = {}, pixData = {};
+/* Cada cuadradito es el PROMEDIO de todos los píxeles de la foto que cubre (no una muestra suelta):
+   así un color que aparece en un nivel sigue en el mismo lugar en los niveles siguientes y la imagen no "salta". */
+function pixPromedio(src, img, W, H, bw, bh, out) {
+  let d = pixData[src];
+  if (!d || d.W !== W || d.H !== H) { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, W, H); d = pixData[src] = { W, H, px: x.getImageData(0, 0, W, H).data }; }
+  out.width = bw; out.height = bh;
+  const o = out.getContext('2d'), od = o.createImageData(bw, bh), px = d.px;
+  for (let j = 0; j < bh; j++) {
+    const y0 = Math.floor(j * H / bh), y1 = Math.max(y0 + 1, Math.floor((j + 1) * H / bh));
+    for (let i = 0; i < bw; i++) {
+      const x0 = Math.floor(i * W / bw), x1 = Math.max(x0 + 1, Math.floor((i + 1) * W / bw));
+      let r = 0, g = 0, bl = 0, n = 0;
+      for (let y = y0; y < y1; y++) for (let x = x0, p = (y * W + x0) * 4; x < x1; x++, p += 4) { r += px[p]; g += px[p + 1]; bl += px[p + 2]; n++; }
+      const q = (j * bw + i) * 4; od.data[q] = r / n; od.data[q + 1] = g / n; od.data[q + 2] = bl / n; od.data[q + 3] = 255;
+    }
+  }
+  o.putImageData(od, 0, 0);
+}
 function pixShow(cv, src, bl, anim) {
   if (!src) return;
   const go = img => {
@@ -3514,8 +3538,8 @@ function pixShow(cv, src, bl, anim) {
     const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, tmp = document.createElement('canvas');
     const draw = b => {
       if (!b) { ctx.imageSmoothingEnabled = true; ctx.drawImage(img, 0, 0, W, H); return; }
-      const bw = Math.max(1, Math.round(b)), bh = Math.max(1, Math.round(b * H / W)); tmp.width = bw; tmp.height = bh;
-      const t = tmp.getContext('2d'); t.imageSmoothingEnabled = true; t.drawImage(img, 0, 0, bw, bh);
+      const bw = Math.max(1, Math.round(b)), bh = Math.max(1, Math.round(b * H / W));
+      pixPromedio(src, img, W, H, bw, bh, tmp);
       ctx.imageSmoothingEnabled = false; ctx.drawImage(tmp, 0, 0, bw, bh, 0, 0, W, H);
     };
     clearInterval(cv._t);
@@ -4105,7 +4129,7 @@ function createDirector(music, fx) {
       if (TRACKS.respuesta) setTimeout(() => music.cue('respuesta'), 400); // el golpe de la respuesta queda listo
     } else if (m === 'revelado' || (m === 'ganador' && lastMoment === 'redoble')) {
       if (fx) fx.stop(120);
-      const after = m === 'ganador' ? key : 'datos';
+      const after = key;   // lo que corresponde después de revelar (datos, o el tema de la pregunta en aproximación)
       if (TRACKS.respuesta) {
         music.play('respuesta', { instant: true });
         afterT = setTimeout(() => { if (after && TRACKS[after]) music.play(after); }, RESP_MS);
@@ -6710,6 +6734,7 @@ function initControl() {
     if (seq) abortSeq('Secuencia de previa cancelada', true);
     const ini = (PREVIA && PREVIA.inicio) || {};
     S = { slide: 0, step: null, overlay: null, results: {}, delayMs: S.delayMs, hidePlayer: S.hidePlayer, vol: S.vol, ritmo: S.ritmo, acentos: S.acentos, bucleAj: S.bucleAj, crEn: S.crEn, notas: S.notas, volPistas: S.volPistas, auto: S.auto, bucleModo: S.bucleModo, bucleAnt: S.bucleAnt, previaModo: ini.pantalla || 'apagado' };
+    if (ini.volumen != null) { S.vol = ini.volumen; S.volListo = true; $('#set-vol').value = S.vol; $('#set-vol-v').textContent = S.vol; if (link) link.send({ type: 'vol', v: S.vol }); }   // queda en el de inicio de la previa; si lo cambiás, la previa arranca con el tuyo
     log('Partida reiniciada · luz de sala, lista para la previa', 'o');
     lastLightKey = null; lastLook = null;
     commit();
@@ -7062,7 +7087,8 @@ function initControl() {
   function startPrevia() {
     if (!PREVIA) return;
     const ini = PREVIA.inicio || {};
-    if (ini.volumen != null) { S.vol = ini.volumen; $('#set-vol').value = S.vol; $('#set-vol-v').textContent = S.vol; if (link) link.send({ type: 'vol', v: S.vol }); }
+    if (ini.volumen != null && !S.volListo) { S.vol = ini.volumen; $('#set-vol').value = S.vol; $('#set-vol-v').textContent = S.vol; if (link) link.send({ type: 'vol', v: S.vol }); }
+    delete S.volListo;
     if (ini.pantalla) S.previaModo = ini.pantalla;
     if (ini.pista) S.manual = ini.pista;
     const desde = pruebaPrevia() && ini.pista ? PRUEBA_DESDE : 0;
