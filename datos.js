@@ -125,7 +125,13 @@ window.TRIVIA = {
      A pantalla completa, sin controles; cuando termina sigue sola.
      inicio / fin: segundos para recortarlo (fin sirve para cortar antes de la pantalla final de YouTube) · volumen: 0 a 1 */
   corto: { local: true, archivo: '', id: '', nombre: 'La historia de Bioingeniería', inicio: 0, fin: null, volumen: 1,
-           presenta: { estudio: 'Bioingeniería Animation Studios', texto: 'presenta' }, negroDespues: 10 },   // negroDespues: segundos en negro al terminar el video (para comentarlo)   // la productora chica (logo de neón) que presenta el corto · presenta: false = sin intro
+           presenta: { estudio: 'Bioingeniería Animation Studios', texto: 'presenta' }, negroDespues: 10,
+           // advertencias antes del video, una por pantalla (\n = otro párrafo en la misma pantalla; seg: cuánto queda, si querés fijarlo)
+           advertencias: [
+             'Esta historia está basada en hechos reales.',
+             'Algunos acontecimientos y lugares fueron adaptados con fines narrativos.',
+             'Los personajes fueron diseñados a partir de breves descripciones escritas.\nNo se utilizaron fotografías de las personas reales.\nCualquier diferencia con la realidad es involuntaria.',
+           ] },   // negroDespues: segundos en negro al terminar el video (para comentarlo)   // la productora chica (logo de neón) que presenta el corto · presenta: false = sin intro
   // local: true = el video se elige de los archivos de la compu de la tele (botón 🎞️ en su pantalla de inicio; en Chrome/Edge queda recordado)
   // archivo: mp4 subido al repositorio (si pesa menos de 100 MB) · id: un video de YouTube · todo vacío/false = sin corto
 

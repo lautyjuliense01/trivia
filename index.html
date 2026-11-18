@@ -418,6 +418,9 @@ body.dimmed::after{background:radial-gradient(ellipse at 50% 45%, transparent 25
   background-size:180px 160px,110px 130px;background-position:0 0,40px 60px;animation:drift 60s linear infinite;opacity:.45}
 .dust.d2{background-size:260px 240px,150px 170px;animation-duration:95s;animation-direction:reverse;opacity:.3}
 @keyframes drift{to{transform:translate(180px,-160px)}}
+.cine-adv{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1em;padding:0 14vw;text-align:center;opacity:0;animation-name:advInOut;animation-timing-function:linear;animation-fill-mode:both}
+.cine-adv p{margin:0;font-family:'Cinzel',serif;font-weight:400;font-size:clamp(20px,2.3vw,38px);line-height:1.5;letter-spacing:.06em;color:#ece6da;text-shadow:0 0 18px rgba(255,255,255,.12)}
+@keyframes advInOut{0%{opacity:0}14%{opacity:1}86%{opacity:1}100%{opacity:0}}
 .pv-cv{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;animation:fadeIn 4s ease forwards}
 .pv-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 50%,transparent 45%,rgba(0,0,0,.55) 78%,#000 100%)}
 .previa-code{position:absolute;z-index:2;right:24px;bottom:20px;color:#6d6252;font-size:14px;letter-spacing:.1em}
@@ -1387,7 +1390,7 @@ body{background:
 <script>
 (() => {
 'use strict';
-const VERSION = 'v79 · 16/11 01:10';
+const VERSION = 'v80 · 17/11 21:50';
 const D = window.TRIVIA;
 const VOLUME = 70;   // nivel normal del show; de 70 a 100 queda para ajuste fino
 const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
@@ -5172,9 +5175,16 @@ function initScreen() {
       // el corto lo presenta una productora chica, "Bioingeniería Surround", con su cartel de neón (corto.presenta en datos.js)
       const pres = CORTO.intro === false || CORTO.presenta === false ? null : { estudio: 'Bioingeniería Animation Studios', texto: CORTO.introTexto || 'presenta', ...(CORTO.presenta || {}) };
       const MINI = pres ? (CORTO.introMs || 7200) : 0;
-      h = `<div class="cine"><div class="cine-black" style="animation:none;opacity:1"></div>${MINI ? `<div class="cine-card ident-card mini" style="animation-delay:300ms;animation-duration:${MINI}ms">${neonHTML(pres)}</div>` : ''}</div>`;
+      // después del cartel de la productora y antes del video: las advertencias, una por vez, como al comienzo de una película (corto.advertencias)
+      const ADV = (CORTO.advertencias || []).filter(Boolean).map(a => typeof a === 'string' ? { texto: a } : a);
+      let tA = MINI ? MINI + 900 : 400;
+      const advHTML = ADV.map(a => {
+        const dur = Math.round((a.seg || Math.min(9, 3 + String(a.texto).length / 22)) * 1000), at = tA; tA += dur + 500;
+        return `<div class="cine-adv" style="animation-delay:${at}ms;animation-duration:${dur}ms">${String(a.texto).split('\n').map(l => `<p>${esc(l)}</p>`).join('')}</div>`;
+      }).join('');
+      h = `<div class="cine"><div class="cine-black" style="animation:none;opacity:1"></div>${MINI ? `<div class="cine-card ident-card mini" style="animation-delay:300ms;animation-duration:${MINI}ms">${neonHTML(pres)}</div>` : ''}${advHTML}</div>`;
       if (MINI) setTimeout(() => neonRun(300, MINI, cineHits), 0);   // el zumbido del neón va con el grupo 'apertura' (ver neonRun)
-      cineHits.push(setTimeout(() => cortoStart(st.slide), MINI ? MINI + 500 : 0));
+      cineHits.push(setTimeout(() => cortoStart(st.slide), ADV.length ? tA + 300 : (MINI ? MINI + 500 : 0)));
     } else if (sl.k === 'intro') {
       const ed = esc(D.edicion).replace(/(\d{4})\s*$/, '').trim();
       const yr = (D.edicion.match(/\d{4}/) || [''])[0];
